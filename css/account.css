@@ -1039,6 +1039,22 @@ thead .plans-th-cap {
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
 .game-head { position: relative; }
+
+/* 卷面设置（题库 / 模拟考试 / 考试）：范围与题量同卡，开始按钮出卡、单摆卡下
+   （用户 2026-09-30）。题量段在卡内用一道细线跟范围分开，仍属同一张卡。 */
+.game-setup-card { display: flex; flex-direction: column; gap: 12px; }
+.game-setup-size {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.game-setup-size .account-card-title { margin-bottom: 10px; }
+/* 出卡的按钮：.poems-game 是 flex column + gap，它自己就会跟上下文拉开 12px，
+   这里只补一点上边距，让它比"卡内按钮"更像独立一步。 */
+.game-setup-begin { margin-top: 2px; }
+
+/* 飞花令：换令收进令字卡，看答案不套卡片、落在页底 */
+.game-fly-restart { margin-top: 10px; }
+.game-fly-reveal { display: flex; flex-direction: column; }
 .game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
 .game-char {
   display: flex;
