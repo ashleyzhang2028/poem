@@ -346,11 +346,14 @@
     return Ent.tierLabel(r.minTier || Ent.cap(m.cap).minTier) + " 可用";
   }
 
+  // 飞花令两段（用户 2026-09-30 裁决）：
+  //   ① 令字卡：范围 / 令字 / 命中句数 / 难度（常见字·一般字·难字）**再加换令按钮**
+  //      —— 「换令按钮应该在常见字，一般字按钮选项下面显示，一张卡片内」；
+  //   ② 「自己写一句试试」卡。
+  //   ③ 看答案**不在这两段里** —— 「看答案按钮应该不需要卡片，显示在页底（其他卡片下面）」。
   function renderFly() {
-    var id = identifier();
     var m = modeOf("fly");
     var cps = scopedCorpus();
-    var ff = Q.flyFlower({ poems: cps, chars: state.chars });
     var sum = Q.charSummary(cps, state.chars);
 
     var html = '<section class="account-card game-head">' +
@@ -368,20 +371,7 @@
           (lv.id === state.level ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"') +
           ">" + esc(lv.name) + "</button>";
       }).join("") + "</div>" +
-      "</section>";
-
-    html += '<section class="account-card">' +
-      '<button class="account-btn ghost" type="button" data-game-reveal="1">' +
-      (state.revealed ? "收起答案" : "看答案（" + ff.count + " 句）") + "</button>" +
-      (state.revealed
-        ? '<div class="game-lines">' + (ff.rows.length ? ff.rows.map(function (r) {
-            return '<div class="game-line" data-id="' + esc(r.id) + '">' +
-              '<span class="game-line-text">' + mark(r.text, state.chars) + "</span>" +
-              '<span class="game-line-src">' + esc(r.title) +
-              (r.source ? " · " + esc(bookName(r.source)) : "") + "</span>" +
-              "</div>";
-          }).join("") : '<p class="account-hint">这一份语料里没有带这些字的句子。</p>') + "</div>"
-        : '<p class="account-hint">先自己想，想完了再点开对一对。点开之后可以点任意一句跳到原文。</p>') +
+      '<button class="account-btn ghost game-fly-restart" type="button" data-game-restart="1">换令</button>' +
       "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">自己写一句试试</h2>' +
@@ -395,6 +385,26 @@
       '<p class="account-hint">判分是逐字比对：写出来的这一句要能在合集里一字不差地找到。</p>' +
       "</section>";
     return html;
+  }
+
+  // 页底那颗「看答案」：不套卡片（用户 2026-09-30「看答案按钮应该不需要卡片」），
+  // 排在页面所有卡片**下面**（含「回到卷面设置」那张），答案清单跟着它往下摊。
+  function renderFlyReveal() {
+    var cps = scopedCorpus();
+    var ff = Q.flyFlower({ poems: cps, chars: state.chars });
+    return '<div class="game-fly-reveal">' +
+      '<button class="account-btn ghost" type="button" data-game-reveal="1">' +
+      (state.revealed ? "收起答案" : "看答案（" + ff.count + " 句）") + "</button>" +
+      (state.revealed
+        ? '<div class="game-lines">' + (ff.rows.length ? ff.rows.map(function (r) {
+            return '<div class="game-line" data-id="' + esc(r.id) + '">' +
+              '<span class="game-line-text">' + mark(r.text, state.chars) + "</span>" +
+              '<span class="game-line-src">' + esc(r.title) +
+              (r.source ? " · " + esc(bookName(r.source)) : "") + "</span>" +
+              "</div>";
+          }).join("") : '<p class="account-hint">这一份语料里没有带这些字的句子。</p>') + "</div>"
+        : '<p class="account-hint">先自己想，想完了再点开对一对。点开之后可以点任意一句跳到原文。</p>') +
+      "</div>";
   }
 
   function bookName(source) {
@@ -472,6 +482,9 @@
     return names.join(" + ") + (n == null ? "" : "（" + n + " 篇）");
   }
 
+  // 卷面设置：**范围与题量收进同一张卡**，开始按钮从卡里出来、单摆在卡下
+  // （用户 2026-09-30：「题库和题量设置应该放在一张卡片内，开始按钮应该从卡片中
+  // 脱离出来，单独在卡片下面显示」）。题量段在卡内自带一道细分隔线，与范围分开。
   function renderSetup() {
     var m = modeOf(state.pending);
     var v = variantOf(state.pending);
@@ -479,14 +492,16 @@
     var sizes = v.sizes || [];
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
-        var html = '<section class="account-card game-head">' +
+    var html = '<section class="account-card game-head">' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
-      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
       "</section>";
 
-    html += '<section class="account-card"><h2 class="account-card-title">题量</h2>' +
+    html += '<section class="account-card game-setup-card">' +
+      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
+      '<div class="game-setup-size">' +
+      '<h2 class="account-card-title">题量</h2>' +
       '<div class="seg mini" id="game-size" role="group" aria-label="题量">' +
       sizes.map(function (n) {
         return '<button type="button" data-game-size="' + n + '"' +
@@ -498,11 +513,13 @@
         ? "交卷批改，退出不评分。"
         : "答完出结果。" + (v.record ? "记录留本地。" : "本地不留记录。")) +
       "</p>" +
-      '<button class="account-btn" type="button" data-game-begin="1">开始</button>' +
+      "</div></section>";
+
+    // 开始按钮：脱离卡片，单独落在卡片下方（用户 2026-09-30 裁决）
+    html += '<button class="account-btn game-setup-begin" type="button" data-game-begin="1">开始</button>' +
       (state.setupNotice
         ? '<p class="account-msg warn">' + esc(state.setupNotice) + "</p>"
-        : "") +
-      "</section>";
+        : "");
     return html;
   }
 
@@ -690,14 +707,13 @@
     else if (state.mode) body = renderPaper();
     else body = renderHome();
 
-    if (state.mode === "fly") {
+    // 「回到卷面设置」只在答题卷面上出现（setup / history 两屏不摆）
+    if (state.mode && state.mode !== "setup" && state.mode !== "history") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
-        'data-game-restart="1">换令</button></section>';
-    } else if (state.mode === "setup" || state.mode === "history") {
-          } else if (state.mode) {
-            body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-reset="1">回到卷面设置</button></section>';
     }
+    // 飞花令的「看答案」排在页底：所有卡片之后（用户 2026-09-30）
+    if (state.mode === "fly") body += renderFlyReveal();
     host.innerHTML = body + (state.overlayId ? renderPoemOverlay(state.overlayId) : "");
     bind();
         paintBack();
