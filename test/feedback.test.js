@@ -258,9 +258,13 @@ console.log("一、创建：登录用户 / 设备号访客 / 拒绝没身份的�
     const pageHtml = read("settings/feedback/index.html");
     chk(/js\/feedback\.js/.test(pageHtml) && /js\/feedback-page\.js/.test(pageHtml), "反馈页带上了数据层与页面层两个脚本");
 
-    const adminHtml = read("admin/index.html");
-    chk(/id="feedback-card"/.test(adminHtml), "管理后台有反馈卡片");
-    chk(/js\/feedback\.js/.test(adminHtml), "管理后台也带上了 js/feedback.js（读标签用）");
+    // 管理后台自 fb55a48 起是「一张卡一页」：index 只列导航（带 /admin/feedback.html），
+    // 卡片本体在 feedback.html 上。断言跟着卡片走，别钉在已经不挂它的 index 上。
+    const adminIndex = read("admin/index.html");
+    chk(/href="\/admin\/feedback\/?.html"/.test(adminIndex), "管理后台首页有意见反馈入口");
+    const adminFeedback = read("admin/feedback.html");
+    chk(/id="feedback-card"/.test(adminFeedback), "管理后台有反馈卡片");
+    chk(/js\/feedback\.js/.test(adminFeedback), "管理后台也带上了 js/feedback.js（读标签用）");
 
     const swSrc = read("sw.js");
     chk(/\.\/js\/feedback\.js/.test(swSrc) && /\.\/js\/feedback-page\.js/.test(swSrc) && /\.\/settings\/feedback\//.test(swSrc),
