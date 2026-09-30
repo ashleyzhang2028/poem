@@ -48,7 +48,7 @@
         "exam.gathering":    { minTier: "max",  login: true,  quota: null, name: "古诗词 大会",
                            breaks: ["大会"] },
         "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "模拟考试" },
-        "exam.formal":       { minTier: "max",  login: true,  quota: null, name: "正式考试" },
+        "exam.formal":       { minTier: "max",  login: true,  quota: null, name: "考试" },
         "exam.changshi":     { minTier: "pro",  login: true,  quota: null, name: "文学常识考试" }
 
   };

@@ -18,7 +18,7 @@
       desc: "抽一套卷子当场做，答完立刻说对错"
     },
     {
-      id: "formal", cap: "exam.formal", tier: "max", name: "正式考试",
+      id: "formal", cap: "exam.formal", tier: "max", name: "考试",
       judge: "after", timed: true, record: true,
       sizes: [10, 20, 30], size: 10, minutes: 20,
       desc: "交卷后统一批改，限时 20 分钟，到点自动交卷"

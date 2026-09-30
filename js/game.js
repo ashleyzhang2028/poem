@@ -300,7 +300,7 @@
     var sum = Q.charSummary(cps, state.chars);
 
     var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
       '<div class="game-chars">' + state.chars.map(function (c) {
@@ -427,12 +427,12 @@
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
         var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
       '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) +
-      "（要改就点上面「换一个玩法」回首页，点一下格子就行）</p>" +
+      "（要改就点上面「换一个题型」回首页，点一下格子就行）</p>" +
       "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
@@ -468,7 +468,7 @@
     var done = !!state.graded || (reveal && !!state.checked[i]);
 
     var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
       esc(scopePickLabel(state.setup.scope)) +
@@ -844,7 +844,7 @@
     if (!C || standalone()) return;
     if (!mode) { C.setPage(""); C.setSub(""); return; }
     C.setPage("古诗词大会");
-    C.setSub("飞花令 · 题库复习 · 模拟考试 · 正式考试");
+    C.setSub("飞花令 · 题库复习 · 模拟考试 · 考试");
   }
 
     function paintBack() {
