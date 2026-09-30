@@ -376,6 +376,10 @@ const SHELL_GROUP = (function () {
 const byTitle = {};
 mrOf.forEach(function (m) { byTitle[m.title] = m; });
 
+/* 姓名 → 主表正文 id。masterRefOf 用它把壳指回正文（见那里关于号段错位的说明）。 */
+const MASTER_REF = {};
+mrOf.forEach(function (m) { if (!MASTER_REF[m.title]) MASTER_REF[m.title] = m.id; });
+
 /* ── 校验名单 ────────────────────────────────────────────────────────── */
 const seenName = {};
 const added = [];
@@ -704,14 +708,31 @@ if (process.argv.indexOf('--master') >= 0) {
    两条壳的**形状完全一样**（textRef / id / title / group / gradeGroup /
    dynasty / author / source / excerpt），只多一个 country 字段 —— 拆两部
    这件事落在数据上就是这一个字段，页面、搜索、断言以后都认它，不再猜。 */
+/* 主表里这一条正文的 id（按**姓名**认回，不按号）。
+   ⚠️ 这里踩过一个很贵的坑（Issue #381 第二十轮报告的那个错位）：
+      `mr-c-*` / `mr-w-*` 是**两个各自独立的号段**，而主表 id 是按**全册**
+      编的（中国卷第 1 位恰好是全册第 1 位）。`masterRef` 原先是「拿卷内
+      序位去全册号段里取一个 id」，于是整段指错：苏格拉底的 masterRef 成了
+      全册第 11 位（`mingren-mr-w-11`），达·芬奇的成了全册第 55 位
+      （`mingren-mr-c-308` = 靳辅）。413 条外国名家里 248 条指错。
+      错得还不报错 —— `mingren-mr-11` 在主表里**真的存在**（恩培多克勒），
+      查得到、不为空，于是「查不到才兜底」的那条路一次都没走过。
+   姓名认回来是件确定性的事：主表里 mingren 那一段的 title 唯一（「一人在
+   一册里只占一行」），所以这一步没有歧义。 */
+function masterRefOf(rec) {
+  const hit = MASTER_REF[rec.title];
+  if (!hit) throw new Error('主表里找不到与「' + rec.title + '」同名的正文条目');
+  return hit;
+}
+
 function shellOf(rec) {
   const life = rec.row ? rec.row[3] : lifeOf(rec.text);
   const one = rec.row ? rec.row[rec.row.length - 1] : tailOf(rec.text);
   return {
     id: rec.newId,
-    /* 主表里这一条正文的 id（= 上一轮的老号）。两卷各出一份壳，正文仍只有
-       一份 —— 这条线就是「哪一份正文」的明写落点，不靠号段对齐去猜。 */
-    masterRef: rec.oldId || rec.newId,
+    /* 主表里这一条正文的 id。两卷各出一份壳，正文仍只有一份 —— 这条线就是
+       「哪一份正文」的明写落点。按姓名认，见 masterRefOf。 */
+    masterRef: masterRefOf(rec),
     title: rec.title,
     group: rec.group,
     country: rec.foreign ? '外国' : '中国',

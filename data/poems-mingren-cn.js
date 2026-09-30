@@ -92,7 +92,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-08",
-    masterRef: "mingren-mr-c-09",
+    masterRef: "mingren-mr-c-08",
     id: "mr-c-08",
     title: "左丘明",
     group: "历史学家",
@@ -105,7 +105,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-09",
-    masterRef: "mingren-mr-c-10",
+    masterRef: "mingren-mr-c-09",
     id: "mr-c-09",
     title: "孔子",
     group: "思想家",
@@ -118,7 +118,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-10",
-    masterRef: "mingren-mr-c-11",
+    masterRef: "mingren-mr-c-10",
     id: "mr-c-10",
     title: "司马穰苴",
     group: "军事家",
@@ -131,7 +131,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-11",
-    masterRef: "mingren-mr-c-12",
+    masterRef: "mingren-mr-c-11",
     id: "mr-c-11",
     title: "邓析",
     group: "政治家",
@@ -144,7 +144,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-12",
-    masterRef: "mingren-mr-c-13",
+    masterRef: "mingren-mr-c-12",
     id: "mr-c-12",
     title: "孙武",
     group: "军事家",
@@ -157,7 +157,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-13",
-    masterRef: "mingren-mr-c-14",
+    masterRef: "mingren-mr-c-13",
     id: "mr-c-13",
     title: "范蠡",
     group: "经济学家",
@@ -170,7 +170,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-14",
-    masterRef: "mingren-mr-c-17",
+    masterRef: "mingren-mr-c-14",
     id: "mr-c-14",
     title: "鲁班",
     group: "美术家",
@@ -183,7 +183,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-15",
-    masterRef: "mingren-mr-c-23",
+    masterRef: "mingren-mr-c-15",
     id: "mr-c-15",
     title: "墨子",
     group: "思想家",
@@ -196,7 +196,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-16",
-    masterRef: "mingren-mr-c-24",
+    masterRef: "mingren-mr-c-16",
     id: "mr-c-16",
     title: "李悝",
     group: "政治家",
@@ -209,7 +209,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-17",
-    masterRef: "mingren-mr-c-26",
+    masterRef: "mingren-mr-c-17",
     id: "mr-c-17",
     title: "吴起",
     group: "军事家",
@@ -222,7 +222,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-18",
-    masterRef: "mingren-mr-c-27",
+    masterRef: "mingren-mr-c-18",
     id: "mr-c-18",
     title: "扁鹊",
     group: "医学家",
@@ -235,7 +235,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-19",
-    masterRef: "mingren-mr-c-28",
+    masterRef: "mingren-mr-c-19",
     id: "mr-c-19",
     title: "甘德",
     group: "天文地理学家",
@@ -248,7 +248,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-20",
-    masterRef: "mingren-mr-c-29",
+    masterRef: "mingren-mr-c-20",
     id: "mr-c-20",
     title: "石申",
     group: "天文地理学家",
@@ -261,7 +261,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-21",
-    masterRef: "mingren-mr-c-30",
+    masterRef: "mingren-mr-c-21",
     id: "mr-c-21",
     title: "白圭",
     group: "经济学家",
@@ -274,7 +274,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-22",
-    masterRef: "mingren-mr-c-31",
+    masterRef: "mingren-mr-c-22",
     id: "mr-c-22",
     title: "慎到",
     group: "政治家",
@@ -287,7 +287,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-23",
-    masterRef: "mingren-mr-c-32",
+    masterRef: "mingren-mr-c-23",
     id: "mr-c-23",
     title: "商鞅",
     group: "政治家",
@@ -300,7 +300,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-24",
-    masterRef: "mingren-mr-c-33",
+    masterRef: "mingren-mr-c-24",
     id: "mr-c-24",
     title: "申不害",
     group: "政治家",
@@ -313,7 +313,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-25",
-    masterRef: "mingren-mr-c-34",
+    masterRef: "mingren-mr-c-25",
     id: "mr-c-25",
     title: "孙膑",
     group: "军事家",
@@ -326,7 +326,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-26",
-    masterRef: "mingren-mr-c-35",
+    masterRef: "mingren-mr-c-26",
     id: "mr-c-26",
     title: "孟子",
     group: "思想家",
@@ -339,7 +339,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-27",
-    masterRef: "mingren-mr-c-36",
+    masterRef: "mingren-mr-c-27",
     id: "mr-c-27",
     title: "张仪",
     group: "政治家",
@@ -352,7 +352,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-28",
-    masterRef: "mingren-mr-c-37",
+    masterRef: "mingren-mr-c-28",
     id: "mr-c-28",
     title: "庄子",
     group: "思想家",
@@ -365,7 +365,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-29",
-    masterRef: "mingren-mr-c-38",
+    masterRef: "mingren-mr-c-29",
     id: "mr-c-29",
     title: "伯牙",
     group: "音乐家",
@@ -378,7 +378,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-30",
-    masterRef: "mingren-mr-c-39",
+    masterRef: "mingren-mr-c-30",
     id: "mr-c-30",
     title: "苏秦",
     group: "政治家",
@@ -391,7 +391,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-31",
-    masterRef: "mingren-mr-c-41",
+    masterRef: "mingren-mr-c-31",
     id: "mr-c-31",
     title: "屈原",
     group: "文学家",
@@ -404,7 +404,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-32",
-    masterRef: "mingren-mr-c-42",
+    masterRef: "mingren-mr-c-32",
     id: "mr-c-32",
     title: "白起",
     group: "军事家",
@@ -417,7 +417,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-33",
-    masterRef: "mingren-mr-c-43",
+    masterRef: "mingren-mr-c-33",
     id: "mr-c-33",
     title: "荀子",
     group: "思想家",
@@ -430,7 +430,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-34",
-    masterRef: "mingren-mr-c-44",
+    masterRef: "mingren-mr-c-34",
     id: "mr-c-34",
     title: "李冰",
     group: "农学家",
@@ -443,7 +443,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-35",
-    masterRef: "mingren-mr-c-45",
+    masterRef: "mingren-mr-c-35",
     id: "mr-c-35",
     title: "宋玉",
     group: "文学家",
@@ -456,7 +456,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-36",
-    masterRef: "mingren-mr-c-46",
+    masterRef: "mingren-mr-c-36",
     id: "mr-c-36",
     title: "李牧",
     group: "军事家",
@@ -469,7 +469,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-37",
-    masterRef: "mingren-mr-c-47",
+    masterRef: "mingren-mr-c-37",
     id: "mr-c-37",
     title: "李斯",
     group: "政治家",
@@ -482,7 +482,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-38",
-    masterRef: "mingren-mr-c-48",
+    masterRef: "mingren-mr-c-38",
     id: "mr-c-38",
     title: "韩非",
     group: "政治家",
@@ -495,7 +495,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-39",
-    masterRef: "mingren-mr-c-50",
+    masterRef: "mingren-mr-c-39",
     id: "mr-c-39",
     title: "张释之",
     group: "政治家",
@@ -508,7 +508,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-40",
-    masterRef: "mingren-mr-c-51",
+    masterRef: "mingren-mr-c-40",
     id: "mr-c-40",
     title: "萧何",
     group: "政治家",
@@ -521,7 +521,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-41",
-    masterRef: "mingren-mr-c-52",
+    masterRef: "mingren-mr-c-41",
     id: "mr-c-41",
     title: "王翦",
     group: "军事家",
@@ -534,7 +534,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-42",
-    masterRef: "mingren-mr-c-53",
+    masterRef: "mingren-mr-c-42",
     id: "mr-c-42",
     title: "廉颇",
     group: "军事家",
@@ -547,7 +547,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-43",
-    masterRef: "mingren-mr-c-54",
+    masterRef: "mingren-mr-c-43",
     id: "mr-c-43",
     title: "郑国",
     group: "农学家",
@@ -560,7 +560,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-44",
-    masterRef: "mingren-mr-c-55",
+    masterRef: "mingren-mr-c-44",
     id: "mr-c-44",
     title: "陈平",
     group: "政治家",
@@ -573,7 +573,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-45",
-    masterRef: "mingren-mr-c-56",
+    masterRef: "mingren-mr-c-45",
     id: "mr-c-45",
     title: "韩信",
     group: "军事家",
@@ -586,7 +586,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-46",
-    masterRef: "mingren-mr-c-57",
+    masterRef: "mingren-mr-c-46",
     id: "mr-c-46",
     title: "周亚夫",
     group: "军事家",
@@ -599,7 +599,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-47",
-    masterRef: "mingren-mr-c-58",
+    masterRef: "mingren-mr-c-47",
     id: "mr-c-47",
     title: "贾谊",
     group: "文学家",
@@ -612,7 +612,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-48",
-    masterRef: "mingren-mr-c-59",
+    masterRef: "mingren-mr-c-48",
     id: "mr-c-48",
     title: "枚乘",
     group: "文学家",
@@ -625,7 +625,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-49",
-    masterRef: "mingren-mr-c-60",
+    masterRef: "mingren-mr-c-49",
     id: "mr-c-49",
     title: "司马相如",
     group: "文学家",
@@ -638,7 +638,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-50",
-    masterRef: "mingren-mr-c-61",
+    masterRef: "mingren-mr-c-50",
     id: "mr-c-50",
     title: "董仲舒",
     group: "思想家",
@@ -651,7 +651,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-51",
-    masterRef: "mingren-mr-c-62",
+    masterRef: "mingren-mr-c-51",
     id: "mr-c-51",
     title: "卫青",
     group: "军事家",
@@ -664,7 +664,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-52",
-    masterRef: "mingren-mr-c-63",
+    masterRef: "mingren-mr-c-52",
     id: "mr-c-52",
     title: "张骞",
     group: "政治家",
@@ -677,7 +677,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-53",
-    masterRef: "mingren-mr-c-64",
+    masterRef: "mingren-mr-c-53",
     id: "mr-c-53",
     title: "东方朔",
     group: "文学家",
@@ -690,7 +690,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-54",
-    masterRef: "mingren-mr-c-65",
+    masterRef: "mingren-mr-c-54",
     id: "mr-c-54",
     title: "落下闳",
     group: "天文地理学家",
@@ -703,7 +703,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-55",
-    masterRef: "mingren-mr-c-66",
+    masterRef: "mingren-mr-c-55",
     id: "mr-c-55",
     title: "桑弘羊",
     group: "经济学家",
@@ -716,7 +716,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-56",
-    masterRef: "mingren-mr-c-67",
+    masterRef: "mingren-mr-c-56",
     id: "mr-c-56",
     title: "司马迁",
     group: "文学家",
@@ -729,7 +729,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-57",
-    masterRef: "mingren-mr-c-68",
+    masterRef: "mingren-mr-c-57",
     id: "mr-c-57",
     title: "霍去病",
     group: "军事家",
@@ -742,7 +742,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-58",
-    masterRef: "mingren-mr-c-69",
+    masterRef: "mingren-mr-c-58",
     id: "mr-c-58",
     title: "赵过",
     group: "农学家",
@@ -755,7 +755,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-59",
-    masterRef: "mingren-mr-c-70",
+    masterRef: "mingren-mr-c-59",
     id: "mr-c-59",
     title: "氾胜之",
     group: "农学家",
@@ -768,7 +768,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-60",
-    masterRef: "mingren-mr-c-73",
+    masterRef: "mingren-mr-c-60",
     id: "mr-c-60",
     title: "扬雄",
     group: "语言文字学家",
@@ -781,7 +781,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-61",
-    masterRef: "mingren-mr-c-77",
+    masterRef: "mingren-mr-c-61",
     id: "mr-c-61",
     title: "王充",
     group: "思想家",
@@ -794,7 +794,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-62",
-    masterRef: "mingren-mr-c-78",
+    masterRef: "mingren-mr-c-62",
     id: "mr-c-62",
     title: "王景",
     group: "农学家",
@@ -807,7 +807,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-63",
-    masterRef: "mingren-mr-c-79",
+    masterRef: "mingren-mr-c-63",
     id: "mr-c-63",
     title: "班固",
     group: "文学家",
@@ -820,7 +820,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-64",
-    masterRef: "mingren-mr-c-80",
+    masterRef: "mingren-mr-c-64",
     id: "mr-c-64",
     title: "班超",
     group: "军事家",
@@ -833,7 +833,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-65",
-    masterRef: "mingren-mr-c-81",
+    masterRef: "mingren-mr-c-65",
     id: "mr-c-65",
     title: "许慎",
     group: "语言文字学家",
@@ -846,7 +846,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-66",
-    masterRef: "mingren-mr-c-82",
+    masterRef: "mingren-mr-c-66",
     id: "mr-c-66",
     title: "蔡伦",
     group: "科学家",
@@ -859,7 +859,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-67",
-    masterRef: "mingren-mr-c-83",
+    masterRef: "mingren-mr-c-67",
     id: "mr-c-67",
     title: "张衡",
     group: "文学家",
@@ -872,7 +872,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-68",
-    masterRef: "mingren-mr-c-85",
+    masterRef: "mingren-mr-c-68",
     id: "mr-c-68",
     title: "郑玄",
     group: "语言文字学家",
@@ -885,7 +885,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-69",
-    masterRef: "mingren-mr-c-86",
+    masterRef: "mingren-mr-c-69",
     id: "mr-c-69",
     title: "蔡邕",
     group: "文学家",
@@ -898,7 +898,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-70",
-    masterRef: "mingren-mr-c-87",
+    masterRef: "mingren-mr-c-70",
     id: "mr-c-70",
     title: "华佗",
     group: "医学家",
@@ -911,7 +911,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-71",
-    masterRef: "mingren-mr-c-88",
+    masterRef: "mingren-mr-c-71",
     id: "mr-c-71",
     title: "张仲景",
     group: "医学家",
@@ -924,7 +924,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-72",
-    masterRef: "mingren-mr-c-89",
+    masterRef: "mingren-mr-c-72",
     id: "mr-c-72",
     title: "孔融",
     group: "文学家",
@@ -937,7 +937,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-73",
-    masterRef: "mingren-mr-c-90",
+    masterRef: "mingren-mr-c-73",
     id: "mr-c-73",
     title: "曹操",
     group: "文学家",
@@ -950,7 +950,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-74",
-    masterRef: "mingren-mr-c-91",
+    masterRef: "mingren-mr-c-74",
     id: "mr-c-74",
     title: "徐干",
     group: "经济学家",
@@ -963,7 +963,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-75",
-    masterRef: "mingren-mr-c-92",
+    masterRef: "mingren-mr-c-75",
     id: "mr-c-75",
     title: "周瑜",
     group: "军事家",
@@ -976,7 +976,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-76",
-    masterRef: "mingren-mr-c-93",
+    masterRef: "mingren-mr-c-76",
     id: "mr-c-76",
     title: "蔡琰",
     group: "文学家",
@@ -989,7 +989,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-77",
-    masterRef: "mingren-mr-c-94",
+    masterRef: "mingren-mr-c-77",
     id: "mr-c-77",
     title: "王粲",
     group: "文学家",
@@ -1002,7 +1002,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-78",
-    masterRef: "mingren-mr-c-95",
+    masterRef: "mingren-mr-c-78",
     id: "mr-c-78",
     title: "诸葛亮",
     group: "军事家",
@@ -1015,7 +1015,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-79",
-    masterRef: "mingren-mr-c-96",
+    masterRef: "mingren-mr-c-79",
     id: "mr-c-79",
     title: "曹丕",
     group: "文学家",
@@ -1028,7 +1028,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-80",
-    masterRef: "mingren-mr-c-97",
+    masterRef: "mingren-mr-c-80",
     id: "mr-c-80",
     title: "曹植",
     group: "文学家",
@@ -1041,7 +1041,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-81",
-    masterRef: "mingren-mr-c-99",
+    masterRef: "mingren-mr-c-81",
     id: "mr-c-81",
     title: "马钧",
     group: "科学家",
@@ -1054,7 +1054,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-82",
-    masterRef: "mingren-mr-c-100",
+    masterRef: "mingren-mr-c-82",
     id: "mr-c-82",
     title: "阮籍",
     group: "文学家",
@@ -1067,7 +1067,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-83",
-    masterRef: "mingren-mr-c-101",
+    masterRef: "mingren-mr-c-83",
     id: "mr-c-83",
     title: "嵇康",
     group: "音乐家",
@@ -1080,7 +1080,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-84",
-    masterRef: "mingren-mr-c-102",
+    masterRef: "mingren-mr-c-84",
     id: "mr-c-84",
     title: "陈寿",
     group: "历史学家",
@@ -1093,7 +1093,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-85",
-    masterRef: "mingren-mr-c-103",
+    masterRef: "mingren-mr-c-85",
     id: "mr-c-85",
     title: "潘岳",
     group: "文学家",
@@ -1106,7 +1106,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-86",
-    masterRef: "mingren-mr-c-104",
+    masterRef: "mingren-mr-c-86",
     id: "mr-c-86",
     title: "左思",
     group: "文学家",
@@ -1119,7 +1119,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-87",
-    masterRef: "mingren-mr-c-105",
+    masterRef: "mingren-mr-c-87",
     id: "mr-c-87",
     title: "张协",
     group: "文学家",
@@ -1132,7 +1132,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-88",
-    masterRef: "mingren-mr-c-106",
+    masterRef: "mingren-mr-c-88",
     id: "mr-c-88",
     title: "陆机",
     group: "文学家",
@@ -1145,7 +1145,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-89",
-    masterRef: "mingren-mr-c-107",
+    masterRef: "mingren-mr-c-89",
     id: "mr-c-89",
     title: "郭璞",
     group: "文学家",
@@ -1158,7 +1158,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-90",
-    masterRef: "mingren-mr-c-108",
+    masterRef: "mingren-mr-c-90",
     id: "mr-c-90",
     title: "干宝",
     group: "文学家",
@@ -1171,7 +1171,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-91",
-    masterRef: "mingren-mr-c-109",
+    masterRef: "mingren-mr-c-91",
     id: "mr-c-91",
     title: "葛洪",
     group: "医学家",
@@ -1184,7 +1184,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-92",
-    masterRef: "mingren-mr-c-110",
+    masterRef: "mingren-mr-c-92",
     id: "mr-c-92",
     title: "王羲之",
     group: "书法家",
@@ -1197,7 +1197,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-93",
-    masterRef: "mingren-mr-c-111",
+    masterRef: "mingren-mr-c-93",
     id: "mr-c-93",
     title: "法显",
     group: "语言文字学家",
@@ -1210,7 +1210,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-94",
-    masterRef: "mingren-mr-c-112",
+    masterRef: "mingren-mr-c-94",
     id: "mr-c-94",
     title: "谢玄",
     group: "军事家",
@@ -1223,7 +1223,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-95",
-    masterRef: "mingren-mr-c-113",
+    masterRef: "mingren-mr-c-95",
     id: "mr-c-95",
     title: "王献之",
     group: "书法家",
@@ -1236,7 +1236,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-96",
-    masterRef: "mingren-mr-c-114",
+    masterRef: "mingren-mr-c-96",
     id: "mr-c-96",
     title: "鸠摩罗什",
     group: "语言文字学家",
@@ -1249,7 +1249,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-97",
-    masterRef: "mingren-mr-c-115",
+    masterRef: "mingren-mr-c-97",
     id: "mr-c-97",
     title: "顾恺之",
     group: "美术家",
@@ -1262,7 +1262,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-98",
-    masterRef: "mingren-mr-c-116",
+    masterRef: "mingren-mr-c-98",
     id: "mr-c-98",
     title: "王珣",
     group: "书法家",
@@ -1275,7 +1275,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-99",
-    masterRef: "mingren-mr-c-117",
+    masterRef: "mingren-mr-c-99",
     id: "mr-c-99",
     title: "陶渊明",
     group: "文学家",
@@ -1288,7 +1288,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-100",
-    masterRef: "mingren-mr-c-118",
+    masterRef: "mingren-mr-c-100",
     id: "mr-c-100",
     title: "谢灵运",
     group: "文学家",
@@ -1301,7 +1301,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-101",
-    masterRef: "mingren-mr-c-119",
+    masterRef: "mingren-mr-c-101",
     id: "mr-c-101",
     title: "范晔",
     group: "历史学家",
@@ -1314,7 +1314,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-102",
-    masterRef: "mingren-mr-c-120",
+    masterRef: "mingren-mr-c-102",
     id: "mr-c-102",
     title: "刘义庆",
     group: "文学家",
@@ -1327,7 +1327,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-103",
-    masterRef: "mingren-mr-c-121",
+    masterRef: "mingren-mr-c-103",
     id: "mr-c-103",
     title: "鲍照",
     group: "文学家",
@@ -1340,7 +1340,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-104",
-    masterRef: "mingren-mr-c-122",
+    masterRef: "mingren-mr-c-104",
     id: "mr-c-104",
     title: "陆探微",
     group: "美术家",
@@ -1353,7 +1353,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-105",
-    masterRef: "mingren-mr-c-123",
+    masterRef: "mingren-mr-c-105",
     id: "mr-c-105",
     title: "祖冲之",
     group: "科学家",
@@ -1366,7 +1366,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-106",
-    masterRef: "mingren-mr-c-124",
+    masterRef: "mingren-mr-c-106",
     id: "mr-c-106",
     title: "江淹",
     group: "文学家",
@@ -1379,7 +1379,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-107",
-    masterRef: "mingren-mr-c-125",
+    masterRef: "mingren-mr-c-107",
     id: "mr-c-107",
     title: "范缜",
     group: "哲学家",
@@ -1392,7 +1392,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-108",
-    masterRef: "mingren-mr-c-126",
+    masterRef: "mingren-mr-c-108",
     id: "mr-c-108",
     title: "陶弘景",
     group: "文学家",
@@ -1405,7 +1405,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-109",
-    masterRef: "mingren-mr-c-127",
+    masterRef: "mingren-mr-c-109",
     id: "mr-c-109",
     title: "谢朓",
     group: "文学家",
@@ -1418,7 +1418,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-110",
-    masterRef: "mingren-mr-c-128",
+    masterRef: "mingren-mr-c-110",
     id: "mr-c-110",
     title: "刘勰",
     group: "文学家",
@@ -1431,7 +1431,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-111",
-    masterRef: "mingren-mr-c-129",
+    masterRef: "mingren-mr-c-111",
     id: "mr-c-111",
     title: "钟嵘",
     group: "文学家",
@@ -1444,7 +1444,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-112",
-    masterRef: "mingren-mr-c-130",
+    masterRef: "mingren-mr-c-112",
     id: "mr-c-112",
     title: "贾思勰",
     group: "农学家",
@@ -1457,7 +1457,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-113",
-    masterRef: "mingren-mr-c-131",
+    masterRef: "mingren-mr-c-113",
     id: "mr-c-113",
     title: "张僧繇",
     group: "美术家",
@@ -1470,7 +1470,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-114",
-    masterRef: "mingren-mr-c-132",
+    masterRef: "mingren-mr-c-114",
     id: "mr-c-114",
     title: "智永",
     group: "书法家",
@@ -1483,7 +1483,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-115",
-    masterRef: "mingren-mr-c-133",
+    masterRef: "mingren-mr-c-115",
     id: "mr-c-115",
     title: "庾信",
     group: "文学家",
@@ -1496,7 +1496,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-116",
-    masterRef: "mingren-mr-c-134",
+    masterRef: "mingren-mr-c-116",
     id: "mr-c-116",
     title: "颜之推",
     group: "思想家",
@@ -1509,7 +1509,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-117",
-    masterRef: "mingren-mr-c-135",
+    masterRef: "mingren-mr-c-117",
     id: "mr-c-117",
     title: "展子虔",
     group: "美术家",
@@ -1522,7 +1522,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-118",
-    masterRef: "mingren-mr-c-136",
+    masterRef: "mingren-mr-c-118",
     id: "mr-c-118",
     title: "宇文恺",
     group: "美术家",
@@ -1535,7 +1535,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-119",
-    masterRef: "mingren-mr-c-137",
+    masterRef: "mingren-mr-c-119",
     id: "mr-c-119",
     title: "欧阳询",
     group: "书法家",
@@ -1548,7 +1548,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-120",
-    masterRef: "mingren-mr-c-138",
+    masterRef: "mingren-mr-c-120",
     id: "mr-c-120",
     title: "虞世南",
     group: "书法家",
@@ -1561,7 +1561,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-121",
-    masterRef: "mingren-mr-c-139",
+    masterRef: "mingren-mr-c-121",
     id: "mr-c-121",
     title: "李靖",
     group: "军事家",
@@ -1574,7 +1574,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-122",
-    masterRef: "mingren-mr-c-140",
+    masterRef: "mingren-mr-c-122",
     id: "mr-c-122",
     title: "孔颖达",
     group: "语言文字学家",
@@ -1587,7 +1587,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-123",
-    masterRef: "mingren-mr-c-141",
+    masterRef: "mingren-mr-c-123",
     id: "mr-c-123",
     title: "房玄龄",
     group: "政治家",
@@ -1600,7 +1600,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-124",
-    masterRef: "mingren-mr-c-142",
+    masterRef: "mingren-mr-c-124",
     id: "mr-c-124",
     title: "戴胄",
     group: "政治家",
@@ -1613,7 +1613,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-125",
-    masterRef: "mingren-mr-c-143",
+    masterRef: "mingren-mr-c-125",
     id: "mr-c-125",
     title: "孙思邈",
     group: "医学家",
@@ -1626,7 +1626,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-126",
-    masterRef: "mingren-mr-c-144",
+    masterRef: "mingren-mr-c-126",
     id: "mr-c-126",
     title: "杜如晦",
     group: "政治家",
@@ -1639,7 +1639,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-127",
-    masterRef: "mingren-mr-c-145",
+    masterRef: "mingren-mr-c-127",
     id: "mr-c-127",
     title: "王绩",
     group: "文学家",
@@ -1652,7 +1652,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-128",
-    masterRef: "mingren-mr-c-146",
+    masterRef: "mingren-mr-c-128",
     id: "mr-c-128",
     title: "李春",
     group: "美术家",
@@ -1665,7 +1665,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-129",
-    masterRef: "mingren-mr-c-147",
+    masterRef: "mingren-mr-c-129",
     id: "mr-c-129",
     title: "长孙无忌",
     group: "政治家",
@@ -1678,7 +1678,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-130",
-    masterRef: "mingren-mr-c-148",
+    masterRef: "mingren-mr-c-130",
     id: "mr-c-130",
     title: "褚遂良",
     group: "书法家",
@@ -1691,7 +1691,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-131",
-    masterRef: "mingren-mr-c-149",
+    masterRef: "mingren-mr-c-131",
     id: "mr-c-131",
     title: "阎立本",
     group: "美术家",
@@ -1704,7 +1704,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-132",
-    masterRef: "mingren-mr-c-150",
+    masterRef: "mingren-mr-c-132",
     id: "mr-c-132",
     title: "玄奘",
     group: "语言文字学家",
@@ -1717,7 +1717,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-133",
-    masterRef: "mingren-mr-c-151",
+    masterRef: "mingren-mr-c-133",
     id: "mr-c-133",
     title: "骆宾王",
     group: "文学家",
@@ -1730,7 +1730,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-134",
-    masterRef: "mingren-mr-c-152",
+    masterRef: "mingren-mr-c-134",
     id: "mr-c-134",
     title: "卢照邻",
     group: "文学家",
@@ -1743,7 +1743,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-135",
-    masterRef: "mingren-mr-c-153",
+    masterRef: "mingren-mr-c-135",
     id: "mr-c-135",
     title: "义净",
     group: "语言文字学家",
@@ -1756,7 +1756,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-136",
-    masterRef: "mingren-mr-c-154",
+    masterRef: "mingren-mr-c-136",
     id: "mr-c-136",
     title: "慧能",
     group: "思想家",
@@ -1769,7 +1769,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-137",
-    masterRef: "mingren-mr-c-155",
+    masterRef: "mingren-mr-c-137",
     id: "mr-c-137",
     title: "孙过庭",
     group: "书法家",
@@ -1782,7 +1782,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-138",
-    masterRef: "mingren-mr-c-156",
+    masterRef: "mingren-mr-c-138",
     id: "mr-c-138",
     title: "姚崇",
     group: "政治家",
@@ -1795,7 +1795,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-139",
-    masterRef: "mingren-mr-c-157",
+    masterRef: "mingren-mr-c-139",
     id: "mr-c-139",
     title: "王勃",
     group: "文学家",
@@ -1808,7 +1808,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-140",
-    masterRef: "mingren-mr-c-158",
+    masterRef: "mingren-mr-c-140",
     id: "mr-c-140",
     title: "杨炯",
     group: "文学家",
@@ -1821,7 +1821,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-141",
-    masterRef: "mingren-mr-c-159",
+    masterRef: "mingren-mr-c-141",
     id: "mr-c-141",
     title: "李思训",
     group: "美术家",
@@ -1834,7 +1834,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-142",
-    masterRef: "mingren-mr-c-160",
+    masterRef: "mingren-mr-c-142",
     id: "mr-c-142",
     title: "宋之问",
     group: "文学家",
@@ -1847,7 +1847,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-143",
-    masterRef: "mingren-mr-c-161",
+    masterRef: "mingren-mr-c-143",
     id: "mr-c-143",
     title: "沈佺期",
     group: "文学家",
@@ -1860,7 +1860,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-144",
-    masterRef: "mingren-mr-c-162",
+    masterRef: "mingren-mr-c-144",
     id: "mr-c-144",
     title: "贺知章",
     group: "文学家",
@@ -1873,7 +1873,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-145",
-    masterRef: "mingren-mr-c-163",
+    masterRef: "mingren-mr-c-145",
     id: "mr-c-145",
     title: "张若虚",
     group: "文学家",
@@ -1886,7 +1886,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-146",
-    masterRef: "mingren-mr-c-164",
+    masterRef: "mingren-mr-c-146",
     id: "mr-c-146",
     title: "陈子昂",
     group: "文学家",
@@ -1899,7 +1899,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-147",
-    masterRef: "mingren-mr-c-165",
+    masterRef: "mingren-mr-c-147",
     id: "mr-c-147",
     title: "刘知几",
     group: "历史学家",
@@ -1912,7 +1912,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-148",
-    masterRef: "mingren-mr-c-166",
+    masterRef: "mingren-mr-c-148",
     id: "mr-c-148",
     title: "宋璟",
     group: "政治家",
@@ -1925,7 +1925,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-149",
-    masterRef: "mingren-mr-c-167",
+    masterRef: "mingren-mr-c-149",
     id: "mr-c-149",
     title: "张旭",
     group: "书法家",
@@ -1938,7 +1938,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-150",
-    masterRef: "mingren-mr-c-168",
+    masterRef: "mingren-mr-c-150",
     id: "mr-c-150",
     title: "张九龄",
     group: "文学家",
@@ -1951,7 +1951,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-151",
-    masterRef: "mingren-mr-c-169",
+    masterRef: "mingren-mr-c-151",
     id: "mr-c-151",
     title: "吴道子",
     group: "美术家",
@@ -1964,7 +1964,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-152",
-    masterRef: "mingren-mr-c-170",
+    masterRef: "mingren-mr-c-152",
     id: "mr-c-152",
     title: "一行",
     group: "天文地理学家",
@@ -1977,7 +1977,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-153",
-    masterRef: "mingren-mr-c-171",
+    masterRef: "mingren-mr-c-153",
     id: "mr-c-153",
     title: "王翰",
     group: "文学家",
@@ -1990,7 +1990,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-154",
-    masterRef: "mingren-mr-c-172",
+    masterRef: "mingren-mr-c-154",
     id: "mr-c-154",
     title: "王之涣",
     group: "文学家",
@@ -2003,7 +2003,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-155",
-    masterRef: "mingren-mr-c-173",
+    masterRef: "mingren-mr-c-155",
     id: "mr-c-155",
     title: "孟浩然",
     group: "文学家",
@@ -2016,7 +2016,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-156",
-    masterRef: "mingren-mr-c-174",
+    masterRef: "mingren-mr-c-156",
     id: "mr-c-156",
     title: "郭子仪",
     group: "军事家",
@@ -2029,7 +2029,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-157",
-    masterRef: "mingren-mr-c-175",
+    masterRef: "mingren-mr-c-157",
     id: "mr-c-157",
     title: "王昌龄",
     group: "文学家",
@@ -2042,7 +2042,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-158",
-    masterRef: "mingren-mr-c-176",
+    masterRef: "mingren-mr-c-158",
     id: "mr-c-158",
     title: "李龟年",
     group: "音乐家",
@@ -2055,7 +2055,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-159",
-    masterRef: "mingren-mr-c-177",
+    masterRef: "mingren-mr-c-159",
     id: "mr-c-159",
     title: "王维",
     group: "文学家",
@@ -2068,7 +2068,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-160",
-    masterRef: "mingren-mr-c-178",
+    masterRef: "mingren-mr-c-160",
     id: "mr-c-160",
     title: "李白",
     group: "文学家",
@@ -2081,7 +2081,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-161",
-    masterRef: "mingren-mr-c-179",
+    masterRef: "mingren-mr-c-161",
     id: "mr-c-161",
     title: "高适",
     group: "文学家",
@@ -2094,7 +2094,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-162",
-    masterRef: "mingren-mr-c-180",
+    masterRef: "mingren-mr-c-162",
     id: "mr-c-162",
     title: "崔颢",
     group: "文学家",
@@ -2107,7 +2107,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-163",
-    masterRef: "mingren-mr-c-181",
+    masterRef: "mingren-mr-c-163",
     id: "mr-c-163",
     title: "韩幹",
     group: "美术家",
@@ -2120,7 +2120,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-164",
-    masterRef: "mingren-mr-c-182",
+    masterRef: "mingren-mr-c-164",
     id: "mr-c-164",
     title: "李光弼",
     group: "军事家",
@@ -2133,7 +2133,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-165",
-    masterRef: "mingren-mr-c-183",
+    masterRef: "mingren-mr-c-165",
     id: "mr-c-165",
     title: "刘长卿",
     group: "文学家",
@@ -2146,7 +2146,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-166",
-    masterRef: "mingren-mr-c-184",
+    masterRef: "mingren-mr-c-166",
     id: "mr-c-166",
     title: "颜真卿",
     group: "书法家",
@@ -2159,7 +2159,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-167",
-    masterRef: "mingren-mr-c-185",
+    masterRef: "mingren-mr-c-167",
     id: "mr-c-167",
     title: "杜甫",
     group: "文学家",
@@ -2172,7 +2172,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-168",
-    masterRef: "mingren-mr-c-186",
+    masterRef: "mingren-mr-c-168",
     id: "mr-c-168",
     title: "张萱",
     group: "美术家",
@@ -2185,7 +2185,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-169",
-    masterRef: "mingren-mr-c-187",
+    masterRef: "mingren-mr-c-169",
     id: "mr-c-169",
     title: "岑参",
     group: "文学家",
@@ -2198,7 +2198,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-170",
-    masterRef: "mingren-mr-c-188",
+    masterRef: "mingren-mr-c-170",
     id: "mr-c-170",
     title: "刘晏",
     group: "经济学家",
@@ -2211,7 +2211,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-171",
-    masterRef: "mingren-mr-c-189",
+    masterRef: "mingren-mr-c-171",
     id: "mr-c-171",
     title: "李阳冰",
     group: "书法家",
@@ -2224,7 +2224,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-172",
-    masterRef: "mingren-mr-c-190",
+    masterRef: "mingren-mr-c-172",
     id: "mr-c-172",
     title: "韩滉",
     group: "美术家",
@@ -2237,7 +2237,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-173",
-    masterRef: "mingren-mr-c-191",
+    masterRef: "mingren-mr-c-173",
     id: "mr-c-173",
     title: "周昉",
     group: "美术家",
@@ -2250,7 +2250,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-174",
-    masterRef: "mingren-mr-c-192",
+    masterRef: "mingren-mr-c-174",
     id: "mr-c-174",
     title: "陆羽",
     group: "农学家",
@@ -2263,7 +2263,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-175",
-    masterRef: "mingren-mr-c-193",
+    masterRef: "mingren-mr-c-175",
     id: "mr-c-175",
     title: "杜佑",
     group: "历史学家",
@@ -2276,7 +2276,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-176",
-    masterRef: "mingren-mr-c-194",
+    masterRef: "mingren-mr-c-176",
     id: "mr-c-176",
     title: "韦应物",
     group: "文学家",
@@ -2289,7 +2289,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-177",
-    masterRef: "mingren-mr-c-195",
+    masterRef: "mingren-mr-c-177",
     id: "mr-c-177",
     title: "怀素",
     group: "书法家",
@@ -2302,7 +2302,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-178",
-    masterRef: "mingren-mr-c-196",
+    masterRef: "mingren-mr-c-178",
     id: "mr-c-178",
     title: "李益",
     group: "文学家",
@@ -2315,7 +2315,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-179",
-    masterRef: "mingren-mr-c-197",
+    masterRef: "mingren-mr-c-179",
     id: "mr-c-179",
     title: "孟郊",
     group: "文学家",
@@ -2328,7 +2328,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-180",
-    masterRef: "mingren-mr-c-198",
+    masterRef: "mingren-mr-c-180",
     id: "mr-c-180",
     title: "张籍",
     group: "文学家",
@@ -2341,7 +2341,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-181",
-    masterRef: "mingren-mr-c-199",
+    masterRef: "mingren-mr-c-181",
     id: "mr-c-181",
     title: "王建",
     group: "文学家",
@@ -2354,7 +2354,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-182",
-    masterRef: "mingren-mr-c-200",
+    masterRef: "mingren-mr-c-182",
     id: "mr-c-182",
     title: "韩愈",
     group: "文学家",
@@ -2367,7 +2367,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-183",
-    masterRef: "mingren-mr-c-201",
+    masterRef: "mingren-mr-c-183",
     id: "mr-c-183",
     title: "白居易",
     group: "文学家",
@@ -2380,7 +2380,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-184",
-    masterRef: "mingren-mr-c-202",
+    masterRef: "mingren-mr-c-184",
     id: "mr-c-184",
     title: "刘禹锡",
     group: "文学家",
@@ -2393,7 +2393,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-185",
-    masterRef: "mingren-mr-c-203",
+    masterRef: "mingren-mr-c-185",
     id: "mr-c-185",
     title: "柳宗元",
     group: "文学家",
@@ -2406,7 +2406,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-186",
-    masterRef: "mingren-mr-c-204",
+    masterRef: "mingren-mr-c-186",
     id: "mr-c-186",
     title: "柳公权",
     group: "书法家",
@@ -2419,7 +2419,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-187",
-    masterRef: "mingren-mr-c-205",
+    masterRef: "mingren-mr-c-187",
     id: "mr-c-187",
     title: "贾岛",
     group: "文学家",
@@ -2432,7 +2432,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-188",
-    masterRef: "mingren-mr-c-206",
+    masterRef: "mingren-mr-c-188",
     id: "mr-c-188",
     title: "元稹",
     group: "文学家",
@@ -2445,7 +2445,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-189",
-    masterRef: "mingren-mr-c-207",
+    masterRef: "mingren-mr-c-189",
     id: "mr-c-189",
     title: "李贺",
     group: "文学家",
@@ -2458,7 +2458,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-190",
-    masterRef: "mingren-mr-c-208",
+    masterRef: "mingren-mr-c-190",
     id: "mr-c-190",
     title: "卢仝",
     group: "农学家",
@@ -2471,7 +2471,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-191",
-    masterRef: "mingren-mr-c-209",
+    masterRef: "mingren-mr-c-191",
     id: "mr-c-191",
     title: "杜牧",
     group: "文学家",
@@ -2484,7 +2484,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-192",
-    masterRef: "mingren-mr-c-210",
+    masterRef: "mingren-mr-c-192",
     id: "mr-c-192",
     title: "温庭筠",
     group: "文学家",
@@ -2497,7 +2497,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-193",
-    masterRef: "mingren-mr-c-211",
+    masterRef: "mingren-mr-c-193",
     id: "mr-c-193",
     title: "李商隐",
     group: "文学家",
@@ -2510,7 +2510,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-194",
-    masterRef: "mingren-mr-c-212",
+    masterRef: "mingren-mr-c-194",
     id: "mr-c-194",
     title: "韦庄",
     group: "文学家",
@@ -2523,7 +2523,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-195",
-    masterRef: "mingren-mr-c-213",
+    masterRef: "mingren-mr-c-195",
     id: "mr-c-195",
     title: "黄筌",
     group: "美术家",
@@ -2536,7 +2536,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-196",
-    masterRef: "mingren-mr-c-214",
+    masterRef: "mingren-mr-c-196",
     id: "mr-c-196",
     title: "顾闳中",
     group: "美术家",
@@ -2549,7 +2549,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-197",
-    masterRef: "mingren-mr-c-215",
+    masterRef: "mingren-mr-c-197",
     id: "mr-c-197",
     title: "郭忠恕",
     group: "美术家",
@@ -2562,7 +2562,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-198",
-    masterRef: "mingren-mr-c-216",
+    masterRef: "mingren-mr-c-198",
     id: "mr-c-198",
     title: "赵普",
     group: "政治家",
@@ -2575,7 +2575,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-199",
-    masterRef: "mingren-mr-c-217",
+    masterRef: "mingren-mr-c-199",
     id: "mr-c-199",
     title: "李煜",
     group: "文学家",
@@ -2588,7 +2588,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-200",
-    masterRef: "mingren-mr-c-218",
+    masterRef: "mingren-mr-c-200",
     id: "mr-c-200",
     title: "喻皓",
     group: "美术家",
@@ -2601,7 +2601,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-201",
-    masterRef: "mingren-mr-c-219",
+    masterRef: "mingren-mr-c-201",
     id: "mr-c-201",
     title: "范宽",
     group: "美术家",
@@ -2614,7 +2614,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-202",
-    masterRef: "mingren-mr-c-220",
+    masterRef: "mingren-mr-c-202",
     id: "mr-c-202",
     title: "寇准",
     group: "政治家",
@@ -2627,7 +2627,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-203",
-    masterRef: "mingren-mr-c-221",
+    masterRef: "mingren-mr-c-203",
     id: "mr-c-203",
     title: "毕昇",
     group: "科学家",
@@ -2640,7 +2640,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-204",
-    masterRef: "mingren-mr-c-223",
+    masterRef: "mingren-mr-c-204",
     id: "mr-c-204",
     title: "柳永",
     group: "文学家",
@@ -2653,7 +2653,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-205",
-    masterRef: "mingren-mr-c-224",
+    masterRef: "mingren-mr-c-205",
     id: "mr-c-205",
     title: "范仲淹",
     group: "文学家",
@@ -2666,7 +2666,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-206",
-    masterRef: "mingren-mr-c-225",
+    masterRef: "mingren-mr-c-206",
     id: "mr-c-206",
     title: "晏殊",
     group: "文学家",
@@ -2679,7 +2679,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-207",
-    masterRef: "mingren-mr-c-226",
+    masterRef: "mingren-mr-c-207",
     id: "mr-c-207",
     title: "胡瑗",
     group: "思想家",
@@ -2692,7 +2692,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-208",
-    masterRef: "mingren-mr-c-227",
+    masterRef: "mingren-mr-c-208",
     id: "mr-c-208",
     title: "郭熙",
     group: "美术家",
@@ -2705,7 +2705,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-209",
-    masterRef: "mingren-mr-c-228",
+    masterRef: "mingren-mr-c-209",
     id: "mr-c-209",
     title: "欧阳修",
     group: "文学家",
@@ -2718,7 +2718,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-210",
-    masterRef: "mingren-mr-c-229",
+    masterRef: "mingren-mr-c-210",
     id: "mr-c-210",
     title: "狄青",
     group: "军事家",
@@ -2731,7 +2731,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-211",
-    masterRef: "mingren-mr-c-230",
+    masterRef: "mingren-mr-c-211",
     id: "mr-c-211",
     title: "苏洵",
     group: "文学家",
@@ -2744,7 +2744,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-212",
-    masterRef: "mingren-mr-c-231",
+    masterRef: "mingren-mr-c-212",
     id: "mr-c-212",
     title: "蔡襄",
     group: "书法家",
@@ -2757,7 +2757,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-213",
-    masterRef: "mingren-mr-c-232",
+    masterRef: "mingren-mr-c-213",
     id: "mr-c-213",
     title: "曾巩",
     group: "文学家",
@@ -2770,7 +2770,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-214",
-    masterRef: "mingren-mr-c-233",
+    masterRef: "mingren-mr-c-214",
     id: "mr-c-214",
     title: "司马光",
     group: "历史学家",
@@ -2783,7 +2783,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-215",
-    masterRef: "mingren-mr-c-234",
+    masterRef: "mingren-mr-c-215",
     id: "mr-c-215",
     title: "张载",
     group: "思想家",
@@ -2796,7 +2796,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-216",
-    masterRef: "mingren-mr-c-235",
+    masterRef: "mingren-mr-c-216",
     id: "mr-c-216",
     title: "苏颂",
     group: "天文地理学家",
@@ -2809,7 +2809,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-217",
-    masterRef: "mingren-mr-c-236",
+    masterRef: "mingren-mr-c-217",
     id: "mr-c-217",
     title: "王安石",
     group: "政治家",
@@ -2822,7 +2822,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-218",
-    masterRef: "mingren-mr-c-237",
+    masterRef: "mingren-mr-c-218",
     id: "mr-c-218",
     title: "沈括",
     group: "科学家",
@@ -2835,7 +2835,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-219",
-    masterRef: "mingren-mr-c-238",
+    masterRef: "mingren-mr-c-219",
     id: "mr-c-219",
     title: "程颢",
     group: "思想家",
@@ -2848,7 +2848,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-220",
-    masterRef: "mingren-mr-c-239",
+    masterRef: "mingren-mr-c-220",
     id: "mr-c-220",
     title: "程颐",
     group: "思想家",
@@ -2861,7 +2861,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-221",
-    masterRef: "mingren-mr-c-240",
+    masterRef: "mingren-mr-c-221",
     id: "mr-c-221",
     title: "苏轼",
     group: "文学家",
@@ -2874,7 +2874,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-222",
-    masterRef: "mingren-mr-c-241",
+    masterRef: "mingren-mr-c-222",
     id: "mr-c-222",
     title: "晏几道",
     group: "文学家",
@@ -2887,7 +2887,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-223",
-    masterRef: "mingren-mr-c-242",
+    masterRef: "mingren-mr-c-223",
     id: "mr-c-223",
     title: "苏辙",
     group: "文学家",
@@ -2900,7 +2900,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-224",
-    masterRef: "mingren-mr-c-243",
+    masterRef: "mingren-mr-c-224",
     id: "mr-c-224",
     title: "黄庭坚",
     group: "文学家",
@@ -2913,7 +2913,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-225",
-    masterRef: "mingren-mr-c-244",
+    masterRef: "mingren-mr-c-225",
     id: "mr-c-225",
     title: "秦观",
     group: "文学家",
@@ -2926,7 +2926,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-226",
-    masterRef: "mingren-mr-c-245",
+    masterRef: "mingren-mr-c-226",
     id: "mr-c-226",
     title: "李公麟",
     group: "美术家",
@@ -2939,7 +2939,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-227",
-    masterRef: "mingren-mr-c-246",
+    masterRef: "mingren-mr-c-227",
     id: "mr-c-227",
     title: "米芾",
     group: "书法家",
@@ -2952,7 +2952,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-228",
-    masterRef: "mingren-mr-c-247",
+    masterRef: "mingren-mr-c-228",
     id: "mr-c-228",
     title: "贺铸",
     group: "文学家",
@@ -2965,7 +2965,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-229",
-    masterRef: "mingren-mr-c-248",
+    masterRef: "mingren-mr-c-229",
     id: "mr-c-229",
     title: "周邦彦",
     group: "文学家",
@@ -2978,7 +2978,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-230",
-    masterRef: "mingren-mr-c-249",
+    masterRef: "mingren-mr-c-230",
     id: "mr-c-230",
     title: "李诫",
     group: "美术家",
@@ -2991,7 +2991,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-231",
-    masterRef: "mingren-mr-c-250",
+    masterRef: "mingren-mr-c-231",
     id: "mr-c-231",
     title: "李唐",
     group: "美术家",
@@ -3004,7 +3004,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-232",
-    masterRef: "mingren-mr-c-251",
+    masterRef: "mingren-mr-c-232",
     id: "mr-c-232",
     title: "陈旉",
     group: "农学家",
@@ -3017,7 +3017,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-233",
-    masterRef: "mingren-mr-c-252",
+    masterRef: "mingren-mr-c-233",
     id: "mr-c-233",
     title: "赵佶",
     group: "美术家",
@@ -3030,7 +3030,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-234",
-    masterRef: "mingren-mr-c-253",
+    masterRef: "mingren-mr-c-234",
     id: "mr-c-234",
     title: "李清照",
     group: "文学家",
@@ -3043,7 +3043,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-235",
-    masterRef: "mingren-mr-c-254",
+    masterRef: "mingren-mr-c-235",
     id: "mr-c-235",
     title: "张择端",
     group: "美术家",
@@ -3056,7 +3056,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-236",
-    masterRef: "mingren-mr-c-255",
+    masterRef: "mingren-mr-c-236",
     id: "mr-c-236",
     title: "王希孟",
     group: "美术家",
@@ -3069,7 +3069,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-237",
-    masterRef: "mingren-mr-c-256",
+    masterRef: "mingren-mr-c-237",
     id: "mr-c-237",
     title: "岳飞",
     group: "军事家",
@@ -3082,7 +3082,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-238",
-    masterRef: "mingren-mr-c-257",
+    masterRef: "mingren-mr-c-238",
     id: "mr-c-238",
     title: "郑樵",
     group: "历史学家",
@@ -3095,7 +3095,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-239",
-    masterRef: "mingren-mr-c-258",
+    masterRef: "mingren-mr-c-239",
     id: "mr-c-239",
     title: "陆游",
     group: "文学家",
@@ -3108,7 +3108,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-240",
-    masterRef: "mingren-mr-c-259",
+    masterRef: "mingren-mr-c-240",
     id: "mr-c-240",
     title: "范成大",
     group: "文学家",
@@ -3121,7 +3121,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-241",
-    masterRef: "mingren-mr-c-260",
+    masterRef: "mingren-mr-c-241",
     id: "mr-c-241",
     title: "杨万里",
     group: "文学家",
@@ -3134,7 +3134,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-242",
-    masterRef: "mingren-mr-c-261",
+    masterRef: "mingren-mr-c-242",
     id: "mr-c-242",
     title: "朱熹",
     group: "思想家",
@@ -3147,7 +3147,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-243",
-    masterRef: "mingren-mr-c-262",
+    masterRef: "mingren-mr-c-243",
     id: "mr-c-243",
     title: "陆九渊",
     group: "思想家",
@@ -3160,7 +3160,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-244",
-    masterRef: "mingren-mr-c-263",
+    masterRef: "mingren-mr-c-244",
     id: "mr-c-244",
     title: "辛弃疾",
     group: "文学家",
@@ -3173,7 +3173,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-245",
-    masterRef: "mingren-mr-c-264",
+    masterRef: "mingren-mr-c-245",
     id: "mr-c-245",
     title: "马远",
     group: "美术家",
@@ -3186,7 +3186,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-246",
-    masterRef: "mingren-mr-c-265",
+    masterRef: "mingren-mr-c-246",
     id: "mr-c-246",
     title: "姜夔",
     group: "文学家",
@@ -3199,7 +3199,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-247",
-    masterRef: "mingren-mr-c-267",
+    masterRef: "mingren-mr-c-247",
     id: "mr-c-247",
     title: "夏圭",
     group: "美术家",
@@ -3212,7 +3212,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-248",
-    masterRef: "mingren-mr-c-268",
+    masterRef: "mingren-mr-c-248",
     id: "mr-c-248",
     title: "宋慈",
     group: "政治家",
@@ -3225,7 +3225,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-249",
-    masterRef: "mingren-mr-c-269",
+    masterRef: "mingren-mr-c-249",
     id: "mr-c-249",
     title: "元好问",
     group: "文学家",
@@ -3238,7 +3238,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-250",
-    masterRef: "mingren-mr-c-270",
+    masterRef: "mingren-mr-c-250",
     id: "mr-c-250",
     title: "梁楷",
     group: "美术家",
@@ -3251,7 +3251,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-251",
-    masterRef: "mingren-mr-c-271",
+    masterRef: "mingren-mr-c-251",
     id: "mr-c-251",
     title: "关汉卿",
     group: "文学家",
@@ -3264,7 +3264,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-252",
-    masterRef: "mingren-mr-c-272",
+    masterRef: "mingren-mr-c-252",
     id: "mr-c-252",
     title: "白朴",
     group: "文学家",
@@ -3277,7 +3277,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-253",
-    masterRef: "mingren-mr-c-273",
+    masterRef: "mingren-mr-c-253",
     id: "mr-c-253",
     title: "王恽",
     group: "农学家",
@@ -3290,7 +3290,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-254",
-    masterRef: "mingren-mr-c-274",
+    masterRef: "mingren-mr-c-254",
     id: "mr-c-254",
     title: "郭守敬",
     group: "农学家",
@@ -3303,7 +3303,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-255",
-    masterRef: "mingren-mr-c-275",
+    masterRef: "mingren-mr-c-255",
     id: "mr-c-255",
     title: "文天祥",
     group: "文学家",
@@ -3316,7 +3316,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-256",
-    masterRef: "mingren-mr-c-276",
+    masterRef: "mingren-mr-c-256",
     id: "mr-c-256",
     title: "黄道婆",
     group: "科学家",
@@ -3329,7 +3329,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-257",
-    masterRef: "mingren-mr-c-277",
+    masterRef: "mingren-mr-c-257",
     id: "mr-c-257",
     title: "鲜于枢",
     group: "书法家",
@@ -3342,7 +3342,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-258",
-    masterRef: "mingren-mr-c-278",
+    masterRef: "mingren-mr-c-258",
     id: "mr-c-258",
     title: "马致远",
     group: "文学家",
@@ -3355,7 +3355,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-259",
-    masterRef: "mingren-mr-c-279",
+    masterRef: "mingren-mr-c-259",
     id: "mr-c-259",
     title: "马端临",
     group: "历史学家",
@@ -3368,7 +3368,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-260",
-    masterRef: "mingren-mr-c-280",
+    masterRef: "mingren-mr-c-260",
     id: "mr-c-260",
     title: "赵孟頫",
     group: "美术家",
@@ -3381,7 +3381,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-261",
-    masterRef: "mingren-mr-c-281",
+    masterRef: "mingren-mr-c-261",
     id: "mr-c-261",
     title: "睢景臣",
     group: "戏曲家",
@@ -3394,7 +3394,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-262",
-    masterRef: "mingren-mr-c-282",
+    masterRef: "mingren-mr-c-262",
     id: "mr-c-262",
     title: "郑光祖",
     group: "戏曲家",
@@ -3407,7 +3407,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-263",
-    masterRef: "mingren-mr-c-285",
+    masterRef: "mingren-mr-c-263",
     id: "mr-c-263",
     title: "黄公望",
     group: "美术家",
@@ -3420,7 +3420,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-264",
-    masterRef: "mingren-mr-c-286",
+    masterRef: "mingren-mr-c-264",
     id: "mr-c-264",
     title: "张养浩",
     group: "戏曲家",
@@ -3433,7 +3433,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-265",
-    masterRef: "mingren-mr-c-287",
+    masterRef: "mingren-mr-c-265",
     id: "mr-c-265",
     title: "王祯",
     group: "农学家",
@@ -3446,7 +3446,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-266",
-    masterRef: "mingren-mr-c-288",
+    masterRef: "mingren-mr-c-266",
     id: "mr-c-266",
     title: "吴镇",
     group: "美术家",
@@ -3459,7 +3459,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-267",
-    masterRef: "mingren-mr-c-289",
+    masterRef: "mingren-mr-c-267",
     id: "mr-c-267",
     title: "乔吉",
     group: "戏曲家",
@@ -3472,7 +3472,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-268",
-    masterRef: "mingren-mr-c-290",
+    masterRef: "mingren-mr-c-268",
     id: "mr-c-268",
     title: "王实甫",
     group: "戏曲家",
@@ -3485,7 +3485,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-269",
-    masterRef: "mingren-mr-c-291",
+    masterRef: "mingren-mr-c-269",
     id: "mr-c-269",
     title: "施耐庵",
     group: "文学家",
@@ -3498,7 +3498,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-270",
-    masterRef: "mingren-mr-c-292",
+    masterRef: "mingren-mr-c-270",
     id: "mr-c-270",
     title: "倪瓒",
     group: "美术家",
@@ -3511,7 +3511,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-271",
-    masterRef: "mingren-mr-c-294",
+    masterRef: "mingren-mr-c-271",
     id: "mr-c-271",
     title: "高明",
     group: "戏曲家",
@@ -3524,7 +3524,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-272",
-    masterRef: "mingren-mr-c-296",
+    masterRef: "mingren-mr-c-272",
     id: "mr-c-272",
     title: "罗贯中",
     group: "文学家",
@@ -3537,7 +3537,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-273",
-    masterRef: "mingren-mr-c-297",
+    masterRef: "mingren-mr-c-273",
     id: "mr-c-273",
     title: "徐达",
     group: "军事家",
@@ -3550,7 +3550,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-274",
-    masterRef: "mingren-mr-c-299",
+    masterRef: "mingren-mr-c-274",
     id: "mr-c-274",
     title: "郑和",
     group: "政治家",
@@ -3563,7 +3563,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-275",
-    masterRef: "mingren-mr-c-301",
+    masterRef: "mingren-mr-c-275",
     id: "mr-c-275",
     title: "于谦",
     group: "军事家",
@@ -3576,7 +3576,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-276",
-    masterRef: "mingren-mr-c-302",
+    masterRef: "mingren-mr-c-276",
     id: "mr-c-276",
     title: "蒯祥",
     group: "美术家",
@@ -3589,7 +3589,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-277",
-    masterRef: "mingren-mr-c-304",
+    masterRef: "mingren-mr-c-277",
     id: "mr-c-277",
     title: "邱濬",
     group: "经济学家",
@@ -3602,7 +3602,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-278",
-    masterRef: "mingren-mr-c-305",
+    masterRef: "mingren-mr-c-278",
     id: "mr-c-278",
     title: "沈周",
     group: "美术家",
@@ -3615,7 +3615,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-279",
-    masterRef: "mingren-mr-c-309",
+    masterRef: "mingren-mr-c-279",
     id: "mr-c-279",
     title: "文徵明",
     group: "美术家",
@@ -3628,7 +3628,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-280",
-    masterRef: "mingren-mr-c-310",
+    masterRef: "mingren-mr-c-280",
     id: "mr-c-280",
     title: "唐寅",
     group: "美术家",
@@ -3641,7 +3641,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-281",
-    masterRef: "mingren-mr-c-312",
+    masterRef: "mingren-mr-c-281",
     id: "mr-c-281",
     title: "王守仁",
     group: "思想家",
@@ -3654,7 +3654,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-282",
-    masterRef: "mingren-mr-c-319",
+    masterRef: "mingren-mr-c-282",
     id: "mr-c-282",
     title: "仇英",
     group: "美术家",
@@ -3667,7 +3667,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-283",
-    masterRef: "mingren-mr-c-320",
+    masterRef: "mingren-mr-c-283",
     id: "mr-c-283",
     title: "吴承恩",
     group: "文学家",
@@ -3680,7 +3680,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-284",
-    masterRef: "mingren-mr-c-322",
+    masterRef: "mingren-mr-c-284",
     id: "mr-c-284",
     title: "归有光",
     group: "文学家",
@@ -3693,7 +3693,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-285",
-    masterRef: "mingren-mr-c-325",
+    masterRef: "mingren-mr-c-285",
     id: "mr-c-285",
     title: "李时珍",
     group: "医学家",
@@ -3706,7 +3706,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-286",
-    masterRef: "mingren-mr-c-327",
+    masterRef: "mingren-mr-c-286",
     id: "mr-c-286",
     title: "潘季驯",
     group: "农学家",
@@ -3719,7 +3719,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-287",
-    masterRef: "mingren-mr-c-328",
+    masterRef: "mingren-mr-c-287",
     id: "mr-c-287",
     title: "徐渭",
     group: "美术家",
@@ -3732,7 +3732,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-288",
-    masterRef: "mingren-mr-c-329",
+    masterRef: "mingren-mr-c-288",
     id: "mr-c-288",
     title: "张居正",
     group: "政治家",
@@ -3745,7 +3745,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-289",
-    masterRef: "mingren-mr-c-331",
+    masterRef: "mingren-mr-c-289",
     id: "mr-c-289",
     title: "李贽",
     group: "思想家",
@@ -3758,7 +3758,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-290",
-    masterRef: "mingren-mr-c-332",
+    masterRef: "mingren-mr-c-290",
     id: "mr-c-290",
     title: "戚继光",
     group: "军事家",
@@ -3771,7 +3771,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-291",
-    masterRef: "mingren-mr-c-334",
+    masterRef: "mingren-mr-c-291",
     id: "mr-c-291",
     title: "朱载堉",
     group: "音乐家",
@@ -3784,7 +3784,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-292",
-    masterRef: "mingren-mr-c-339",
+    masterRef: "mingren-mr-c-292",
     id: "mr-c-292",
     title: "汤显祖",
     group: "戏曲家",
@@ -3797,7 +3797,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-293",
-    masterRef: "mingren-mr-c-340",
+    masterRef: "mingren-mr-c-293",
     id: "mr-c-293",
     title: "董其昌",
     group: "美术家",
@@ -3810,7 +3810,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-294",
-    masterRef: "mingren-mr-c-342",
+    masterRef: "mingren-mr-c-294",
     id: "mr-c-294",
     title: "徐光启",
     group: "农学家",
@@ -3823,7 +3823,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-295",
-    masterRef: "mingren-mr-c-344",
+    masterRef: "mingren-mr-c-295",
     id: "mr-c-295",
     title: "袁宏道",
     group: "文学家",
@@ -3836,7 +3836,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-296",
-    masterRef: "mingren-mr-c-346",
+    masterRef: "mingren-mr-c-296",
     id: "mr-c-296",
     title: "冯梦龙",
     group: "文学家",
@@ -3849,7 +3849,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-297",
-    masterRef: "mingren-mr-c-348",
+    masterRef: "mingren-mr-c-297",
     id: "mr-c-297",
     title: "凌濛初",
     group: "文学家",
@@ -3862,7 +3862,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-298",
-    masterRef: "mingren-mr-c-349",
+    masterRef: "mingren-mr-c-298",
     id: "mr-c-298",
     title: "袁崇焕",
     group: "军事家",
@@ -3875,7 +3875,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-299",
-    masterRef: "mingren-mr-c-350",
+    masterRef: "mingren-mr-c-299",
     id: "mr-c-299",
     title: "宋应星",
     group: "农学家",
@@ -3888,7 +3888,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-300",
-    masterRef: "mingren-mr-c-351",
+    masterRef: "mingren-mr-c-300",
     id: "mr-c-300",
     title: "徐霞客",
     group: "天文地理学家",
@@ -3901,7 +3901,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-301",
-    masterRef: "mingren-mr-c-352",
+    masterRef: "mingren-mr-c-301",
     id: "mr-c-301",
     title: "谈迁",
     group: "历史学家",
@@ -3914,7 +3914,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-302",
-    masterRef: "mingren-mr-c-354",
+    masterRef: "mingren-mr-c-302",
     id: "mr-c-302",
     title: "陈洪绶",
     group: "美术家",
@@ -3927,7 +3927,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-303",
-    masterRef: "mingren-mr-c-360",
+    masterRef: "mingren-mr-c-303",
     id: "mr-c-303",
     title: "黄宗羲",
     group: "思想家",
@@ -3940,7 +3940,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-304",
-    masterRef: "mingren-mr-c-361",
+    masterRef: "mingren-mr-c-304",
     id: "mr-c-304",
     title: "李渔",
     group: "文学家",
@@ -3953,7 +3953,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-305",
-    masterRef: "mingren-mr-c-362",
+    masterRef: "mingren-mr-c-305",
     id: "mr-c-305",
     title: "顾炎武",
     group: "思想家",
@@ -3966,7 +3966,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-306",
-    masterRef: "mingren-mr-c-363",
+    masterRef: "mingren-mr-c-306",
     id: "mr-c-306",
     title: "王夫之",
     group: "思想家",
@@ -3979,7 +3979,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-307",
-    masterRef: "mingren-mr-c-366",
+    masterRef: "mingren-mr-c-307",
     id: "mr-c-307",
     title: "朱耷",
     group: "美术家",
@@ -3992,7 +3992,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-308",
-    masterRef: "mingren-mr-c-371",
+    masterRef: "mingren-mr-c-308",
     id: "mr-c-308",
     title: "靳辅",
     group: "农学家",
@@ -4005,7 +4005,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-309",
-    masterRef: "mingren-mr-c-372",
+    masterRef: "mingren-mr-c-309",
     id: "mr-c-309",
     title: "颜元",
     group: "思想家",
@@ -4018,7 +4018,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-310",
-    masterRef: "mingren-mr-c-375",
+    masterRef: "mingren-mr-c-310",
     id: "mr-c-310",
     title: "蒲松龄",
     group: "文学家",
@@ -4031,7 +4031,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-311",
-    masterRef: "mingren-mr-c-376",
+    masterRef: "mingren-mr-c-311",
     id: "mr-c-311",
     title: "石涛",
     group: "美术家",
@@ -4044,7 +4044,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-312",
-    masterRef: "mingren-mr-c-377",
+    masterRef: "mingren-mr-c-312",
     id: "mr-c-312",
     title: "洪昇",
     group: "戏曲家",
@@ -4057,7 +4057,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-313",
-    masterRef: "mingren-mr-c-378",
+    masterRef: "mingren-mr-c-313",
     id: "mr-c-313",
     title: "孔尚任",
     group: "戏曲家",
@@ -4070,7 +4070,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-314",
-    masterRef: "mingren-mr-c-379",
+    masterRef: "mingren-mr-c-314",
     id: "mr-c-314",
     title: "纳兰性德",
     group: "文学家",
@@ -4083,7 +4083,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-315",
-    masterRef: "mingren-mr-c-383",
+    masterRef: "mingren-mr-c-315",
     id: "mr-c-315",
     title: "江永",
     group: "语言文字学家",
@@ -4096,7 +4096,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-316",
-    masterRef: "mingren-mr-c-386",
+    masterRef: "mingren-mr-c-316",
     id: "mr-c-316",
     title: "金农",
     group: "美术家",
@@ -4109,7 +4109,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-317",
-    masterRef: "mingren-mr-c-387",
+    masterRef: "mingren-mr-c-317",
     id: "mr-c-317",
     title: "郎世宁",
     group: "美术家",
@@ -4122,7 +4122,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-318",
-    masterRef: "mingren-mr-c-388",
+    masterRef: "mingren-mr-c-318",
     id: "mr-c-318",
     title: "郑燮",
     group: "美术家",
@@ -4135,7 +4135,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-319",
-    masterRef: "mingren-mr-c-389",
+    masterRef: "mingren-mr-c-319",
     id: "mr-c-319",
     title: "吴敬梓",
     group: "文学家",
@@ -4148,7 +4148,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-320",
-    masterRef: "mingren-mr-c-394",
+    masterRef: "mingren-mr-c-320",
     id: "mr-c-320",
     title: "曹雪芹",
     group: "文学家",
@@ -4161,7 +4161,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-321",
-    masterRef: "mingren-mr-c-395",
+    masterRef: "mingren-mr-c-321",
     id: "mr-c-321",
     title: "袁枚",
     group: "文学家",
@@ -4174,7 +4174,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-322",
-    masterRef: "mingren-mr-c-396",
+    masterRef: "mingren-mr-c-322",
     id: "mr-c-322",
     title: "王鸣盛",
     group: "历史学家",
@@ -4187,7 +4187,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-323",
-    masterRef: "mingren-mr-c-397",
+    masterRef: "mingren-mr-c-323",
     id: "mr-c-323",
     title: "戴震",
     group: "语言文字学家",
@@ -4200,7 +4200,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-324",
-    masterRef: "mingren-mr-c-398",
+    masterRef: "mingren-mr-c-324",
     id: "mr-c-324",
     title: "赵翼",
     group: "历史学家",
@@ -4213,7 +4213,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-325",
-    masterRef: "mingren-mr-c-399",
+    masterRef: "mingren-mr-c-325",
     id: "mr-c-325",
     title: "钱大昕",
     group: "历史学家",
@@ -4226,7 +4226,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-326",
-    masterRef: "mingren-mr-c-401",
+    masterRef: "mingren-mr-c-326",
     id: "mr-c-326",
     title: "段玉裁",
     group: "语言文字学家",
@@ -4239,7 +4239,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-327",
-    masterRef: "mingren-mr-c-403",
+    masterRef: "mingren-mr-c-327",
     id: "mr-c-327",
     title: "章学诚",
     group: "历史学家",
@@ -4252,7 +4252,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-328",
-    masterRef: "mingren-mr-c-407",
+    masterRef: "mingren-mr-c-328",
     id: "mr-c-328",
     title: "王念孙",
     group: "语言文字学家",
@@ -4265,7 +4265,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-329",
-    masterRef: "mingren-mr-c-416",
+    masterRef: "mingren-mr-c-329",
     id: "mr-c-329",
     title: "焦循",
     group: "思想家",
@@ -4278,7 +4278,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-330",
-    masterRef: "mingren-mr-c-417",
+    masterRef: "mingren-mr-c-330",
     id: "mr-c-330",
     title: "阮元",
     group: "思想家",
@@ -4291,7 +4291,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-331",
-    masterRef: "mingren-mr-c-418",
+    masterRef: "mingren-mr-c-331",
     id: "mr-c-331",
     title: "王引之",
     group: "语言文字学家",
@@ -4304,7 +4304,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-332",
-    masterRef: "mingren-mr-c-424",
+    masterRef: "mingren-mr-c-332",
     id: "mr-c-332",
     title: "包世臣",
     group: "经济学家",
@@ -4317,7 +4317,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-333",
-    masterRef: "mingren-mr-c-430",
+    masterRef: "mingren-mr-c-333",
     id: "mr-c-333",
     title: "龚自珍",
     group: "文学家",
@@ -4330,7 +4330,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-334",
-    masterRef: "mingren-mr-c-432",
+    masterRef: "mingren-mr-c-334",
     id: "mr-c-334",
     title: "魏源",
     group: "经济学家",
@@ -4343,7 +4343,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-335",
-    masterRef: "mingren-mr-c-447",
+    masterRef: "mingren-mr-c-335",
     id: "mr-c-335",
     title: "曾国藩",
     group: "政治家",
@@ -4356,7 +4356,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-336",
-    masterRef: "mingren-mr-c-452",
+    masterRef: "mingren-mr-c-336",
     id: "mr-c-336",
     title: "李善兰",
     group: "语言文字学家",
@@ -4369,7 +4369,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-337",
-    masterRef: "mingren-mr-c-454",
+    masterRef: "mingren-mr-c-337",
     id: "mr-c-337",
     title: "左宗棠",
     group: "军事家",
@@ -4382,7 +4382,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-338",
-    masterRef: "mingren-mr-c-464",
+    masterRef: "mingren-mr-c-338",
     id: "mr-c-338",
     title: "徐寿",
     group: "语言文字学家",
@@ -4395,7 +4395,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-339",
-    masterRef: "mingren-mr-c-470",
+    masterRef: "mingren-mr-c-339",
     id: "mr-c-339",
     title: "丁宝桢",
     group: "农学家",
@@ -4408,7 +4408,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-340",
-    masterRef: "mingren-mr-c-474",
+    masterRef: "mingren-mr-c-340",
     id: "mr-c-340",
     title: "李鸿章",
     group: "政治家",
@@ -4421,7 +4421,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-341",
-    masterRef: "mingren-mr-c-484",
+    masterRef: "mingren-mr-c-341",
     id: "mr-c-341",
     title: "翁同龢",
     group: "历史学家",
@@ -4434,7 +4434,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-342",
-    masterRef: "mingren-mr-c-491",
+    masterRef: "mingren-mr-c-342",
     id: "mr-c-342",
     title: "吴大澂",
     group: "历史学家",
@@ -4447,7 +4447,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-343",
-    masterRef: "mingren-mr-c-492",
+    masterRef: "mingren-mr-c-343",
     id: "mr-c-343",
     title: "张之洞",
     group: "思想家",
@@ -4460,7 +4460,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-344",
-    masterRef: "mingren-mr-c-495",
+    masterRef: "mingren-mr-c-344",
     id: "mr-c-344",
     title: "沈家本",
     group: "政治家",
@@ -4473,7 +4473,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-345",
-    masterRef: "mingren-mr-c-496",
+    masterRef: "mingren-mr-c-345",
     id: "mr-c-345",
     title: "任颐",
     group: "美术家",
@@ -4486,7 +4486,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-346",
-    masterRef: "mingren-mr-c-504",
+    masterRef: "mingren-mr-c-346",
     id: "mr-c-346",
     title: "吴昌硕",
     group: "美术家",
@@ -4499,7 +4499,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-347",
-    masterRef: "mingren-mr-c-506",
+    masterRef: "mingren-mr-c-347",
     id: "mr-c-347",
     title: "王懿荣",
     group: "历史学家",
@@ -4512,7 +4512,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-348",
-    masterRef: "mingren-mr-c-509",
+    masterRef: "mingren-mr-c-348",
     id: "mr-c-348",
     title: "黄遵宪",
     group: "文学家",
@@ -4525,7 +4525,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-349",
-    masterRef: "mingren-mr-c-516",
+    masterRef: "mingren-mr-c-349",
     id: "mr-c-349",
     title: "林纾",
     group: "语言文字学家",
@@ -4538,7 +4538,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-350",
-    masterRef: "mingren-mr-c-520",
+    masterRef: "mingren-mr-c-350",
     id: "mr-c-350",
     title: "严复",
     group: "语言文字学家",
@@ -4551,7 +4551,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-351",
-    masterRef: "mingren-mr-c-522",
+    masterRef: "mingren-mr-c-351",
     id: "mr-c-351",
     title: "刘鹗",
     group: "文学家",
@@ -4564,7 +4564,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-352",
-    masterRef: "mingren-mr-c-524",
+    masterRef: "mingren-mr-c-352",
     id: "mr-c-352",
     title: "康有为",
     group: "思想家",
@@ -4577,7 +4577,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-353",
-    masterRef: "mingren-mr-c-530",
+    masterRef: "mingren-mr-c-353",
     id: "mr-c-353",
     title: "詹天佑",
     group: "美术家",
@@ -4590,7 +4590,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-354",
-    masterRef: "mingren-mr-c-535",
+    masterRef: "mingren-mr-c-354",
     id: "mr-c-354",
     title: "齐白石",
     group: "美术家",
@@ -4603,7 +4603,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-355",
-    masterRef: "mingren-mr-c-537",
+    masterRef: "mingren-mr-c-355",
     id: "mr-c-355",
     title: "黄宾虹",
     group: "美术家",
@@ -4616,7 +4616,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-356",
-    masterRef: "mingren-mr-c-538",
+    masterRef: "mingren-mr-c-356",
     id: "mr-c-356",
     title: "吴趼人",
     group: "文学家",
@@ -4629,7 +4629,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-357",
-    masterRef: "mingren-mr-c-541",
+    masterRef: "mingren-mr-c-357",
     id: "mr-c-357",
     title: "李宝嘉",
     group: "文学家",
@@ -4642,7 +4642,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-358",
-    masterRef: "mingren-mr-c-545",
+    masterRef: "mingren-mr-c-358",
     id: "mr-c-358",
     title: "蔡元培",
     group: "思想家",
@@ -4655,7 +4655,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-359",
-    masterRef: "mingren-mr-c-549",
+    masterRef: "mingren-mr-c-359",
     id: "mr-c-359",
     title: "曾朴",
     group: "文学家",
@@ -4668,7 +4668,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-360",
-    masterRef: "mingren-mr-c-551",
+    masterRef: "mingren-mr-c-360",
     id: "mr-c-360",
     title: "梁启超",
     group: "思想家",
@@ -4681,7 +4681,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-361",
-    masterRef: "mingren-mr-c-553",
+    masterRef: "mingren-mr-c-361",
     id: "mr-c-361",
     title: "沈寿",
     group: "美术家",
@@ -4694,7 +4694,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-362",
-    masterRef: "mingren-mr-c-560",
+    masterRef: "mingren-mr-c-362",
     id: "mr-c-362",
     title: "王国维",
     group: "历史学家",
@@ -4707,7 +4707,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-363",
-    masterRef: "mingren-mr-c-561",
+    masterRef: "mingren-mr-c-363",
     id: "mr-c-363",
     title: "陈独秀",
     group: "思想家",
@@ -4720,7 +4720,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-364",
-    masterRef: "mingren-mr-c-563",
+    masterRef: "mingren-mr-c-364",
     id: "mr-c-364",
     title: "陈垣",
     group: "历史学家",
@@ -4733,7 +4733,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-365",
-    masterRef: "mingren-mr-c-564",
+    masterRef: "mingren-mr-c-365",
     id: "mr-c-365",
     title: "鲁迅",
     group: "文学家",
@@ -4746,7 +4746,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-366",
-    masterRef: "mingren-mr-c-576",
+    masterRef: "mingren-mr-c-366",
     id: "mr-c-366",
     title: "吕思勉",
     group: "历史学家",
@@ -4759,7 +4759,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-367",
-    masterRef: "mingren-mr-c-577",
+    masterRef: "mingren-mr-c-367",
     id: "mr-c-367",
     title: "萧友梅",
     group: "音乐家",
@@ -4772,7 +4772,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-368",
-    masterRef: "mingren-mr-c-579",
+    masterRef: "mingren-mr-c-368",
     id: "mr-c-368",
     title: "秉志",
     group: "生物学家",
@@ -4785,7 +4785,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-369",
-    masterRef: "mingren-mr-c-589",
+    masterRef: "mingren-mr-c-369",
     id: "mr-c-369",
     title: "李大钊",
     group: "思想家",
@@ -4798,7 +4798,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-370",
-    masterRef: "mingren-mr-c-592",
+    masterRef: "mingren-mr-c-370",
     id: "mr-c-370",
     title: "陈寅恪",
     group: "历史学家",
@@ -4811,7 +4811,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-371",
-    masterRef: "mingren-mr-c-593",
+    masterRef: "mingren-mr-c-371",
     id: "mr-c-371",
     title: "竺可桢",
     group: "科学家",
@@ -4824,7 +4824,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-372",
-    masterRef: "mingren-mr-c-594",
+    masterRef: "mingren-mr-c-372",
     id: "mr-c-372",
     title: "侯德榜",
     group: "科学家",
@@ -4837,7 +4837,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-373",
-    masterRef: "mingren-mr-c-598",
+    masterRef: "mingren-mr-c-373",
     id: "mr-c-373",
     title: "赵元任",
     group: "语言文字学家",
@@ -4850,7 +4850,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-374",
-    masterRef: "mingren-mr-c-601",
+    masterRef: "mingren-mr-c-374",
     id: "mr-c-374",
     title: "华彦钧",
     group: "音乐家",
@@ -4863,7 +4863,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-375",
-    masterRef: "mingren-mr-c-603",
+    masterRef: "mingren-mr-c-375",
     id: "mr-c-375",
     title: "胡先骕",
     group: "生物学家",
@@ -4876,7 +4876,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-376",
-    masterRef: "mingren-mr-c-604",
+    masterRef: "mingren-mr-c-376",
     id: "mr-c-376",
     title: "吕彦直",
     group: "美术家",
@@ -4889,7 +4889,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-377",
-    masterRef: "mingren-mr-c-605",
+    masterRef: "mingren-mr-c-377",
     id: "mr-c-377",
     title: "董作宾",
     group: "历史学家",
@@ -4902,7 +4902,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-378",
-    masterRef: "mingren-mr-c-606",
+    masterRef: "mingren-mr-c-378",
     id: "mr-c-378",
     title: "徐悲鸿",
     group: "美术家",
@@ -4915,7 +4915,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-379",
-    masterRef: "mingren-mr-c-607",
+    masterRef: "mingren-mr-c-379",
     id: "mr-c-379",
     title: "刘天华",
     group: "音乐家",
@@ -4928,7 +4928,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-380",
-    masterRef: "mingren-mr-c-608",
+    masterRef: "mingren-mr-c-380",
     id: "mr-c-380",
     title: "郁达夫",
     group: "文学家",
@@ -4941,7 +4941,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-381",
-    masterRef: "mingren-mr-c-610",
+    masterRef: "mingren-mr-c-381",
     id: "mr-c-381",
     title: "李济",
     group: "历史学家",
@@ -4954,7 +4954,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-382",
-    masterRef: "mingren-mr-c-611",
+    masterRef: "mingren-mr-c-382",
     id: "mr-c-382",
     title: "徐志摩",
     group: "文学家",
@@ -4967,7 +4967,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-383",
-    masterRef: "mingren-mr-c-614",
+    masterRef: "mingren-mr-c-383",
     id: "mr-c-383",
     title: "潘天寿",
     group: "美术家",
@@ -4980,7 +4980,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-384",
-    masterRef: "mingren-mr-c-615",
+    masterRef: "mingren-mr-c-384",
     id: "mr-c-384",
     title: "朱自清",
     group: "文学家",
@@ -4993,7 +4993,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-385",
-    masterRef: "mingren-mr-c-618",
+    masterRef: "mingren-mr-c-385",
     id: "mr-c-385",
     title: "翦伯赞",
     group: "历史学家",
@@ -5006,7 +5006,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-386",
-    masterRef: "mingren-mr-c-621",
+    masterRef: "mingren-mr-c-386",
     id: "mr-c-386",
     title: "闻一多",
     group: "文学家",
@@ -5019,7 +5019,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-387",
-    masterRef: "mingren-mr-c-625",
+    masterRef: "mingren-mr-c-387",
     id: "mr-c-387",
     title: "张大千",
     group: "美术家",
@@ -5032,7 +5032,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-388",
-    masterRef: "mingren-mr-c-626",
+    masterRef: "mingren-mr-c-388",
     id: "mr-c-388",
     title: "林风眠",
     group: "美术家",
@@ -5045,7 +5045,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-389",
-    masterRef: "mingren-mr-c-627",
+    masterRef: "mingren-mr-c-389",
     id: "mr-c-389",
     title: "王力",
     group: "语言文字学家",
@@ -5058,7 +5058,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-390",
-    masterRef: "mingren-mr-c-628",
+    masterRef: "mingren-mr-c-390",
     id: "mr-c-390",
     title: "黄自",
     group: "音乐家",
@@ -5071,7 +5071,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-391",
-    masterRef: "mingren-mr-c-629",
+    masterRef: "mingren-mr-c-391",
     id: "mr-c-391",
     title: "冼星海",
     group: "音乐家",
@@ -5084,7 +5084,7 @@ window.POEMS_MINGREN_CN = [
   },
   {
     textRef: "mingren-mr-c-392",
-    masterRef: "mingren-mr-c-630",
+    masterRef: "mingren-mr-c-392",
     id: "mr-c-392",
     title: "聂耳",
     group: "音乐家",
