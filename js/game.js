@@ -44,7 +44,8 @@
         scopes: [],
     scopeOpen: true,
     left: 0,
-    timer: null
+    timer: null,
+    overlayId: ""
   };
 
   var host = null;
@@ -127,6 +128,23 @@
     Object.keys(p).forEach(function (k) { out[k] = p[k]; });
     if (!out.book) out.book = book;
     return out;
+  }
+
+  // 按当前范围过滤语料：飞花令的选字/看答案/自己写一句都要走同一份，
+  // 否则「选了小学」只是摆设（选了但答案照样混全部范围）
+  function scopedCorpus() {
+    var cps = corpus();
+    if (!Ex || !Ex.select) return cps;
+    try {
+      var out = Ex.select(cps, state.setup.scope);
+      return (out && out.length) ? out : cps;
+    } catch (e) { return cps; }
+  }
+
+  function poemById(id) {
+    var cps = corpus();
+    for (var i = 0; i < cps.length; i++) if (cps[i] && cps[i].id === id) return cps[i];
+    return null;
   }
 
   function ensureCorpus() {
@@ -277,13 +295,14 @@
   function renderFly() {
     var id = identifier();
     var m = modeOf("fly");
-    var cps = corpus();
+    var cps = scopedCorpus();
     var ff = Q.flyFlower({ poems: cps, chars: state.chars });
     var sum = Q.charSummary(cps, state.chars);
 
     var html = '<section class="account-card game-head">' +
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
+      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
       '<div class="game-chars">' + state.chars.map(function (c) {
         return '<span class="game-char">' + esc(c) +
           (pinyinOf(c) ? '<span class="game-char-py">' + esc(pinyinOf(c)) + "</span>" : "") +
@@ -408,18 +427,12 @@
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
         var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换范围</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
-      "</section>";
-
-        html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-      '<p class="account-lead">' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
-      '<div class="game-nav">' +
-      '<button class="account-btn ghost" type="button" data-game-back="1">换范围</button>' +
-      "</div>" +
-      '<p class="account-hint">范围在首页那段清单里选的；要改就回首页，点一下格子就行。</p>' +
+      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) +
+      "（要改就点上面「换一个玩法」回首页，点一下格子就行）</p>" +
       "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
@@ -524,14 +537,14 @@
             body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-reset="1">回到卷面设置</button></section>';
     }
-    host.innerHTML = body;
+    host.innerHTML = body + (state.overlayId ? renderPoemOverlay(state.overlayId) : "");
     bind();
         paintBack();
   }
 
   function startFly(levelId) {
     state.level = levelId || state.level;
-    var cps = corpus();
+    var cps = scopedCorpus();
     state.chars = pickChars(cps, state.level);
     state.revealed = false;
     render();
@@ -663,7 +676,7 @@
     if (!input || !msg) return;
     var said = input.value.trim();
     if (!said) { msg.className = "account-msg warn"; msg.textContent = "先写一句。"; return; }
-    var local = Q.flyFlower({ poems: corpus(), chars: state.chars }).rows
+    var local = Q.flyFlower({ poems: scopedCorpus(), chars: state.chars }).rows
       .filter(function (r) { return r.text === said; })[0];
     judge({ kind: "fly", chars: state.chars, said: said }).then(function (r) {
       var found = r && r.body ? !!r.body.found : !!local;
@@ -683,13 +696,18 @@
         return t && t.closest ? t.closest("[" + attr + "]") : null;
       };
 
+            var closeOverlay = hit("data-game-overlay-close");
+      if (closeOverlay) { state.overlayId = ""; render(); return; }
+
       var go = hit("data-game-go");
       if (go) { location.href = go.getAttribute("data-game-go"); return; }
 
       var back = hit("data-game-back");
       if (back) {
         stopTimer();
-                if (state.mode === "setup") {
+                // 飞花令没有「卷面设置」这一层，退回去只能是首页；
+                // 否则 state.pending 从未写过，落进 setup 会渲染出一片空白（发现于 2026-09-30）
+                if (state.mode === "setup" || state.mode === "fly") {
           state.mode = "";
           state.pending = "";
         } else {
@@ -774,19 +792,41 @@
 
     function openPoem(id) {
     if (!id) return;
-        if (!hasReader()) { location.href = "/poems/?poem=" + encodeURIComponent(id); return; }
-    var ev = new CustomEvent("poems:open", { detail: { id: id }, cancelable: true });
-    document.dispatchEvent(ev);
+    if (hasReader()) {
+      var ev = new CustomEvent("poems:open", { detail: { id: id }, cancelable: true });
+      document.dispatchEvent(ev);
+      return;
+    }
+        // 独立页（/dahui/）没有阅读器可挂：原地弹一张只读原文卡，不整页跳走丢答题进度
+    if (poemById(id)) { state.overlayId = id; render(); return; }
+    location.href = "/poems/?poem=" + encodeURIComponent(id);
   }
 
     function hasReader() {
     return !!document.querySelector('[data-gw="reader"]');
   }
 
+    function renderPoemOverlay(id) {
+    var p = poemById(id);
+    if (!p) return "";
+    var text = esc(String(p.text || "")).replace(/\n/g, "<br>");
+    return '<div class="modal">' +
+      '<div class="modal-mask" data-game-overlay-close="1"></div>' +
+      '<div class="modal-box small">' +
+      '<button class="modal-close" type="button" data-game-overlay-close="1">&times;</button>' +
+      '<div class="modal-head"><h2>' + esc(p.title || "") + "</h2>" +
+      '<p class="meta"><span class="tag ghost">' + esc(p.author || "") + "</span>" +
+      (p.book ? '<span class="tag ghost">' + esc(bookName(p.book)) + "</span>" : "") +
+      "</p></div>" +
+      '<p class="poem-text">' + text + "</p>" +
+      "</div></div>";
+  }
+
   function close() {
     if (!host) return;
     stopTimer();
     state.mode = "";
+    state.overlayId = "";
 
         var onOwnPage = standalone();
     setDockNav(onOwnPage ? "poems" : "game");
@@ -842,6 +882,7 @@
     state.setup = { scope: "all", size: 0, scopeChosen: false };
     state.setupNotice = "";
     state.pending = "";
+    state.overlayId = "";
     render();
     paintHeader(true);
     paintBack();
@@ -876,7 +917,9 @@
     }
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && isOpen() && !state.mode) close();
+      if (e.key !== "Escape") return;
+      if (state.overlayId) { state.overlayId = ""; render(); return; }
+      if (isOpen() && !state.mode) close();
     });
 
     loadCorpusIntoView();

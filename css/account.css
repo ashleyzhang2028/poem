@@ -912,7 +912,7 @@ thead .plans-th-cap {
      （标题墨迹自己还留约 0.5px 边距）。绿条是内嵌阴影画的、不占位，
      这 20px **未选中也留着**，十几行左右对齐一条线；
      选中只是把绿条填进这段空里 —— 行不动、字不跳。 */
-  padding: 9px 2px 9px 7px;
+  padding: 9px 2px 9px 12px;
   background: transparent;
   font: inherit;
   color: var(--ink);
