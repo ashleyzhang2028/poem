@@ -15,6 +15,8 @@
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+  <link rel="stylesheet" href="css/classic.css" />
 </head>
 <body data-nav="settings" data-back="/settings/" data-page="阅读与朗读" data-sub="自动注音 · 连读方式">
   <div class="app">
@@ -43,6 +45,7 @@
               <span class="switch-toggle" aria-hidden="true"></span>
             </label>
             <p class="switch-hint">古诗词大会答题时，答对答错提示音。</p>
+            <p class="switch-hint"><button type="button" class="link-btn" id="sound-try">试听一声</button></p>
           </div>
 
           <div class="settings-item">
@@ -106,6 +109,7 @@
   <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>
 
+  <script src="/js/sfx.js"></script>
   <script src="/js/play-modes.js"></script>
   <script src="/js/review-models.js"></script>
   <script src="/js/collections.js"></script>
