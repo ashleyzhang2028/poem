@@ -189,6 +189,20 @@ const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
 chk(msBad.length === 0,
   '名著导读每组按成书 / 出版时间排序（倒挂：' + (msBad.join('、') || '无') + '）');
 
+/* 上一轮报过的那个形状：外国文学那一组的国别栏（英国 / 法国 / 俄国 / 苏联…）
+   在兜底表里一律返回 1900，于是「组内按成书时间排」对它们等于没排 ——
+   相邻比较永远相等、永远不报错（也就是上面那条倒挂断言**必然**是绿的）。
+   这里补一条真能失败的：外国文学的年份键必须**真的取到了**（YEARS 里有，
+   且不是兜底来的），只有成书年真为 1900（如《绿野仙踪》）才允许是 1900。 */
+const FOREIGN_FALLBACK = MS.filter(p => p.group === '外国文学')
+  .filter(p => {
+    const y = MYEARS.YEARS[p.title];
+    return y == null && MYEARS.yearOf(p.title, p.dynasty) === 1900;
+  })
+  .map(p => p.title);
+chk(FOREIGN_FALLBACK.length === 0,
+  '外国文学每部都有真实年份（落 1900 兜底：' + (FOREIGN_FALLBACK.join('、') || '无') + '）');
+
 /* 数量：Issue #381 第二轮要求「国内名著 ×10、世界名著 ≥300 本」。
    书目表 data/mingshu-books.js 已经排到 1614 部；但正文素材是**分批**写的，
    data/poems-mingshu.js 只收「素材已就绪」的那一批。所以这里守两件事：
@@ -471,6 +485,22 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(BY('外国文学') >= 50,
     '外国文学已填 50 部以上（实际 ' + BY('外国文学') + '）');
   chk(MS.length >= 412, '名著导读已交付 412 部以上（实际 ' + MS.length + '）');
+
+  /* Issue #381 第二十三轮（批次七·外国文学·俄苏片）：用户原话「按中小学必读 →
+     英 → 法 → 俄苏 → 其他语种来吧」。英国、美国、法国各片已交，这一轮接
+     俄苏片。俄国／苏联的书此前只交了 9 部（战争与和平 / 安娜·卡列尼娜 /
+     复活 / 童年 / 在人间 / 我的大学 / 钢铁是怎样炼成的 / 古拉格群岛 / 森林报），
+     其余的按册写入。守两件事：① 俄苏这一组逐部点名进列表页；② 外国文学
+     与列表页都跟着涨。名单里谁被删掉，测试当场点名。 */
+  const RU_SU_SOVIET = ['死魂灵', '钦差大臣', '叶甫盖尼·奥涅金', '上尉的女儿', '当代英雄',
+    '罪与罚', '白痴', '卡拉马佐夫兄弟', '父与子', '猎人笔记', '奥勃洛摩夫',
+    '母亲', '静静的顿河', '樱桃园', '套中人'];
+  chk(RU_SU_SOVIET.every(t => modernInShell.has(t)),
+    '俄苏片这一批 ' + RU_SU_SOVIET.length + ' 部都进了列表页（缺：' +
+    (RU_SU_SOVIET.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(BY('外国文学') >= 66,
+    '外国文学已填 66 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 428, '名著导读已交付 428 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');

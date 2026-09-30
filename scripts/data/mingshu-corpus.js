@@ -247,6 +247,20 @@ add(require('./corpus/fill-world-7.js'));
    16 部（fill-foreign-1），这一册接法国片 10 部。 */
 add(require('./corpus/fill-foreign-fr.js'));
 
+/* ── Issue #381 第二十三轮（批次七·外国文学·俄苏片）──────────────────
+   用户原话「按中小学必读 → 英 → 法 → 俄苏 → 其他语种来吧」。英国、美国、
+   法国各片已交，这一册接**俄苏片**：俄国 47 + 苏联 23 部，已交 9 部
+   （战争与和平 / 安娜·卡列尼娜 / 复活 / 童年 / 在人间 / 我的大学 /
+   钢铁是怎样炼成的 / 古拉格群岛 / 森林报），本册逐册写入，一部只占一处。
+   分五册装（一册 2—10 部），便于分批校读。 */
+add(require('./corpus/fill-foreign-ru.js'));
+add(require('./corpus/fill-foreign-ru-2.js'));
+add(require('./corpus/fill-foreign-ru-3.js'));
+add(require('./corpus/fill-foreign-ru-4.js'));
+add(require('./corpus/fill-foreign-ru-5.js'));
+add(require('./corpus/fill-foreign-ru-6.js'));
+add(require('./corpus/fill-foreign-ru-7.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
