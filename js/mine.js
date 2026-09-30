@@ -673,13 +673,11 @@
 
   function renderSync() {
     var input = $("toggle-sync");
-    var hint = $("sync-hint");
-    if (!input || !hint) return;
+    if (!input) return;
     var S = syncMod();
 
     if (!S) {
       input.disabled = true;
-      hint.textContent = "同步功能加载失败，请刷新页面重试。";
       hide($("sync-conflict"));
       return;
     }
@@ -690,18 +688,6 @@
     input.checked = on;
 
     input.disabled = (st === "unavailable");
-
-    hint.textContent = n
-      ? "有 " + n + " 篇进度存在冲突，请在下方选择保留哪一份。"
-      : st === "unavailable"
-      ? "暂未开放云同步，进度仅保存在本机。"
-      : st === "tier"
-        ? "跨设备同步需 Pro 及以上，进度仍完整保存在本机。"
-        : st === "off"
-          ? "开启后，进度会在登录同一账号的设备间同步。"
-          : st === "signin"
-            ? "已开启，登录后开始同步。"
-            : "";
 
     renderConflict(S, !!sess());
   }

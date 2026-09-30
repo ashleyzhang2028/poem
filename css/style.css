@@ -1712,8 +1712,6 @@ body.has-install-tip #app {
 .settings-about .kv-list + .settings-about-title { margin-top: 22px; }
 
 .kv-list + .kv-list {
-  margin-top: 6px;
-  padding-top: 6px;
   border-top: 1px solid var(--line-2);
 }
 

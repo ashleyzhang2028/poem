@@ -467,7 +467,7 @@
   function scopePickNote() {
     var n = pickCount();
     var on = state.scopes.slice();
-    if (!on.length) return "一格没选 = 什么都考" + (n == null ? "" : "（" + n + " 篇）");
+    if (!on.length) return "全部" + (n == null ? "" : "（" + n + " 篇）");
     if (on.indexOf("all") >= 0) return "全部" + (n == null ? "" : "（" + n + " 篇）");
     var names = on.map(scopeName);
     return names.join(" + ") + (n == null ? "" : "（" + n + " 篇）");
@@ -481,12 +481,12 @@
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
         var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
       '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) +
-      "（要改就点上面「换一个题型」回首页，点一下格子就行）</p>" +
+      "（点「换题型」回首页）</p>" +
       "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
@@ -498,8 +498,8 @@
       }).join("") + "</div>" +
       '<p class="account-hint">' +
       (v.judge === "after"
-        ? "交卷后统一批改，中途退出不评分、不留记录。"
-        : "答完立刻说对错。" + (v.record ? "卷面记录留在本机。" : "本地不留记录。")) +
+        ? "交卷后批改，中途退出不评分。"
+        : "答完立刻说对错。" + (v.record ? "卷面记录留在本地。" : "本地不留记录。")) +
       "</p>" +
       '<button class="account-btn" type="button" data-game-begin="1">开始</button>' +
       (state.setupNotice
@@ -514,11 +514,10 @@
     var html = '<section class="account-card game-head">' +
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">返回</button>' +
       '<h2 class="account-card-title">考试记录</h2>' +
-      '<p class="account-hint">只记录「考试」这一种题型（不含模拟考试、题库复习），存在服务器上，可以查看与删除。</p>' +
       "</section>";
 
     if (!id.signedIn) {
-      html += '<section class="account-card"><p class="account-hint">登录后才能查看。</p>' +
+      html += '<section class="account-card"><p class="account-hint">登录后查看。</p>' +
         '<button class="account-btn" type="button" data-game-go="/login/">登录</button></section>';
       return html;
     }
@@ -531,7 +530,7 @@
       return html;
     }
     if (!state.historyRecords.length) {
-      html += '<section class="account-card"><p class="account-hint">还没有「考试」记录 —— 考完一次，交卷后会自动存一条。</p></section>';
+      html += '<section class="account-card"><p class="account-hint">暂无「考试」记录</p></section>';
       return html;
     }
 
@@ -585,13 +584,13 @@
     var html = state.graded ? renderScoreBanner(state.graded) : "";
 
     html += '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
       esc(scopePickLabel(state.setup.scope)) +
       (v.timed ? " · 剩余 " + timeLeftText() : "") +
       " · " +
-      (state.server === "off" && reveal ? "本机判分（服务端没接通）" : "由服务器判分") + "</p>" +
+      (state.server === "off" && reveal ? "本地评分（服务端没接通）" : "由服务器评分") + "</p>" +
       (v.timed && !state.graded
         ? '<div class="game-timer-bar"><div class="game-timer-fill" id="game-timer-fill" style="width:' +
           Math.max(0, Math.min(100, Math.round(state.left / Math.max(1, (v.minutes || 1) * 60000) * 100))) +
@@ -629,11 +628,11 @@
       "</div>" +
       (state.graded
         ? '<p class="account-msg ok">' + esc(state.graded.text) + "</p>" +
-          (state.graded.saved ? '<p class="account-hint">卷面记录已留在本机（不上云）。</p>' : "") +
+          (state.graded.saved ? '<p class="account-hint">卷面记录已留本地。</p>' : "") +
           (state.mode === "formal" && state.graded.cloudSaved
-            ? '<p class="account-hint">已存到「考试记录」（服务器）。</p>' : "")
+            ? '<p class="account-hint">已存「考试记录」。</p>' : "")
         : '<p class="account-hint">已答 ' + answered + " / " + total + " 题。" +
-          (v.judge === "after" ? "交卷后统一批改。" : "答完一题立刻说对错。") + "</p>") +
+          (v.judge === "after" ? "交卷后批改。" : "答完立刻显示结果。") + "</p>") +
       "</section>";
     return html;
   }
@@ -698,7 +697,7 @@
 
     if (state.mode === "fly") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
-        'data-game-restart="1">换一副令字</button></section>';
+        'data-game-restart="1">换令</button></section>';
     } else if (state.mode === "setup" || state.mode === "history") {
           } else if (state.mode) {
             body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
@@ -832,7 +831,7 @@
       graded.wrong = graded.total - graded.right;
       graded.text = graded.total
         ? "这次 " + graded.total + " 题对 " + graded.right + " 题"
-        : "这一卷没有题目";
+        : "这一卷无题目";
 
       state.graded = graded;
       state.gradedAnimated = false;
@@ -907,7 +906,7 @@
       var historyDel = hit("data-game-history-del");
       if (historyDel) {
         var eid = historyDel.getAttribute("data-game-history-del");
-        if (eid && window.confirm("删除这条考试记录？删掉之后找不回来。") && window.AccountApi && AccountApi.examRecordDelete) {
+        if (eid && window.confirm("删除这条考试记录？") && window.AccountApi && AccountApi.examRecordDelete) {
           AccountApi.examRecordDelete({ eid: eid }).then(function (r) {
             if (r && r.ok && Array.isArray(state.historyRecords)) {
               state.historyRecords = state.historyRecords.filter(function (row) { return row.eid !== eid; });
