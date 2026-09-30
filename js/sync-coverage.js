@@ -122,12 +122,12 @@
     {
       key: "poem_mingren_cn_read_v1", sync: true, row: "reads:poem_mingren_cn_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "历代名家「中国」已读 —— Issue #399 拆两部后的中国卷。"
+      why: "名家「中国」已读 —— Issue #399 拆两部后的中国卷。"
     },
     {
       key: "poem_mingren_foreign_read_v1", sync: true, row: "reads:poem_mingren_foreign_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "历代名家「外国」已读 —— Issue #399 拆两部后的外国卷。"
+      why: "名家「外国」已读 —— Issue #399 拆两部后的外国卷。"
     },
     /* Issue #407：帝王两卷 —— 与历代名家同一族，各有一把「已读」键。 */
     {

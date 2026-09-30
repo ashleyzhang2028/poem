@@ -113,7 +113,7 @@
     /* Issue #399：历代名家拆两部 —— 中国卷 / 外国卷各是一个集子。 */
     {
       id: "mingren",
-      name: "历代名家「中国」",
+      name: "名家「中国」",
       book: "MingrenBook",
       short: "名家·中",
       page: "/mingren/",
@@ -122,7 +122,7 @@
     },
     {
       id: "mingren-waiguo",
-      name: "历代名家「外国」",
+      name: "名家「外国」",
       book: "MingrenBook",
       short: "名家·外",
       page: "/mingren-waiguo/",
