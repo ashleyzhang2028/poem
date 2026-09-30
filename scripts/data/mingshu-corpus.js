@@ -272,6 +272,19 @@ add(require('./corpus/fill-foreign-jp-2.js'));
 add(require('./corpus/fill-foreign-jp-3.js'));
 add(require('./corpus/fill-foreign-jp-4.js'));
 
+/* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────
+   用户原话「按你的计划，尽快完成吧 每次最少提交100」。英国片书目表 83 部，
+   此前已交 18 部（fill-foreign-1 一批 + 中小学必读一批），余 65 部按册往下填。
+   本册 16 部：毛姆 3、戈尔丁 1、奥威尔 2、赫胥黎 1、威尔斯 3、
+   柯南·道尔 1、金斯利 1、吉卜林 1、柯林斯 2、哈代 1。 */
+add(require('./corpus/fill-foreign-uk-1.js'));
+add(require('./corpus/fill-foreign-uk-2.js'));
+add(require('./corpus/fill-foreign-uk-3.js'));
+add(require('./corpus/fill-foreign-uk-4.js'));
+add(require('./corpus/fill-foreign-uk-5.js'));
+add(require('./corpus/fill-foreign-uk-6.js'));
+add(require('./corpus/fill-foreign-uk-7.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
