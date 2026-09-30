@@ -1055,7 +1055,15 @@ thead .plans-th-cap {
 /* 飞花令：换令收进令字卡，看答案不套卡片、落在页底 */
 .game-fly-restart { margin-top: 10px; }
 .game-fly-reveal { display: flex; flex-direction: column; }
-.game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
+/* 令字横排：**拼音在上、汉字在下**（用户 2026-09-30 裁决）。
+ *
+ * 从前是反的（汉字在上、拼音在下）；而且两字用 `flex-end` 底边对齐 ——
+ * 一个字有拼音、另一个没有（拼音表里查不到），两个盒高就不一样，
+ * 真机量过（390×844）：有拼音的盒 58px、没拼音的盒 42px，汉字高低差 8px。
+ *
+ * 现在：横排 `align-items: center`（两盒等高时 = 汉字基线对齐），
+ * 拼音行在 `.game-char-py` 里定高 —— 没拼音的字也占着这一行，盒高一致。 */
+.game-chars { display: flex; align-items: center; gap: 18px; margin: 4px 0 10px; }
 .game-char {
   display: flex;
   flex-direction: column;
@@ -1066,7 +1074,20 @@ thead .plans-th-cap {
   font-weight: 600;
 }
 
-.game-char-py { font-size: 12px; color: var(--ink-3); font-weight: 400; letter-spacing: .5px; }
+/* 拼音那一行：定高 16px。定高是为了「有拼音的字」与「没拼音的字」盒高一致，
+   否则横排时两字的汉字基线会错开。 */
+.game-char-py {
+  display: block;
+  height: 16px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-3);
+  font-weight: 400;
+  letter-spacing: .5px;
+}
+
+/* 汉字那一行 */
+.game-char-han { display: block; }
 
 .game-lines { margin-top: 10px; }
 .game-line {
