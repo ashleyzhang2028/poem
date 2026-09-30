@@ -73,7 +73,7 @@
     var cached = "未缓存";
     try {
       var nav = (typeof navigator !== "undefined" && navigator) || null;
-      if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存，可离线打开";
+      if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存 · 可离线打开";
     } catch (e) { cached = "未缓存"; }
 
     box.innerHTML =
