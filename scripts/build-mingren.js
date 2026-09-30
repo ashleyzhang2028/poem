@@ -340,6 +340,34 @@ function neutralizeLabel(t) {
   return String(t || '').split('主要作品 / 贡献').join('主要作品 / 作为');
 }
 
+/* ── 外国卷的「字 / 号」一行放外文名（Issue #399）───────────────────────
+   用户 2026-09-30 的话：「所有外国帝王和名人，请添加他们的英文，以及所在
+   国家语言的名字。如果能找到的话。」「外文名放在「字 / 号」格里」。
+
+   外国人物没有中文意义上的「字 / 号」—— 那一格原先一律是「字：—；号：—」，
+   是个空符号。本轮起改成外文名（本国语言 + 拉丁转写），素材见
+   scripts/data/mingren-foreign-names.js（按人名索引）。
+
+   ⚠️ 只对外国条目生效；中国条目的「字 / 号」是真的字与号，一个字不动。
+   ⚠️ **空格才填**：第十二 / 十三轮已经在主表里写了外文名的那 113 位
+      （那几格的写法是「希腊名：…」而不是「字：—」），这里不覆盖 ——
+      幂等就落在这条上。 */
+const FOREIGN_NAMES = require('./data/mingren-foreign-names.js').FOREIGN_NAMES;
+function withForeignName(text, name) {
+  if (!text) return text;
+  const value = FOREIGN_NAMES[name];
+  if (!value) return text;
+  const m = String(text).match(/^(│ 字 \/ 号 *│)([^│]*)(│.*)$/m);
+  if (!m) return text;
+  /* 已经写了外文名的（主表里那 113 条）：不覆盖。判据是那一格里有没有
+     拉丁字母 —— 中文的「字 / 号」不会有西文字母。 */
+  if (/[A-Za-z\u00C0-\u024F\u0400-\u04FF]/.test(m[2])) return text;
+  return String(text).replace(/^(│ 字 \/ 号 *│)([^│]*)(│.*)$/m,
+    function (all, pre, val, post) {
+      return pre + ' ' + value + post;
+    });
+}
+
 const MIN_TOTAL = 400;   // 正文净字数下限（表格线不计）
 
 const problems = [];     // 校验积攒下来的问题，有一条就不写盘
@@ -646,6 +674,9 @@ const RENUMBER = {};
 const counting = { cn: 0, foreign: 0 };
 ROSTER.forEach(function (rec) {
   rec.foreign = isForeignEntry(rec.title, rec.text);
+  /* 外国卷：把外文名写进「字 / 号」那一格（Issue #399）。中国卷不动 ——
+     两卷共一段正文，国别是二值的，判完就当「这一格该不该是外文名」的开关。 */
+  if (rec.foreign) rec.text = withForeignName(rec.text, rec.title);
   rec.volume = rec.foreign ? 'foreign' : 'cn';
   counting[rec.volume] += 1;
   const newId = (rec.foreign ? 'mr-w-' : 'mr-c-') + String(counting[rec.volume]).padStart(2, '0');

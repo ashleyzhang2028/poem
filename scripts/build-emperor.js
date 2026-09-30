@@ -126,7 +126,7 @@ const DIM = [
 /* 诸侯那一段的段名。世系图只在这一段出现（见 lineageOf）。 */
 const VASSAL_GROUP = '东周·诸侯（春秋战国）';
 
-function bodyOf(rec, group) {
+function bodyOf(rec, group, foreign) {
   const n = NOTE[rec.name];
   if (!n) throw new Error('缺六维素材：' + rec.name);
   const miss = ['life'].concat(DIM.map(function (d) { return d[0]; }))
@@ -135,7 +135,19 @@ function bodyOf(rec, group) {
 
   const rows = [['皇号', rec.name + '（' + rec.dynastyLabel + '）']];
   if (rec.period === VASSAL_GROUP) rows.push(['世系', rec.lineageChart]);
-  IDENT_ROWS.forEach(function (r) { rows.push([r[0], String(rec[r[1]] == null ? '—' : rec[r[1]])]); });
+  /* 外国帝王没有中文意义上的「姓名」—— 那一格原先只有汉译名。Issue #399
+     用户原话：「所有外国帝王和名人，请添加他们的英文，以及所在国家语言的
+     名字。如果能找到的话。」素材里 `nameFull` 本来就带着外文名（如
+     「拿破仑·波拿巴（Napoleon Bonaparte）」），此前只在列表页的
+     `author` 里露面，正文的「姓名」一格一直没接上。这里接上 —— 只对外国卷，
+     中国卷的「姓名」（姒文命 / 刘彻）是真的姓名，一个字不动。 */
+  IDENT_ROWS.forEach(function (r) {
+    if (foreign && r[1] === 'name' && rec.nameFull) {
+      rows.push([r[0], String(rec.nameFull)]);
+      return;
+    }
+    rows.push([r[0], String(rec[r[1]] == null ? '—' : rec[r[1]])]);
+  });
   const out = [T.box(rows)];
   out.push('【生平】' + n.life);
   DIM.forEach(function (d) { out.push('【' + d[1] + '】' + n[d[0]]); });
@@ -159,6 +171,9 @@ function buildRows(rows, foreign) {
     const period = foreign ? r[1] : (DYN[key] ? DYN[key][1] : r[2]);
     out.push({
       name: r[0], key: key, period: period,
+      /* 卷别（中国 / 外国）落成字段：正文的「姓名」一格要不要接 `nameFull`
+         （外文名）就看它，不靠段名或词表再猜一次。 */
+      foreign: !!foreign,
       dynastyLabel: r[2], nameFull: r[3], era: r[4], reign: r[5],
       posthumous: r[6], temple: r[7], lineage: r[8], tag: r[9]
     });
@@ -287,7 +302,7 @@ function shells(list, prefix, varName, bookId) {
 if (CHECK_ONLY) {
   let bad = 0;
   CN.concat(FOREIGN_ROWS).forEach(function (r) {
-    try { bodyOf(r, r.period); } catch (e) { console.error('✗ ' + e.message); bad++; }
+    try { bodyOf(r, r.period, !!r.foreign); } catch (e) { console.error('✗ ' + e.message); bad++; }
   });
   if (bad) process.exit(1);
   console.log('✓ 校验通过：' + (CN.length + FOREIGN_ROWS.length) + ' 位帝王六维齐备');
@@ -308,7 +323,7 @@ if (WANT_MASTER) {
       id: 'dwang-' + r.id,
       title: r.name,
       entries: ['dwang-' + r.id],
-      text: bodyOf(r, r.period)
+      text: bodyOf(r, r.period, !!r.foreign)
     };
     /* 白话译文也要进主表 —— 主表是正文与译文的唯一一份（Issue #342 起
        各部的正文都收归主表，壳体只留 textRef）。诸侯这 253 位是唯一

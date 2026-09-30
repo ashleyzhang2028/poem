@@ -430,6 +430,40 @@ chk(r9miss.length === 0,
   chk(!inBook[n], '第九轮合并掉的重复条「' + n + '」不在册');
 });
 
+/* ── 七、外国卷的「字 / 号」一格放外文名（Issue #399）────────────────────
+   用户 2026-09-30 的话：「所有外国帝王和名人，请添加他们的英文，以及所在
+   国家语言的名字。如果能找到的话。」「外文名放在「字 / 号」格里」。
+
+   外国人物没有中文意义上的「字 / 号」，那一格先前一律是「字：—；号：—」。
+   这里守两条：
+     · 外国卷**每一条**的「字 / 号」格里都得有西文字母（不再有空符号）；
+     · 中国卷的「字 / 号」是**真的字与号**，一条都不许出现西文字母
+       （混进来就是「外国名放错了卷」）。 */
+const foreignNoName = FOREIGN.filter(p => {
+  const m = String(p.text).match(/│ 字 \/ 号 *│([^│]*)│/);
+  const cell = m ? m[1].trim() : '';
+  return !/[A-Za-z\u00C0-\u024F\u0400-\u04FF]/.test(cell);
+});
+chk(foreignNoName.length === 0,
+  '外国卷 ' + FOREIGN.length + ' 位的「字 / 号」格都有外文名（空/无西文：' +
+  (foreignNoName.map(p => p.title).join('、') || '无') + '）');
+
+/* ⚠️ 白名单：中国卷里有两位**本来就是外国人**的历史人物 —— 鸠摩罗什
+   （梵名 Kumārajīva，龟兹人）、郎世宁（原名 Giuseppe Castiglione，意大利
+   耶稣会士）。他们在前一版就归了中国卷（生于 / 服务于中国的文化脉络），
+   「字 / 号」那一格写的也正是外文名。按人名放行，与 ALLOW 那条纪律同源：
+   白名单按「人名」成对放，不放宽整个判据。 */
+const CN_LATIN_OK = ['鸠摩罗什', '郎世宁'];
+const cnHasLatin = CN.filter(function (p) {
+  if (CN_LATIN_OK.indexOf(p.title) >= 0) return false;
+  const m = String(p.text).match(/│ 字 \/ 号 *│([^│]*)│/);
+  const cell = m ? m[1].trim() : '';
+  return /[A-Za-z\u00C0-\u024F\u0400-\u04FF]/.test(cell);
+});
+chk(cnHasLatin.length === 0,
+  '中国卷 ' + CN.length + ' 位的「字 / 号」格不含西文（混入：' +
+  (cnHasLatin.map(p => p.title).join('、') || '无') + '）');
+
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 历代名家收录边界 / 新组全部通过');
 process.exit(fails ? 1 : 0);
