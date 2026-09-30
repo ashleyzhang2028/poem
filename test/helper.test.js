@@ -95,9 +95,10 @@ const allText = [...d.POEMS_ALL, ...d.POEMS_CLASSIC].map(p => p.text).join("");
 const missing = [...new Set([...allText].filter(c => /\p{Script=Han}/u.test(c) && !P.has(c)))];
 chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + missing.slice(0, 12).join("") + "）");
 /* Issue #461：古诗文大会 / 阅读大赛清单去重后，真缺的文言短篇补进小古文；
-   高中组额外篇目的 15 篇文言（劝学 / 师说 / 六国论 / 游褒禅山记等）再添一轮。
+   高中组额外篇目的 15 篇文言（劝学 / 师说 / 六国论 / 游褒禅山记等）再添一轮；
+   文汇历年真题 + 大会冷门拓展（庖丁解牛 / 项羽之死 / 诗品序 / 沧浪诗话等）再添 19 篇。
    已在他处的（过秦论 / 屈原列传 / 烛之武退秦师 / 谏太宗十思疏 等）按判重表合流，不重录。 */
-chk(d.POEMS_CLASSIC.length === 128, "小古文共 128 篇（实际 " + d.POEMS_CLASSIC.length + "）");
+chk(d.POEMS_CLASSIC.length === 147, "小古文共 147 篇（实际 " + d.POEMS_CLASSIC.length + "）");
 
 console.log("");
 console.log(fails ? "❌ " + fails + " 项失败" : "🎉 注音与朗读（内核）测试全部通过");
