@@ -39,6 +39,7 @@ LOAD.forEach(function (f) {
     { f: 'data/poems-gushi.js', v: 'POEMS_GUSHI' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
+    { f: 'scripts/data/guwen-corpus-222.js', v: 'GUWEN_CORPUS_222', book: 'guwen' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
