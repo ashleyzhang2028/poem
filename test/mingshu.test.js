@@ -1251,6 +1251,57 @@ MR_SPOT10.forEach(row => {
   chk(dup.length === 0, '历代名家一人一处（重复：' + (dup.join('、') || '无') + '）');
 })();
 
+/* ── Issue #381 用户报的两处：重复句 / 不能换行 ─────────────────────────
+   原话：
+     「我发现 基督山伯爵 文章里有一些句子重复，例如
+       这一段是全书的骨。这一段是全书的骨
+       不止一处重复，请查看所有文章是否有类似问题
+       而有很多文章 不能换行，显示 \n」
+
+   ① 重复句：素材里为凑字数，把同一句写两遍（「这一段是全书的骨。这一段是
+      全书的骨：……」）。装配前由 scripts/lib/text-normalize.js 洗掉。
+      守卫直接在**成品正文**里找「紧挨着、后句以同串开头」的重复。
+      判据取窄 —— 名句里的修辞复沓（「呜呼哀哉！」连用）不是紧挨着同文重复，
+      不误伤。 */
+function dupSpots(text) {
+  const out = [];
+  const sents = String(text || '').split(/(?<=[。！？])/);
+  for (let i = 0; i < sents.length - 1; i++) {
+    const a = sents[i].trim();
+    const b = sents[i + 1].trim();
+    if (a.length < 8 || !b) continue;
+    if (a[0] === '／' || b[0] === '／' || a[0] === '·' || b[0] === '·') continue;
+    const core = a.replace(/[。！？]$/, '');
+    if (core.length >= 8 && b.startsWith(core)) {
+      const rest = b.slice(core.length);
+      if (rest === '' || '：，。；'.indexOf(rest[0]) >= 0) out.push(core);
+    }
+  }
+  return out;
+}
+(function () {
+  const all = MS.concat(MR);
+  let spots = 0;
+  const hit = [];
+  all.forEach(p => {
+    const d = dupSpots(p.text);
+    if (d.length) { spots += d.length; hit.push(p.title); }
+  });
+  chk(spots === 0,
+    '正文无「紧挨着的重复句」（Issue #381：重复 ' + spots + ' 处' +
+    (hit.length ? '，如 ' + hit.slice(0, 5).join('、') : '') + '）');
+})();
+
+/* ② 不能换行：素材误写成字面「\n」（反斜杠 + n），渲染层按真换行切段，
+      页面上就原样显示「\n」。守卫直接查成品正文里有没有字面「\n」。 */
+(function () {
+  const all = MS.concat(MR);
+  const bad = all.filter(p => (p.text || '').indexOf('\\n') >= 0);
+  chk(bad.length === 0,
+    '正文无字面 \\n（Issue #381：应为真换行；' + bad.length + ' 条命中' +
+    (bad.length ? '，如 ' + bad.slice(0, 5).map(p => p.title).join('、') : '') + '）');
+})();
+
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 名著导读 / 历代名家语料全部通过');
 process.exit(fails ? 1 : 0);

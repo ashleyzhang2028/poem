@@ -91,9 +91,23 @@
 
   const DEFAULT_USER = "Ashley";
 
+  // 昵称的**唯一真相**是「当前子用户」那一条（`Family` 名册里的 `nickname`，
+  // 由 `Avatar` 读出来）；`settings.username` 只是老数据里的那份副本。
+  // 子用户切换/改名只动名册，所以标题必须问 `Avatar`，否则切完子用户
+  // 标题还停在上一个孩子的名字上（Issue #444）。
+  function currentNickname() {
+    const A = window.Avatar;
+    if (A && typeof A.nickname === "function") {
+      try {
+        const n = String(A.nickname(window.localStorage) || "").trim();
+        if (n) return n;
+      } catch (e) {  }
+    }
+    return String(settings.username == null ? "" : settings.username).trim();
+  }
+
   function userName() {
-    const n = String(settings.username == null ? "" : settings.username).trim();
-    return n || DEFAULT_USER;
+    return currentNickname() || DEFAULT_USER;
   }
 
   function commitNickname(value) {
@@ -138,7 +152,7 @@
     el.textContent = userName() + "的背诵";
     if (page) page.hidden = false;
 
-    el.classList.toggle("is-default", !String(settings.username || "").trim());
+    el.classList.toggle("is-default", !currentNickname());
   }
 
   function stageOf(grade) {
@@ -1480,6 +1494,28 @@
       invalidatePlan();
       rebuildToday();
     });
+
+    // 切子用户 / 改子用户昵称都不经由 `storage`（同一张表、同一页里改），
+    // 所以另接一道 `family-change`：标题、进度、计划全部按新的那个孩子重来（Issue #444）。
+    //
+    // `family-ui` 只在 document 上派发，而它**冒泡到 window** —— 两处都听会跑两遍，
+    // 用时间戳去重（同一拍里只做一次）。跨页签那一份仍归 `storage` 管，不在这里。
+    var lastFamilyChange = 0;
+    var onFamilyChange = function () {
+      var now = Date.now();
+      if (now - lastFamilyChange < 50) return;
+      lastFamilyChange = now;
+      settings = Storage.getSettings();
+      adoptHelperFromDevice();
+      applyAppName();
+      renderGradeChips();
+      invalidatePlan();
+      rebuildToday();
+      renderAll();
+    };
+    window.addEventListener("family-change", onFamilyChange);
+    document.addEventListener("family-change", onFamilyChange);
+
     syncBottomGap();
     window.addEventListener("resize", syncBottomGap);
     window.addEventListener("orientationchange", syncBottomGap);

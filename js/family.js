@@ -128,7 +128,16 @@
   function ensure(backing) {
     var b = backing === undefined ? defaultBacking() : backing;
     var data = read(b);
-    if (data.profiles.length) return { created: 0, data: data };
+    if (data.profiles.length) {
+      // 名册已经在，而不分家的老键上还留着一张图（老版本建的名册，
+      // 那时还没有「认领第一个孩子」这一手）：补一次认领。
+      //
+      // 认给**当前选中的那一个** —— 这台设备此刻用的就是他，
+      // 老键又没记 owner，只能这么判。认领之后老键撤掉，
+      // 别的孩子再来读就是空的（回自己的首字印），人与人之间不再串脸（Issue #444）。
+      if (safeGet(b, avatarLocalNS())) adoptLegacyAvatarBytes(b, data.at);
+      return { created: 0, data: data };
+    }
 
     var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
     var legacy = legacyProfile(b);
@@ -262,7 +271,23 @@
     if (!hit) return { ok: false, code: "E_NOT_FOUND" };
     hit.nickname = cleanName(name);
     if (!write(backing, data)) return { ok: false, code: "E_WRITE" };
+    syncSettingsUsername(backing, hit.id, hit.nickname);
     return { ok: true, profile: hit };
+  }
+
+  // 昵称有**两份**落点：名册这一份（权威）和 `poem_recite_settings_v1::<id>.username`
+  // 那一份（老数据留下的副本，导出备份、其它页面的兜底都还读它）。
+  // 改名只动名册的话两份就会各说各的 —— 首页标题从前读的就是那份副本，
+  // 于是「改了名，标题不跟」（Issue #444）。这里把副本一起写平，
+  // 落点是**被改的那个孩子**名下那条，与 `ProgressStore` 的拼法一致。
+  function syncSettingsUsername(backing, profileId, name) {
+    if (!backing || !profileId) return false;
+    var K = sharedKeys();
+    var key = keyFor(K.settings, profileId);
+    var cur = safeParse(safeGet(backing, key));
+    var next = (cur && typeof cur === "object" && !Array.isArray(cur)) ? cur : {};
+    next.username = cleanName(name);
+    return safePut(backing, key, JSON.stringify(next));
   }
 
   function setAvatar(profileId, patch, opt) {

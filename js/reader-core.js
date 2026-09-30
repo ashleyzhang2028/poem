@@ -270,6 +270,14 @@
   }
 
   function currentUsername() {
+    var g = typeof window !== "undefined" ? window : null;
+    var A = g && g.Avatar;
+    if (A && typeof A.nickname === "function") {
+      try {
+        var n = String(A.nickname(localStorage) || "").trim();
+        if (n) return n;
+      } catch (e) {  }
+    }
     try {
       var cfg = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") || {};
       return String(cfg.username == null ? "" : cfg.username).trim();
@@ -1971,15 +1979,26 @@
   }
 
   function saveUsername(v) {
-    var cfg = {};
-    try {
-      cfg = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") || {};
-    } catch (e) {
-      cfg = {};
+    var clean = String(v == null ? "" : v).trim().slice(0, 12);
+    var g = typeof window !== "undefined" ? window : null;
+    var A = g && g.Avatar;
+    if (A && typeof A.saveNickname === "function") {
+      try { A.saveNickname(localStorage, clean); } catch (e) {  }
     }
-    if (!cfg || typeof cfg !== "object") cfg = {};
-    cfg.username = String(v == null ? "" : v).trim().slice(0, 12);
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+    var PS = g && g.ProgressStore;
+    if (PS && typeof PS.saveUsername === "function") {
+      try { PS.saveUsername(clean); } catch (e) {  }
+    } else {
+      var cfg = {};
+      try {
+        cfg = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") || {};
+      } catch (e) {
+        cfg = {};
+      }
+      if (!cfg || typeof cfg !== "object") cfg = {};
+      cfg.username = clean;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+    }
     applyAppName();
   }
 
