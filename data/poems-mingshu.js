@@ -3982,6 +3982,39 @@ window.POEMS_MINGSHU = [
     excerpt: "一个眷村的故事"
   },
   {
+    textRef: "mingshu-ms-1192",
+    id: "ms-1192",
+    title: "伊索寓言",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古希腊",
+    author: "伊索",
+    source: "《伊索寓言》",
+    excerpt: "龟兔赛跑"
+  },
+  {
+    textRef: "mingshu-ms-1214",
+    id: "ms-1214",
+    title: "一千零一夜",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "阿拉伯",
+    author: "佚名",
+    source: "《一千零一夜》",
+    excerpt: "讲一夜，多活一天"
+  },
+  {
+    textRef: "mingshu-ms-956",
+    id: "ms-956",
+    title: "哈姆雷特",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《哈姆雷特》",
+    excerpt: "生存还是毁灭"
+  },
+  {
     textRef: "mingshu-ms-20",
     id: "ms-20",
     title: "鲁滨逊漂流记",
@@ -4004,6 +4037,17 @@ window.POEMS_MINGSHU = [
     excerpt: "小人国、大人国与慧骃国"
   },
   {
+    textRef: "mingshu-ms-1055",
+    id: "ms-1055",
+    title: "格林童话",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "德国",
+    author: "格林兄弟",
+    source: "《格林童话》",
+    excerpt: "白雪公主与小红帽"
+  },
+  {
     textRef: "mingshu-ms-28",
     id: "ms-28",
     title: "傲慢与偏见",
@@ -4013,6 +4057,28 @@ window.POEMS_MINGSHU = [
     author: "简·奥斯汀",
     source: "《傲慢与偏见》",
     excerpt: "第一印象常常是靠不住的"
+  },
+  {
+    textRef: "mingshu-ms-27",
+    id: "ms-27",
+    title: "巴黎圣母院",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "雨果",
+    source: "《巴黎圣母院》",
+    excerpt: "钟楼上那个敲钟人"
+  },
+  {
+    textRef: "mingshu-ms-1148",
+    id: "ms-1148",
+    title: "安徒生童话",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "丹麦",
+    author: "安徒生",
+    source: "《安徒生童话》",
+    excerpt: "卖火柴的小女孩"
   },
   {
     textRef: "mingshu-ms-916",
@@ -4081,6 +4147,72 @@ window.POEMS_MINGSHU = [
     excerpt: "一场空欢喜的馈赠"
   },
   {
+    textRef: "mingshu-ms-925",
+    id: "ms-925",
+    title: "悲惨世界",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "雨果",
+    source: "《悲惨世界》",
+    excerpt: "冉阿让与一块面包"
+  },
+  {
+    textRef: "mingshu-ms-990",
+    id: "ms-990",
+    title: "小妇人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "奥尔科特",
+    source: "《小妇人》",
+    excerpt: "四姐妹的成长"
+  },
+  {
+    textRef: "mingshu-ms-1109",
+    id: "ms-1109",
+    title: "战争与和平",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "托尔斯泰",
+    source: "《战争与和平》",
+    excerpt: "四个家族与一场战争"
+  },
+  {
+    textRef: "mingshu-ms-23",
+    id: "ms-23",
+    title: "海底两万里",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《海底两万里》",
+    excerpt: "跟着鹦鹉螺号下潜"
+  },
+  {
+    textRef: "mingshu-ms-21",
+    id: "ms-21",
+    title: "汤姆·索亚历险记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "马克·吐温",
+    source: "《汤姆·索亚历险记》",
+    excerpt: "刷栅栏的孩子"
+  },
+  {
+    textRef: "mingshu-ms-30",
+    id: "ms-30",
+    title: "安娜·卡列尼娜",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "托尔斯泰",
+    source: "《安娜·卡列尼娜》",
+    excerpt: "幸福的家庭都是相似的"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
@@ -4090,6 +4222,50 @@ window.POEMS_MINGSHU = [
     author: "法布尔",
     source: "《昆虫记》",
     excerpt: "荒石园里的观察者"
+  },
+  {
+    textRef: "mingshu-ms-1179",
+    id: "ms-1179",
+    title: "木偶奇遇记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "意大利",
+    author: "科洛迪",
+    source: "《木偶奇遇记》",
+    excerpt: "同一个木偶的另一译名"
+  },
+  {
+    textRef: "mingshu-ms-29",
+    id: "ms-29",
+    title: "复活",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "托尔斯泰",
+    source: "《复活》",
+    excerpt: "一个人灵魂的醒来"
+  },
+  {
+    textRef: "mingshu-ms-926",
+    id: "ms-926",
+    title: "森林报",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "维·比安基",
+    source: "《森林报》",
+    excerpt: "一年四季的森林日记"
+  },
+  {
+    textRef: "mingshu-ms-927",
+    id: "ms-927",
+    title: "假如给我三天光明",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海伦·凯勒",
+    source: "《假如给我三天光明》",
+    excerpt: "在黑暗里看见光明"
   },
   {
     textRef: "mingshu-ms-919",
@@ -4145,6 +4321,204 @@ window.POEMS_MINGSHU = [
     author: "史蒂文森",
     source: "《化身博士》",
     excerpt: "同一个人身上的两个人"
+  },
+  {
+    textRef: "mingshu-ms-941",
+    id: "ms-941",
+    title: "爱丽丝漫游奇境",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "卡罗尔",
+    source: "《爱丽丝漫游奇境》",
+    excerpt: "掉进兔子洞以后"
+  },
+  {
+    textRef: "mingshu-ms-994",
+    id: "ms-994",
+    title: "绿野仙踪",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "鲍姆",
+    source: "《绿野仙踪》",
+    excerpt: "多萝西的奥兹国"
+  },
+  {
+    textRef: "mingshu-ms-1024",
+    id: "ms-1024",
+    title: "小王子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "圣埃克苏佩里",
+    source: "《小王子》",
+    excerpt: "重要的东西用眼睛是看不见的"
+  },
+  {
+    textRef: "mingshu-ms-1040",
+    id: "ms-1040",
+    title: "八十天环游地球",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《八十天环游地球》",
+    excerpt: "一场打赌的旅程"
+  },
+  {
+    textRef: "mingshu-ms-1131",
+    id: "ms-1131",
+    title: "在人间",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《在人间》",
+    excerpt: "少年在人间讨生活"
+  },
+  {
+    textRef: "mingshu-ms-1132",
+    id: "ms-1132",
+    title: "我的大学",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《我的大学》",
+    excerpt: "喀山的一所社会大学"
+  },
+  {
+    textRef: "mingshu-ms-1166",
+    id: "ms-1166",
+    title: "堂·吉诃德",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "西班牙",
+    author: "塞万提斯",
+    source: "《堂·吉诃德》",
+    excerpt: "与风车作战的骑士"
+  },
+  {
+    textRef: "mingshu-ms-1180",
+    id: "ms-1180",
+    title: "爱的教育",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "意大利",
+    author: "亚米契斯",
+    source: "《爱的教育》",
+    excerpt: "一个四年级孩子的日记"
+  },
+  {
+    textRef: "mingshu-ms-1189",
+    id: "ms-1189",
+    title: "希腊神话故事",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "德国",
+    author: "施瓦布",
+    source: "《希腊神话故事》",
+    excerpt: "诸神与英雄的故事"
+  },
+  {
+    textRef: "mingshu-ms-34",
+    id: "ms-34",
+    title: "名人传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《名人传》",
+    excerpt: "贝多芬、米开朗琪罗、托尔斯泰"
+  },
+  {
+    textRef: "mingshu-ms-940",
+    id: "ms-940",
+    title: "柳林风声",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "格雷厄姆",
+    source: "《柳林风声》",
+    excerpt: "河岸边的四个好朋友"
+  },
+  {
+    textRef: "mingshu-ms-1023",
+    id: "ms-1023",
+    title: "绿山墙的安妮",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "加拿大",
+    author: "蒙哥马利",
+    source: "《绿山墙的安妮》",
+    excerpt: "红头发女孩被领回了家"
+  },
+  {
+    textRef: "mingshu-ms-939",
+    id: "ms-939",
+    title: "彼得·潘",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "巴里",
+    source: "《彼得·潘》",
+    excerpt: "永无岛上不肯长大的孩子"
+  },
+  {
+    textRef: "mingshu-ms-991",
+    id: "ms-991",
+    title: "秘密花园",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯内特",
+    source: "《秘密花园》",
+    excerpt: "一把钥匙开一座园子"
+  },
+  {
+    textRef: "mingshu-ms-33",
+    id: "ms-33",
+    title: "童年",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《童年》",
+    excerpt: "在外祖父家的日子"
+  },
+  {
+    textRef: "mingshu-ms-22",
+    id: "ms-22",
+    title: "钢铁是怎样炼成的",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "奥斯特洛夫斯基",
+    source: "《钢铁是怎样炼成的》",
+    excerpt: "把整个生命献给人类"
+  },
+  {
+    textRef: "mingshu-ms-995",
+    id: "ms-995",
+    title: "夏洛的网",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀特",
+    source: "《夏洛的网》",
+    excerpt: "一只蜘蛛救了一头猪"
+  },
+  {
+    textRef: "mingshu-ms-26",
+    id: "ms-26",
+    title: "老人与海",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海明威",
+    source: "《老人与海》",
+    excerpt: "一个人可以被毁灭，但不能被打败"
   },
   {
     textRef: "mingshu-ms-912",
