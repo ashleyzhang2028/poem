@@ -63,6 +63,15 @@ window.POEMS_GUSHI = [
     gradeGroup: "六朝诗",
   },
   {
+    textRef: "gushi-gs-25",
+    id: "gs-25",
+    title: "读山海经·其十",
+    source: "《陶渊明集》",
+    dynasty: "东晋",
+    author: "陶渊明",
+    gradeGroup: "六朝诗",
+  },
+  {
     textRef: "gushi-gs-11",
     id: "gs-11",
     title: "读山海经·其一",
