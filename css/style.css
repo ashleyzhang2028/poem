@@ -2003,7 +2003,8 @@ body.has-install-tip #app {
   justify-content: center;
 }
 .dock-icon svg,
-.dock-icon .avatar { width: var(--dock-icon-size); height: var(--dock-icon-size); display: block; }
+.dock-icon .avatar { width: var(--dock-icon-size); height: var(--dock-icon-size); }
+.dock-icon svg { display: block; }
 
 .dock-icon svg text { font-family: var(--font-poem); }
 .dock-label { line-height: 1; }
@@ -3327,8 +3328,7 @@ html, body {
   background: var(--bg);
   border: 1px solid var(--line-2);
   border-radius: 999px;
-  min-height: 28px;
-  padding: 0 12px;
+  padding: 1 12px;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 }

@@ -1706,7 +1706,6 @@ a.kv-row.nav-row:hover .nav-go { color: var(--green); }
 .admin-role-select {
   font: inherit;
   font-size: 13px;
-  min-height: var(--ctl-h-sm);
   padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: var(--ctl-radius);
