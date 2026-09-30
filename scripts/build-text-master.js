@@ -20,6 +20,9 @@ const LOAD = [
   'scripts/data/tangshi-corpus-461b.js', 'scripts/data/gushi-corpus-461b.js',
   'scripts/data/ci-corpus-461b.js', 'scripts/data/qu-corpus-461.js',
   'scripts/data/classic-corpus-461b.js',
+  /* Issue #471：含扬州 / 广陵 / 江都的古诗词（第一轮）—— 唐诗 / 古诗 / 词各一份。 */
+  'scripts/data/tangshi-corpus-461d.js', 'scripts/data/gushi-corpus-461d.js',
+  'scripts/data/ci-corpus-461d.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -87,6 +90,7 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/gushi-corpus.js', v: 'GUSHI_CORPUS', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-461b.js', v: 'GUSHI_CORPUS_461B', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-461c.js', v: 'GUSHI_CORPUS_461C', book: 'gushi' },
+    { f: 'scripts/data/gushi-corpus-461d.js', v: 'GUSHI_CORPUS_461D', book: 'gushi' },
     { f: 'scripts/data/classic-corpus-461.js', v: 'CLASSIC_CORPUS_461', book: 'classic' },
     { f: 'scripts/data/classic-corpus-461b.js', v: 'CLASSIC_CORPUS_461B', book: 'classic' },
     { f: 'scripts/data/classic-corpus-461c.js', v: 'CLASSIC_CORPUS_461C', book: 'classic' },
@@ -95,11 +99,13 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461b.js', v: 'TANGSHI_CORPUS_461B', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461c.js', v: 'TANGSHI_CORPUS_461C', book: 'tangshi' },
+    { f: 'scripts/data/tangshi-corpus-461d.js', v: 'TANGSHI_CORPUS_461D', book: 'tangshi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     /* Issue #461：「宋词三百首」改名「词」—— 补五代 / 金 / 清的词。 */
     { f: 'scripts/data/ci-corpus-461.js', v: 'CIWEN_CORPUS_461', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461b.js', v: 'CIWEN_CORPUS_461B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
+    { f: 'scripts/data/ci-corpus-461d.js', v: 'CIWEN_CORPUS_461D', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     /* Issue #461：古文观止补篇（222 篇对齐）—— 壳文件只存归属，
        正文在 scripts/data/guwen-corpus-222.js。语料排在壳文件之后，
