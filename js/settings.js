@@ -16,6 +16,17 @@
 
   const APP_NAME = "跬步";
   const SETTINGS_KEY = "poem_recite_settings_v1";
+  const SOUND_KEY = "poem_sound_v1";
+
+  function readSoundPref() {
+    try {
+      var v = localStorage.getItem(SOUND_KEY);
+      return v == null ? true : v !== "0";
+    } catch (e) { return true; }
+  }
+  function writeSoundPref(on) {
+    try { localStorage.setItem(SOUND_KEY, on ? "1" : "0"); } catch (e) {  }
+  }
 
   const PLAN_PREFIX = "poem_plan_";
 
@@ -146,6 +157,8 @@
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
     var helperToggle = $("#toggle-helper");
     if (helperToggle) helperToggle.checked = settings.helper === "on";
+    var soundToggle = $("#toggle-sound");
+    if (soundToggle) soundToggle.checked = readSoundPref();
 
     renderAlgos();
     renderPlayModes();
@@ -926,6 +939,14 @@
         saveSettings();
         renderControls();
         showToast(settings.helper === "on" ? "已开启自动注音" : "已关闭自动注音");
+      });
+    }
+
+    const soundToggle = $("#toggle-sound");
+    if (soundToggle) {
+      soundToggle.addEventListener("change", function () {
+        writeSoundPref(soundToggle.checked);
+        showToast(soundToggle.checked ? "已开启答题音效" : "已关闭答题音效");
       });
     }
 

@@ -1114,6 +1114,59 @@ thead .plans-th-cap {
 .game-nav { display: flex; gap: 8px; }
 .game-nav .account-btn { flex: 1 1 0; margin-top: 0; }
 
+@keyframes gameOptFlashOk {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.03); box-shadow: 0 0 0 3px var(--green-light); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+@keyframes gameOptFlashBad {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.game-opt-flash-ok { animation: gameOptFlashOk .4s ease-out; }
+.game-opt-flash-bad { animation: gameOptFlashBad .4s ease-in-out; }
+
+.game-timer-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.game-timer-fill {
+  height: 100%;
+  background: var(--green);
+  transition: width 1s linear;
+}
+.game-timer-fill.warn { background: var(--red); animation: gameTimerPulse 1s ease-in-out infinite; }
+@keyframes gameTimerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+.game-score-banner {
+  text-align: center;
+  padding: 22px 16px 18px;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  color: #fdfaf2;
+  animation: gameScorePop .4s cubic-bezier(.2, .8, .3, 1);
+}
+.game-score-banner.gold { background: linear-gradient(135deg, var(--gold), #cf9a4a); color: #4a3512; }
+.game-score-banner.green { background: linear-gradient(135deg, #4a8f75, var(--green-dark)); }
+.game-score-banner.blue { background: linear-gradient(135deg, #5b8aa6, var(--blue)); }
+.game-score-num { font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: 1px; }
+.game-score-unit { font-size: 13px; opacity: .85; margin-top: -2px; }
+.game-score-title { font-size: 15px; font-weight: 600; margin-top: 6px; }
+.game-score-sub { font-size: 12px; opacity: .85; margin-top: 2px; }
+@keyframes gameScorePop {
+  0% { transform: scale(.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .print-sheet {
   margin-top: 10px;
   padding: 14px 12px;

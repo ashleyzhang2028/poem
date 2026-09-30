@@ -191,6 +191,56 @@
     })["catch"](function () { state.server = "off"; return null; });
   }
 
+  var SOUND_KEY = "poem_sound_v1";
+
+  function soundOn() {
+    try {
+      var v = localStorage.getItem(SOUND_KEY);
+      return v == null ? true : v !== "0";
+    } catch (e) { return true; }
+  }
+
+  var audioCtx = null;
+  // Web Audio 合成，不带音频文件；答对是上扬双音，答错是低沉单音。
+  function playSound(ok) {
+    if (!soundOn()) return;
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtx) audioCtx = new Ctx();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var t0 = audioCtx.currentTime;
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.type = "sine";
+      if (ok) {
+        o.frequency.setValueAtTime(880, t0);
+        o.frequency.setValueAtTime(1318.5, t0 + 0.09);
+      } else {
+        o.frequency.setValueAtTime(220, t0);
+      }
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (ok ? 0.24 : 0.28));
+      o.start(t0);
+      o.stop(t0 + (ok ? 0.26 : 0.3));
+    } catch (e) {  }
+  }
+
+  function flashOption(k, ok) {
+    var els = $$(".game-opt");
+    var el = els[k];
+    if (!el) return;
+    var cls = ok ? "game-opt-flash-ok" : "game-opt-flash-bad";
+    el.classList.add(cls);
+    el.addEventListener("animationend", function handler() {
+      el.classList.remove(cls);
+      el.removeEventListener("animationend", handler);
+    });
+  }
+
   function pinyinOf(ch) {
     var P = window.Pinyin;
     if (!P || !P.read) return "";
@@ -532,7 +582,9 @@
         var reveal = v.judge !== "after";
     var done = !!state.graded || (reveal && !!state.checked[i]);
 
-    var html = '<section class="account-card game-head">' +
+    var html = state.graded ? renderScoreBanner(state.graded) : "";
+
+    html += '<section class="account-card game-head">' +
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
@@ -540,6 +592,11 @@
       (v.timed ? " · 剩余 " + timeLeftText() : "") +
       " · " +
       (state.server === "off" && reveal ? "本机判分（服务端没接通）" : "由服务器判分") + "</p>" +
+      (v.timed && !state.graded
+        ? '<div class="game-timer-bar"><div class="game-timer-fill" id="game-timer-fill" style="width:' +
+          Math.max(0, Math.min(100, Math.round(state.left / Math.max(1, (v.minutes || 1) * 60000) * 100))) +
+          '%"></div></div>'
+        : "") +
       (state.setupNotice ? '<p class="account-msg warn">' + esc(state.setupNotice) + "</p>" : "") +
       "</section>";
 
@@ -572,11 +629,55 @@
       "</div>" +
       (state.graded
         ? '<p class="account-msg ok">' + esc(state.graded.text) + "</p>" +
-          (state.graded.saved ? '<p class="account-hint">卷面记录已留在本机（不上云）。</p>' : "")
+          (state.graded.saved ? '<p class="account-hint">卷面记录已留在本机（不上云）。</p>' : "") +
+          (state.mode === "formal" && state.graded.cloudSaved
+            ? '<p class="account-hint">已存到「我的考试历史」（服务器）。</p>' : "")
         : '<p class="account-hint">已答 ' + answered + " / " + total + " 题。" +
           (v.judge === "after" ? "交卷后统一批改。" : "答完一题立刻说对错。") + "</p>") +
       "</section>";
     return html;
+  }
+
+  var SCORE_BANDS = [
+    { min: 90, cls: "gold", title: "太棒了！" },
+    { min: 60, cls: "green", title: "不错，继续加油！" },
+    { min: 0, cls: "blue", title: "再练一次，会更好" }
+  ];
+
+  function scoreBand(pct) {
+    for (var i = 0; i < SCORE_BANDS.length; i++) if (pct >= SCORE_BANDS[i].min) return SCORE_BANDS[i];
+    return SCORE_BANDS[SCORE_BANDS.length - 1];
+  }
+
+  function renderScoreBanner(graded) {
+    var pct = graded.total ? Math.round(graded.right / graded.total * 100) : 0;
+    var band = scoreBand(pct);
+    var shown = state.gradedAnimated ? pct : 0;
+    return '<section class="game-score-banner ' + band.cls + '">' +
+      '<div class="game-score-num" data-game-score-target="' + pct + '">' + shown + "</div>" +
+      '<div class="game-score-unit">分</div>' +
+      '<div class="game-score-title">' + esc(band.title) + "</div>" +
+      '<div class="game-score-sub">' + esc(graded.right) + " / " + esc(graded.total) + " 题对</div>" +
+      "</section>";
+  }
+
+  function animateScoreBanner() {
+    if (!state.graded || state.gradedAnimated) return;
+    var numEl = $(".game-score-num");
+    if (!numEl) return;
+    state.gradedAnimated = true;
+    var target = Number(numEl.getAttribute("data-game-score-target") || 0);
+    var t0 = null;
+    var dur = 650;
+    function step(ts) {
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      var val = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      numEl.textContent = String(val);
+      if (p < 1) window.requestAnimationFrame(step);
+      else numEl.textContent = String(target);
+    }
+    window.requestAnimationFrame(step);
   }
 
   function timeLeftText() {
@@ -606,6 +707,7 @@
     host.innerHTML = body + (state.overlayId ? renderPoemOverlay(state.overlayId) : "");
     bind();
         paintBack();
+    animateScoreBanner();
   }
 
   function startFly(levelId) {
@@ -634,6 +736,7 @@
     state.picks = state.paper.map(function () { return ""; });
     state.checked = state.paper.map(function () { return false; });
     state.graded = null;
+    state.gradedAnimated = false;
     state.left = (v.minutes || 0) * 60 * 1000;
     state.startedAt = Date.now();
         state.setupNotice = plan.short
@@ -648,6 +751,7 @@
     stopTimer();
     var v = variantOf(state.mode) || {};
     if (!v.timed || !state.paper.length) return;
+    var totalMs = Math.max(1, (v.minutes || 1) * 60 * 1000);
     state.timer = setInterval(function () {
       state.left -= 1000;
       if (state.left <= 0) {
@@ -658,6 +762,11 @@
       }
             var head = $(".game-head .account-hint");
       if (head) head.innerHTML = head.innerHTML.replace(/剩余 \d+:\d\d/, "剩余 " + timeLeftText());
+      var fill = document.getElementById("game-timer-fill");
+      if (fill) {
+        fill.style.width = Math.max(0, Math.min(100, Math.round(state.left / totalMs * 100))) + "%";
+        fill.classList.toggle("warn", state.left <= 60000);
+      }
     }, 1000);
   }
 
@@ -726,6 +835,7 @@
         : "这一卷没有题目";
 
       state.graded = graded;
+      state.gradedAnimated = false;
             if (v.record) {
         state.graded.saved = Ex.saveRecord({
           kind: state.mode, scope: state.setup.scope,
@@ -880,8 +990,14 @@
         var v = variantOf(state.mode) || {};
         if (!q || state.graded) return;
         state.picks[state.at] = q.options[k];
-                state.checked[state.at] = v.judge !== "after";
+                var reveal = v.judge !== "after";
+        state.checked[state.at] = reveal;
         render();
+        if (reveal) {
+          var justRight = q.options[k] === q.answer;
+          playSound(justRight);
+          flashOption(k, justRight);
+        }
         return;
       }
 

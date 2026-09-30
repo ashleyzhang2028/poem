@@ -181,7 +181,8 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
    表格逐点改，`bash test/run.sh` 兜底文案断言。
 3. **P2（已完成）**：服务器端考试历史——schema → 写入/列表 API → 历史 UI → 删除。
    详见 `docs/architecture.md` §4.117「P2：考试历史上服务器」。
-4. **P3**：游戏化体验——倒计时可视化、音效开关、动画反馈、每次交卷都有的成绩横幅。
+4. **P3（已完成）**：游戏化体验——倒计时可视化、音效开关、动画反馈、每次交卷都有
+   的成绩横幅。详见 `docs/architecture.md` §4.117「P3：游戏感」。
 5. **P4**：飞花令「闯关模式」（可选增量，工作量最大，放最后）。
 
 不做（本轮明确排除，避免范围蔓延）：不改错题回流复习排期（`scheduler.js` 是

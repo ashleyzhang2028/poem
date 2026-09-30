@@ -7638,3 +7638,32 @@ duration_sec/items/created_at`，`items` 是 jsonb 存逐题对错），行级�
 Supabase 控制台跑一遍 `api/_lib/schema.sql`（或至少这一节新增的那一段），
 否则浏览器手测会看到 404 "missing_table"——自动化测试用 `memoryStore`，
 不受这个影响，照样全绿。
+
+#### P3：游戏感——倒计时条、答题音效、动画反馈、每次交卷都有的成绩横幅
+
+按用户澄清（不是「90 分才特殊」，是**每一次交卷都要有醒目横幅**）落地：
+
+- **成绩横幅**：`renderPaper()` 在 `state.graded` 有值时于卷面**最上方**插入
+  `renderScoreBanner()`，按百分制三档配色——`≥90` 金（`--gold`，「太棒了！」）/
+  `60~89` 绿（「不错，继续加油！」）/ `<60` 蓝（「再练一次，会更好」），**没有一档
+  是警示色**，不做「不及格」的否定字眼。数字从 0 用 `requestAnimationFrame`
+  三次方缓出滚到目标值（`animateScoreBanner()`），`state.gradedAnimated` 挡
+  重复播放——`submit()` 交卷后为了推送「考试」记录到服务器会异步再 `render()`
+  一次，若不挡这一位，数字会从 0 再滚一遍。
+- **倒计时可视化**：`formal`（考试）原本只有纯文字「剩余 mm:ss」，加一条
+  `.game-timer-bar`（`startTimer()` 每秒之外顺手更新 `width` 与 `.warn` 类），
+  剩余 ≤60 秒变红并配一个透明度呼吸动画，不是干巴巴一行字。
+- **答题音效**：`js/game.js` 用 Web Audio 振荡器**现场合成**（不带音频文件，
+  离线仍可用）——答对是上扬双音（880→1318.5Hz），答错是低沉单音（220Hz）。
+  只在 `judge !== "after"` 的即时判分题型（题库复习 / 模拟考试）触发，**考试
+  交卷前不给对错**这条老规矩不受影响（没有「声音提前泄题」这回事）。
+  开关 `poem_sound_v1`（默认开），登在 `settings/reader/index.html`
+  「答题音效」胶囊开关，与 `js/sync-coverage.js` 的设备域一类
+  （跟设备走，不跟账号走——换一台没插耳机的设备不该被迫继承静音）。
+- **动画反馈**：选中选项那一刻，`flashOption()` 找到刚渲染出的那颗按钮，
+  答对是缩放+绿色描边一闪（`gameOptFlashOk`），答错是左右轻抖
+  （`gameOptFlashBad`），`animationend` 一次性收尾，不残留常驻类名。
+
+**验证**：真机核过（Chromium + CDP）——`小学` 范围下答题触发 `game-opt-flash-bad`
+类名、交卷后 `.game-score-banner` 按分数出正确档位（0 分→蓝、90 分→金，
+逐字核对文案与数字），`bash test/run.sh` 27 层全绿。`sw.js` v308 → **v309**。

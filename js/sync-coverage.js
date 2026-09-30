@@ -235,6 +235,11 @@
            "游戏层不许自己写等级（§4.15 ④）。"
     },
     {
+      key: "poem_sound_v1", sync: false, row: "", merge: "", cap: WHY.device,
+      why: "答题音效开关（飞花令 / 考试类题型），跟设备走，不跟账号走 —— " +
+           "同一个人换一台没插耳机的设备，不该被迫继承「静音」这条偏好。"
+    },
+    {
       key: "poem_plan_", sync: false, row: "", merge: "", cap: WHY.trans,
       why: "今日计划在 **sessionStorage** 里的缓存（`poem_plan_<日期>_<年级>…`）：" +
            "它是一份**算出来的**结果，不是数据 —— 换台设备重算一次就有，推上去纯属浪费。" +
