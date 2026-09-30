@@ -2706,7 +2706,7 @@ function examRecordPublic(row) {
   };
 }
 
-// 只记「考试」（exam.formal）这一种形态，模拟考试 / 题库复习不上云（§4.66）。
+// 只记「考试」（exam.formal）这一种形态，模拟考试 / 题库不上云（§4.66）。
 function examRecordCreate(deps, input) {
   var cfg = deps.cfg, store = deps.store, t = deps.now();
   if (!cfg.hasSession()) {

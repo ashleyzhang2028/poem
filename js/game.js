@@ -10,7 +10,7 @@
     {
       id: "fly", cap: "feihualing", tier: "max",
       name: "飞花令",
-      desc: "给一个令字，写出所有带这个字的句子",
+      desc: "给一个令字，写出带此字的诗词",
       unit: "句"
     }
   ];
@@ -841,7 +841,7 @@
           right: graded.right, total: graded.total
         }).ok;
       }
-      // 只有「考试」上云（模拟考试 / 题库复习不上云，§4.66）
+      // 只有「考试」上云（模拟考试 / 题库不上云，§4.66）
       if (state.mode === "formal" && window.AccountApi && AccountApi.examRecordCreate) {
         var items = graded.rows.map(function (r, i) {
           var q = state.paper[i] || {};
@@ -1068,7 +1068,7 @@
     if (!C || standalone()) return;
     if (!mode) { C.setPage(""); C.setSub(""); return; }
     C.setPage("古诗词大会");
-    C.setSub("飞花令 · 题库复习 · 模拟考试 · 考试");
+    C.setSub("飞花令 · 题库 · 模拟考试 · 考试");
   }
 
     function paintBack() {

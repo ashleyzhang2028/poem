@@ -20,7 +20,7 @@
 - 落点：`/dahui/` 独立页，挂 `js/quiz.js`（出题内核）+ `js/exam.js`（考试形态内核，
   纯逻辑无 DOM）+ `js/game.js`（渲染 + 交互，`PoemGame`）。
 - 「玩法卡」目前是 4 张：`fly`（飞花令，`js/game.js` 自己实现）+ 3 种考试形态
-  （`js/exam.js` 的 `VARIANTS`：`practice` 题库复习 / `mock` 模拟考试 / `formal` 正式考试）。
+  （`js/exam.js` 的 `VARIANTS`：`practice` 题库 / `mock` 模拟考试 / `formal` 正式考试）。
 - 范围 `scope`：唯一来源 `SITE_BOOKS`，`Ex.scopes(corpus())` 算出「全部 / 单部集子 /
   小学·初中·高中」清单；用户在首页勾选，存 `state.scopes` → `state.setup.scope`。
 - 考试记录：`formal`/`mock` 都有 `record: true`，但只存本机 `poem_exam_v1`
@@ -88,7 +88,7 @@
 ### 「玩法」→「题型」的措辞统一
 
 当前四张卡在文案里混用「玩法」（`data-sub`、`README.md`、`architecture.md`）。
-统一后文案一律用「题型」：飞花令、题库复习、模拟考试、考试——**四种题型**。
+统一后文案一律用「题型」：飞花令、题库、模拟考试、考试——**四种题型**。
 `js/game.js` 里 `modeOf()` 等函数名不必跟着改（内部实现细节，不是文案），
 只改用户可见文案与文档措辞。
 
@@ -98,7 +98,7 @@
 
 - **要上云**：`formal`（改名后的「考试」）——因为它有限时、交卷后统一判、
   且用户明确要「历史记录」「查看」「删除」这类跨设备语义。
-- **不上云**：`mock`（模拟考试）、`practice`（题库复习）——保持本机 `poem_exam_v1`
+- **不上云**：`mock`（模拟考试）、`practice`（题库）——保持本机 `poem_exam_v1`
   轻量记录即可，用户诉求原文是「所有考试（不含模拟考试）」。
 
 ### 2. 表设计（参照 `pinyin_proposals`/`feedback_threads` 的既有写法）

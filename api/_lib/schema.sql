@@ -404,7 +404,7 @@ create index if not exists feedback_comments_tid_idx on public.feedback_comments
 alter table public.feedback_comments enable row level security;
 
 -- ==========================================================================
--- 12. 考试历史（只记「考试」这一种形态，不含模拟考试 / 题库复习）
+-- 12. 考试历史（只记「考试」这一种形态，不含模拟考试 / 题库）
 -- ==========================================================================
 -- 只有登录用户能考「考试」（exam.formal，Max 门槛），交卷即写一条；用户能看
 -- 自己的历史、能删自己的历史。这是个人记录，不是待复核的公共数据，不设
