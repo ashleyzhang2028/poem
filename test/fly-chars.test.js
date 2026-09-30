@@ -117,7 +117,44 @@ chk(!/data-game-reset/.test(game), '它的分支与 data-game-reset 一并删了
 chk(!/先自己想/.test(game), '「先自己想，想完了再点开对一对」那句没了');
 chk(!/判分是逐字比对/.test(game), '「判分是逐字比对」那句没了');
 chk(/game-said-msg/.test(game) && /function checkSaid/.test(game),
-  '「核一核」那条判分**留着**（删的是那句话，不是功能）');
+  '「回答」那条判分**留着**（改的是按钮上的字，不是功能）');
+
+// --- ⑧ 作答卡的三处文案（Issue #356 第五轮）---------------------------------
+// 用户原话：「删除 —— 这是合集里实际能对上的句数。」「自己写一句试试 修改为
+// 作答」「整句照抄，例如日月之行 修改为 云深不知处」「核一核 修改为 回答」。
+// 注意最后一项：用户要换的是**按钮上的字**，「核一核」这条判分逻辑一个字没动。
+// 只扫**渲染模板**（renderFly 那两段 HTML），不扫注释 —— 注释里复述旧说法
+// 不该把测试扫红，而界面上真出现旧说法必须红。
+const flyHtml = (game.match(/function renderFly\(\)[\s\S]*?\n  \}/) || [''])[0];
+chk(!!flyHtml, '找得到 renderFly() 的渲染片段');
+chk(!/这是合集里实际能对上的句数/.test(flyHtml),
+  '句数后面那句「—— 这是合集里实际能对上的句数。」删了（用户：删除）');
+chk(/account-card-title">作答</.test(flyHtml),
+  '卡片标题是「作答」（用户：自己写一句试试 修改为 作答）');
+chk(!/自己写一句试试/.test(flyHtml), '界面上没有「自己写一句试试」了');
+chk(/placeholder="云深不知处"/.test(flyHtml),
+  'placeholder 例句是「云深不知处」（用户：整句照抄，例如日月之行 修改为 云深不知处）');
+chk(!/整句照抄/.test(flyHtml), '界面上没有「整句照抄」这个引导了');
+chk(/data-game-say="1">回答</.test(flyHtml),
+  '按钮是「回答」（用户：核一核 修改为 回答）');
+chk(!/核一核/.test(flyHtml), '界面上没有「核一核」了');
+
+// --- ⑨ 提示字（::placeholder）有自己的字号（Issue #356 第五轮）---------------
+// 用户原话：「这个 placeholder 的字号有点大了，默认值应该没这么大」。
+// 根因：`.account-input` 从前**没有自己的 font-size** —— 全站只剩 style.css
+// 末尾那条 iOS 防缩放规则（≤700px 一律 16px）在管它，于是它跟周围的 13/14px
+// 格格不入。而 iOS 那个判定看的是**输入框自身**的 computed font-size，
+// **不是**占位文字的，所以 ::placeholder 可以单独调小、防缩放那条线不动
+// （`.search-input::placeholder` 早就是同一个写法）。
+chk(/\.account-input::placeholder\s*\{[^}]*font-size:/.test(css),
+  '::placeholder 有自己的 font-size（与输入框自身解耦）');
+chk(/\.account-input::placeholder\s*\{[^}]*--search-placeholder-font/.test(css),
+  'placeholder 字号取自 --search-placeholder-font（与搜索框提示字同档，不另写一个死数）');
+const acctInputBlock = (css.match(/\n\.account-input\s*\{[^}]*\}/) || [''])[0];
+chk(/font-size:\s*var\(--ctl-font-md\)/.test(acctInputBlock),
+  '.account-input 自己有 font-size（不许再裸奔，靠 UA 默认 + iOS 那条决定）');
+chk(/input:not\(\[type="checkbox"\]\)/.test(fs.readFileSync(path.join(root, 'css/style.css'), 'utf8')),
+  'iOS 防缩放那条规则照旧在（手机档输入框仍是 16px，不许为了界面把这条拉掉）');
 
 console.log('');
 if (fails) { console.log('失败 ' + fails + ' 项'); process.exit(1); }
