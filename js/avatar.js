@@ -43,11 +43,18 @@
 
     function localRaw(backing) {
     var k = localKey(backing);
-    if (k !== LOCAL_NS) {
-      var own = safeGet(backing, k);
-      if (own) return own;
-    }
-    return safeGet(backing, LOCAL_NS);
+    if (k === LOCAL_NS) return safeGet(backing, LOCAL_NS);
+
+    // 有「你是谁」这一层时，**只读名下那一把**，不再回落到不分家的老键
+    // （Issue #444）。
+    //
+    // 老键是设备域的一份：谁都能读。一旦把它当公共那一张，任何
+    // 「自己没传过头像」的子用户都会顶着别人的脸 —— 切了子用户、头像不变，
+    // 正是用户报的那件事。归谁**没法从键上知道**（它没记 owner），
+    // 所以这里不猜：名下没有就**回自己的首字印**。
+    // 老用户那张图不会因此丢 —— 建名册时 `Family.ensure()` 已经把它搬给
+    // 第一个孩子并撤掉老键（`family.js` 的 `adoptLegacyAvatarBytes`）。
+    return safeGet(backing, k) || null;
   }
 
   function currentChild(backing) {

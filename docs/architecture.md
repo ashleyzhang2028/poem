@@ -427,3 +427,75 @@ Supabase 控制台跑一遍 `api/_lib/schema.sql`（或至少这一节新增的�
 **验证**：真机核过（Chromium + CDP）——`小学` 范围下答题触发 `game-opt-flash-bad`
 类名、交卷后 `.game-score-banner` 按分数出正确档位（0 分→蓝、90 分→金，
 逐字核对文案与数字），`bash test/run.sh` 27 层全绿。`sw.js` v308 → **v309**。
+
+---
+
+### 4.59 切子用户：首页标题不跟、头像串脸（2026-09-29 · 回答 Issue #444）
+
+用户原话：
+
+> 「目前创建子用户，子用户切换时，我的页面 顶部卡片内的头像应该要跟随子用户
+>   切换而变化，然后右下角我的里面的头像也应该跟随子用户切换而更换头像
+>   当设置子用户昵称，顶部卡片名称会跟着自动更新，但是回到背诵首页，标题中
+>   跬步后面 xxx 的背诵没有应用子用户的昵称」
+
+#### 一、根因：昵称与头像各有**两份落点**，接的却不是同一份
+
+| 谁 | 权威落点 | 谁在读 | 切子用户时 |
+|---|---|---|---|
+| 子用户昵称 | `poem_family_v1` 名册里那条 `nickname` | `Avatar.nickname()`、「我的」页身份行、名册面板 | ✅ 跟着走 |
+| 同一个昵称的**副本** | `poem_recite_settings_v1::<id>.username` | **首页标题**（`js/app.js` 的 `userName()`）、阅读器 `currentUsername()` | ❌ 不动 |
+| 头像地址 | 名册里那条 `avatar.img` | `Avatar` | ✅ 跟着走 |
+| 本机那份头像**字节** | `poem_avatar_local_v1::<id>` | `Avatar`（优先显示的那一份） | 见下 |
+
+三处症状、两条根因：
+
+1. **首页标题读的是副本**。`Family.rename()` 只写名册，副本停在旧名；而
+   `js/app.js` 的 `userName()` 只读 `settings.username`（那份副本）——
+   于是「改了名，标题不跟」。阅读器那一页的 `currentUsername()` 更早一层：
+   它直接读**未分家**的 `localStorage["poem_recite_settings_v1"]`，
+   连当前是哪个孩子都不问。
+2. **本机那份头像字节的回落串脸**。`Avatar.localRaw()` 在「当前子用户名下
+   没有字节」时会回落到不分家的老键 `poem_avatar_local_v1`。老键是设备域的
+   一份，谁都能读 —— 于是任何「自己没传过头像」的子用户都顶着上一个人的脸：
+   切过去头像不变，正是用户报的那件事。
+
+#### 二、做法：昵称以名册为唯一真相，老键不再当公共的那一张
+
+- **首页标题改口**：`js/app.js` 新增 `currentNickname()`，先问
+  `Avatar.nickname()`（名册那条），名册没有才回落 `settings.username`。
+  `syncBrandPage()` 的 `is-default` 判据同源。
+- **改名把副本写平**：`js/family.js` 的 `rename()` 新增
+  `syncSettingsUsername()`，把被改那个孩子名下的那份 `settings.username`
+  一并写平 —— 老副本不再各说各的（导出备份、其它页面的兜底还读它）。
+- **阅读器改口**：`js/reader-core.js` 的 `currentUsername()` 也先问
+  `Avatar.nickname()`；`saveUsername()` 改走 `Avatar.saveNickname()` +
+  `ProgressStore.saveUsername()`，写得进名册，不再只手写老键。
+- **接上 `family-change`**：`js/app.js` 从前只接 `storage`（跨页签），
+  而切子用户 / 改名都发生在同一页里，`storage` 不响 —— 标题要等刷新才换。
+  现在另接一道 `family-change`，把标题、进度、计划按新的那个孩子全部重来。
+- **头像不再串脸**：`Avatar.localRaw()` 有「你是谁」这一层时**只读名下那一把**，
+  名下没有就回自己的首字印；老用户那张图不丢 —— 建名册时
+  `Family.ensure()` 已把它搬给第一个孩子并撤掉老键（`adoptLegacyAvatarBytes`）。
+  另外给**已经建好名册**的老版本补一次认领：`ensure()` 发现老键还在，
+  就归当前选中的那一个再撤掉（老键没记 owner，只能这么判）。
+
+#### 三、这一层怎么守
+
+`test/family.test.js` 七之三：改名后老副本一起写平、新建另一个孩子不动当前
+副本、切过去副本读的是对应那条。
+
+七之四：老键上留着一张图时，「自己没传过头像」的孩子回自己的首字印、
+画出来的图不含别人的字节；名册已在时 `ensure()` 补认领后老键撤掉、
+别的孩子回首字印。
+
+七之五：`js/app.js` 问 `Avatar.nickname()` 且接了 `family-change`；
+`js/reader-core.js` 的 `currentUsername` / `saveUsername` 都问 `Avatar`；
+`js/family.js` 有 `syncSettingsUsername` 与老键补认领。
+
+`sw.js` 的 `CACHE_NAME` 与 `js/settings-nav.js` 的 `APP_VERSION` 一起
+到 **v315 / 0.1.292**（README 那条纪律：动了 `js/` 就得推版本，多个 PR 并行时每个 +5）。
+
+⚠️ 用户报告里「顶栏 / 底栏那两处头像」经真机（jsdom + 本地服务）复核**已经跟着走**
+（#320 修好的那条路），本轮实际补的是「老键串脸」这一族 —— 也就是
+**上一个人传过头像、当前这个人没传过时**才现形的那一种。
