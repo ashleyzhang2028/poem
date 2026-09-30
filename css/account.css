@@ -1165,16 +1165,30 @@ thead .plans-th-cap {
 .game-line-src { font-size: 11px; color: var(--ink-3); }
 .game-hit { background: transparent; color: var(--red); font-weight: 600; }
 
-.game-history-list { display: flex; flex-direction: column; gap: 6px; }
+/* 考试记录：**列表形态**（用户 2026-09-30：「这里用列表形态，也就是不要圆角背景色
+   了，间隔着显示这个背景色 白色，当背景色，白色，去掉圆角弧度。去掉列表的左右
+   padding」）。从前每一行是各自一块 `.radius-sm` 的米色小方块（`background: var(--bg)`
+   + `border-radius`），四行摞起来像四张卡；现在是一条清单：
+   ① 行**不带圆角**、默认透明（卡片底色透出来就是白）；
+   ② 奇数行铺 `--bg` 米色 —— 「米色 / 白 / 米色 / 白」交替，行自己分得开，
+      不必再靠 `gap` 撑缝（`gap` 也一并去掉了）；
+   ③ 清单用 `margin: 0 -14px` 反向吃回卡片的左右内边距（`.account-card` 是
+      `padding: 16px 14px`），让条纹一直铺到卡片边缘 —— 这就是「去掉列表的左右
+      padding」；行自己留 `padding: ... 14px`，文字仍与标题对齐。 */
+.game-history-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -14px;
+}
 .game-history-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 9px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  padding: 9px 14px;
+  background: transparent;
 }
+.game-history-row:nth-child(odd) { background: var(--bg); }
 .game-history-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .game-history-score { font-size: 16px; font-weight: 600; color: var(--green); }
 .game-history-meta { font-size: 11px; color: var(--ink-3); }
