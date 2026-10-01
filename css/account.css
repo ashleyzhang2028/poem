@@ -2306,7 +2306,10 @@ button.pf-ch.is-active rt { color: #fdfaf2; }
 
 @media (max-width: 480px) {
   .admin-nav-item {
-    padding: 12px 0px;
+    /* 左右内边距不能被抹成 0（用户 2026-10-01：「左侧的 SVG 图标过于贴近
+       左侧边框」）。卡片本身只有 14px 内边距，这一行再不留白，图标就顶到
+       卡片边上了。收一点高度，左右照旧留够。 */
+    padding: 12px 14px;
     gap: 12px;
   }
 
