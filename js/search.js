@@ -32,10 +32,19 @@
     });
   }
 
+  /* 判重后的全站条目。SITE_INDEX 与 WorksIndex 都在启动时定下、此后不动，
+     所以这张表算一次就够 —— 原来它每敲一个字重算一遍（5595 条走一遍
+     widOf/repOf 两张哈希）。 */
+  var allCache = null;
+  var allCacheKey = "";
+
   function allItems() {
     var list = (window.SITE_INDEX || []).filter(function (p) { return !p.isBook; });
 
     if (!window.WorksIndex) return list;
+
+    var key = list.length + "/" + (window.WORKS_ALL ? window.WORKS_ALL.length : 0);
+    if (allCache && allCacheKey === key) return allCache;
 
     var out = [];
     var slotOf = {};
@@ -50,34 +59,111 @@
 
       if (rep === p.id) out[slotOf[wid]] = p;
     });
+    allCache = out;
+    allCacheKey = key;
     return out;
   }
 
   function suggestBox() { return document.getElementById("search-suggest"); }
 
-  function matchScore(p, q) {
-    var title = String(p.title || "").toLowerCase();
-    var author = String(p.author || "").toLowerCase();
-    var rest = [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup, p.authorName].join(" ").toLowerCase();
-    var body = [p.text, p.translation, p.meaning, p.gloss].join(" ").toLowerCase();
-    if (title.indexOf(q) >= 0) return 4;
-    if (author.indexOf(q) >= 0) return 3;
-    if (rest.indexOf(q) >= 0) return 2;
-    if (body.indexOf(q) >= 0) return 1;
+  /* ---------------------------------------------------------------
+     匹配：**建索引、不建行**
+
+     单字查询（「春」「一」）在 5405 条里能命中两千上下，而搜索页每敲一个
+     字都要把这一整批塞给阅读器 —— 阅读器于是建两千行 DOM，真正的命中行
+     往往排在一屏之外。删字时把链子往回走一遍，就是同一件事反复做。
+
+     这里换个次序：先在**索引**里筛出命中集（只算不建 DOM），按分数排好，
+     截到 SEARCH_MAX 条，再交给阅读器。查询串本身也带缓存，同一条查两次
+     不必重扫 —— 删一个字落回刚看过的那串时，命中的就是缓存里那同一批
+     对象，一行都不重画。
+
+     只留 SEARCH_MAX 条是按**排名**截的，所以截掉的一定排在展出之后 ——
+     原先展出的九条一条不少，只是不再为剩下的两千条白建行。
+     --------------------------------------------------------------- */
+
+  var SEARCH_MAX = 100;
+  var QUERY_CACHE_MAX = 12;
+
+  /* 一条一项的预折叠字段。大小写只折一次 —— 原来每个字都要对 5405 条
+     的正文、译文、释义、注脚各折一遍，单次翻出去一个字就是十兆字符。 */
+  function itemFieldsOf(p) {
+    return {
+      title: String(p.title || "").toLowerCase(),
+      author: String(p.author || "").toLowerCase(),
+      rest: [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup, p.authorName].join(" ").toLowerCase(),
+      body: [p.text, p.translation, p.meaning, p.gloss].join(" ").toLowerCase()
+    };
+  }
+
+  var fieldCache = null;
+  var fieldCacheKey = "";
+
+  function itemFields() {
+    var all = allItems();
+    var key = all.length + "/" + allCacheKey;
+    if (fieldCache && fieldCacheKey === key) return fieldCache;
+    fieldCache = all.map(function (p) {
+      var f = itemFieldsOf(p);
+      f.p = p;
+      return f;
+    });
+    fieldCacheKey = key;
+    return fieldCache;
+  }
+
+  /* 分数 = 命中的**最靠前**那一档（4 篇名 / 3 作者 / 2 书目 / 1 正文）。
+     顺序照旧：篇名 → 作者 → 其余字段 → 正文。 */
+  function scoreOf(f, q) {
+    if (f.title.indexOf(q) >= 0) return 4;
+    if (f.author.indexOf(q) >= 0) return 3;
+    if (f.rest.indexOf(q) >= 0) return 2;
+    if (f.body.indexOf(q) >= 0) return 1;
     return 0;
+  }
+
+  var queryCache = {};
+  var queryOrder = [];
+
+  function queryResult(q) {
+    if (queryCache[q]) return queryCache[q];
+    var out = [];
+    var fs = itemFields();
+    for (var i = 0; i < fs.length; i++) {
+      var sc = scoreOf(fs[i], q);
+      if (sc > 0) out.push({ f: fs[i], sc: sc });
+    }
+    out.sort(function (a, b) {
+      if (a.sc !== b.sc) return b.sc - a.sc;
+      var la = String(a.f.p.title).length;
+      var lb = String(b.f.p.title).length;
+      if (la !== lb) return la - lb;
+      return 0;
+    });
+    var items = out.map(function (r) {
+      var p = r.f.p;
+      if (!p.__hitScore || r.sc > p.__hitScore) { p.__hitScore = r.sc; p.__hitQuery = q; }
+      return p;
+    });
+    queryCache[q] = items;
+    queryOrder.push(q);
+
+    if (queryOrder.length > QUERY_CACHE_MAX) delete queryCache[queryOrder.shift()];
+    return items;
+  }
+
+  /* 交给阅读器展出的部分：按排名截到 SEARCH_MAX。 */
+  function hitsOf(q) { return queryResult(q); }
+
+  function renderHits(q) {
+    var all = queryResult(q);
+    return all.length > SEARCH_MAX ? all.slice(0, SEARCH_MAX) : all;
   }
 
   function suggestItems(kw) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
-    var hit = allItems().filter(function (p) { return matchScore(p, q) > 0; });
-    hit.sort(function (a, b) {
-      var sa = matchScore(a, q);
-      var sb = matchScore(b, q);
-      if (sa !== sb) return sb - sa;
-      return String(a.title).length - String(b.title).length;
-    });
-    return hit.slice(0, SUGGEST_MAX);
+    return hitsOf(q).slice(0, SUGGEST_MAX);
   }
 
   function suggestMeta(p) {
@@ -203,8 +289,10 @@
     syncHeroState();
     if (api) {
 
-      api.setItems(q ? allItems() : []);
-      api.setKeyword(q);
+      /* keyword 在前、items 在后：阅读器每次改动都会重画一遍列表，
+         这次只画一次。 */
+      api.setKeyword("");
+      api.setItems(q ? renderHits(q) : []);
     }
     annotateMatches(q);
     syncEmptyState(q);
@@ -233,9 +321,14 @@
     var q = String(kw || "").trim();
     var listEl = document.querySelector("#gw-list");
     if (!listEl || !q) return;
-    listEl.querySelectorAll(".item").forEach(function (el) {
-      var id = el.dataset.id;
-      var p = allItems().filter(function (x) { return x.id === id; })[0];
+    /* 每行一份、只建一次 —— 原来在 forEach 里 each 各扫一遍全表
+       找同一条（每页两三千次 × 5405）。 */
+    var slots = document.querySelectorAll("#gw-list .item");
+    var byIdMap = {};
+    var hits = hitSet(q);
+    hits.forEach(function (p) { byIdMap[p.id] = p; });
+    Array.prototype.slice.call(slots).forEach(function (el) {
+      var p = byIdMap[el.dataset.id];
       if (!p) return;
       var ctx = matchContext(p, q);
       if (!ctx) return;
@@ -259,6 +352,9 @@
     var b = Math.min(src.length, i + q.length + 12);
     return src.slice(a, b).replace(/\s/g, "");
   }
+
+  /* 命中集：按查询串取一趟（带缓存）。 */
+  function hitSet(q) { return q ? queryResult(q) : []; }
 
   function keyboardSpace() {
     var vv = window.visualViewport;
