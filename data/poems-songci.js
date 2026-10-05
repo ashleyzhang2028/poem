@@ -3143,6 +3143,15 @@ window.POEMS_SONGCI = [
     author: "夏完淳",
     gradeGroup: "词牌 · 洞仙歌",
   },
+  {
+    textRef: "songci-sc-318",
+    id: "sc-318",
+    source: "《漱玉词》",
+    title: "减字木兰花·卖花担上",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 减字木兰花",
+  },
 ];
 
 (function () {
