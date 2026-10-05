@@ -3174,6 +3174,19 @@ window.POEMS_SONGCI = [
     author: "李清照",
     gradeGroup: "词牌 · 减字木兰花",
   },
+
+  /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。
+     正文在 scripts/data/ci-corpus-461f.js，此处只挂 textRef 归属。 */
+  { textRef: "songci-sc-321", id: "sc-321", title: "望江南·超然台作", source: "《东坡乐府》", dynasty: "宋", author: "苏轼", gradeGroup: "词牌 · 望江南" },
+  { textRef: "songci-sc-322", id: "sc-322", title: "行香子·过七里濑", source: "《东坡乐府》", dynasty: "宋", author: "苏轼", gradeGroup: "词牌 · 行香子" },
+  { textRef: "songci-sc-323", id: "sc-323", title: "满庭芳·蜗角虚名", source: "《东坡乐府》", dynasty: "宋", author: "苏轼", gradeGroup: "词牌 · 满庭芳" },
+  { textRef: "songci-sc-324", id: "sc-324", title: "西江月·世事一场大梦", source: "《东坡乐府》", dynasty: "宋", author: "苏轼", gradeGroup: "词牌 · 西江月" },
+  { textRef: "songci-sc-325", id: "sc-325", title: "阮郎归·初夏", source: "《东坡乐府》", dynasty: "宋", author: "苏轼", gradeGroup: "词牌 · 阮郎归" },
+  { textRef: "songci-sc-326", id: "sc-326", title: "点绛唇·蹴罢秋千", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 点绛唇" },
+  { textRef: "songci-sc-327", id: "sc-327", title: "鹧鸪天·桂花", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 鹧鸪天" },
+  { textRef: "songci-sc-328", id: "sc-328", title: "添字丑奴儿·窗前谁种芭蕉树", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 添字丑奴儿" },
+  { textRef: "songci-sc-329", id: "sc-329", title: "清平乐·年年雪里", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 清平乐" },
+  { textRef: "songci-sc-330", id: "sc-330", title: "摊破浣溪沙·病起萧萧两鬓华", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 摊破浣溪沙" },
 ];
 
 (function () {
