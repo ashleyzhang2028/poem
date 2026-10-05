@@ -27,6 +27,8 @@ const LOAD = [
   'scripts/data/ci-corpus-471.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
+  /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
+  'scripts/data/ci-corpus-461f.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -112,6 +114,8 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-461d.js', v: 'CIWEN_CORPUS_461D', book: 'songci' },
     { f: 'scripts/data/ci-corpus-471.js', v: 'CIWEN_CORPUS_471', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
+    /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */
+    { f: 'scripts/data/ci-corpus-461f.js', v: 'CIWEN_CORPUS_461F', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     /* Issue #461：古文观止补篇（222 篇对齐）—— 壳文件只存归属，
        正文在 scripts/data/guwen-corpus-222.js。语料排在壳文件之后，
