@@ -23,6 +23,8 @@ const LOAD = [
   /* Issue #471：含扬州 / 广陵 / 江都的古诗词（第一轮）—— 唐诗 / 古诗 / 词各一份。 */
   'scripts/data/tangshi-corpus-461d.js', 'scripts/data/gushi-corpus-461d.js',
   'scripts/data/ci-corpus-461d.js',
+  /* Issue #471：李清照词补录 —— 如梦令·昨夜雨疏风骤、怨王孙·春暮。 */
+  'scripts/data/ci-corpus-471.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -106,6 +108,7 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-461b.js', v: 'CIWEN_CORPUS_461B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461d.js', v: 'CIWEN_CORPUS_461D', book: 'songci' },
+    { f: 'scripts/data/ci-corpus-471.js', v: 'CIWEN_CORPUS_471', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     /* Issue #461：古文观止补篇（222 篇对齐）—— 壳文件只存归属，
        正文在 scripts/data/guwen-corpus-222.js。语料排在壳文件之后，
