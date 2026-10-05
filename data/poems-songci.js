@@ -3143,11 +3143,33 @@ window.POEMS_SONGCI = [
     author: "夏完淳",
     gradeGroup: "词牌 · 洞仙歌",
   },
+  /* ---- Issue #471：李清照词补录（先占 318 / 319）---- */
   {
     textRef: "songci-sc-318",
     id: "sc-318",
+    title: "如梦令·昨夜雨疏风骤",
     source: "《漱玉词》",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 如梦令",
+  },
+  {
+    textRef: "songci-sc-319",
+    id: "sc-319",
+    title: "怨王孙·春暮",
+    source: "《漱玉词》",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 怨王孙",
+  },
+
+  /* Issue #461：李清照《减字木兰花·卖花担上》——
+     原按「集内末尾 +1」取的 318 已被上一轮占了，让号移到 320。 */
+  {
+    textRef: "songci-sc-320",
+    id: "sc-320",
     title: "减字木兰花·卖花担上",
+    source: "《漱玉词》",
     dynasty: "宋",
     author: "李清照",
     gradeGroup: "词牌 · 减字木兰花",

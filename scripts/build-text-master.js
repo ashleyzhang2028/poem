@@ -23,7 +23,9 @@ const LOAD = [
   /* Issue #471：含扬州 / 广陵 / 江都的古诗词（第一轮）—— 唐诗 / 古诗 / 词各一份。 */
   'scripts/data/tangshi-corpus-461d.js', 'scripts/data/gushi-corpus-461d.js',
   'scripts/data/ci-corpus-461d.js',
-  /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录。 */
+  /* Issue #471：李清照词补录 —— 如梦令·昨夜雨疏风骤、怨王孙·春暮。 */
+  'scripts/data/ci-corpus-471.js',
+  /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
@@ -108,6 +110,7 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-461b.js', v: 'CIWEN_CORPUS_461B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461d.js', v: 'CIWEN_CORPUS_461D', book: 'songci' },
+    { f: 'scripts/data/ci-corpus-471.js', v: 'CIWEN_CORPUS_471', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     /* Issue #461：古文观止补篇（222 篇对齐）—— 壳文件只存归属，
@@ -491,6 +494,27 @@ if (dupInline.length) {
   console.log('（' + dupInline.length + ' 条条目与主表那一份同时带着正文 —— ' +
     '本轮刚收上来的，接着跑 scripts/apply-text-master.js 摘去内联副本）');
 }
+
+/* 让号重排最容易犯的错是「重号」：两个语料文件各按「集内末尾 +1」取号，
+   分头开发时看不到对方，合流时撞在同一个坑里（#461 的 sc-318 撞上 #471 的
+   sc-318）。这里当场点名 —— 拼错 id 的那份语料会被覆盖掉一个，静默丢篇。 */
+(function () {
+  const byEntry = {};
+  master.forEach(function (m) {
+    (m.entries || []).forEach(function (e) {
+      (byEntry[e] = byEntry[e] || []).push(m.id);
+    });
+  });
+  const clash = Object.keys(byEntry).filter(function (e) { return byEntry[e].length > 1; });
+  if (clash.length) {
+    console.error('✗ 有 ' + clash.length + ' 个条目 id 挂在主表的多条记录上：');
+    clash.slice(0, 8).forEach(function (e) {
+      console.error('    ' + e + ' → ' + byEntry[e].join('、'));
+    });
+    console.error('  多半是两份语料各行其是、取了同一个号 —— 让晚占的那篇移号。');
+    process.exit(1);
+  }
+})();
 
 const empty = master.filter(function (m) { return !m.text; });
 if (empty.length) {
