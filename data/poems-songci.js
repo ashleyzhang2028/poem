@@ -3143,6 +3143,26 @@ window.POEMS_SONGCI = [
     author: "夏完淳",
     gradeGroup: "词牌 · 洞仙歌",
   },
+
+  /* ---- Issue #471：李清照词补录 ---- */
+  {
+    textRef: "songci-sc-318",
+    id: "sc-318",
+    title: "如梦令·昨夜雨疏风骤",
+    source: "《漱玉词》",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 如梦令",
+  },
+  {
+    textRef: "songci-sc-319",
+    id: "sc-319",
+    title: "怨王孙·春暮",
+    source: "《漱玉词》",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 怨王孙",
+  },
 ];
 
 (function () {
