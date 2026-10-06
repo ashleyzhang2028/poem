@@ -408,16 +408,6 @@ html, body {
 }
 .item-reason.review { background: var(--amber-light); color: var(--amber); }
 
-.item-arrow {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #9db3a9;
-  line-height: 0;
-}
-.item-arrow svg { display: block; width: 18px; height: 18px; }
-
 .mbar {
   height: 4px;
   border-radius: 2px;

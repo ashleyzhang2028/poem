@@ -364,5 +364,16 @@ chk(/#today-list \.item-main \{ flex: 0 1 auto; \}/.test(css),
   '今日列表先压正文、再给两颗键让位（窄屏不折行）');
 
 console.log('');
+console.log('=== 八、今日列表不再挂行尾的「>」（Issue #481 收尾） ===');
+
+const todayRow = appSrc.slice(appSrc.indexOf('function renderToday()'), appSrc.indexOf('function titleOf('));
+chk(!/item-arrow/.test(todayRow), '今日列表这一行里没有 item-arrow 了（行内空出这一格）');
+chk(!/arrowGlyph/.test(todayRow), '也不再画那个「>」图标');
+chk(todayRow.indexOf('class="item-later"') < todayRow.indexOf('</div>";'),
+  '一行以两颗键的 item-actions 收尾（后面不再接东西）');
+chk(!/function arrowGlyph/.test(appSrc), 'app.js 里那个 arrowGlyph 一并删了（不留没人调的函数）');
+chk(!/\.item-arrow/.test(css), 'style.css 里的 .item-arrow 规则也删了');
+
+console.log('');
 if (fails) { console.log('失败 ' + fails + ' 项'); process.exit(1); }
 console.log('✓ recite-defer.test.js 全通过');

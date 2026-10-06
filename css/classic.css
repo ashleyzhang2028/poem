@@ -252,8 +252,6 @@
 .gw-menu-item.active { color: var(--blue); font-weight: 600; }
 .gw-menu-item.active .gw-menu-tick { background: var(--blue); border-color: var(--blue); }
 
-.item-arrow { margin-left: auto; }
-
 @media (min-width: 768px) {
 
   .group-card {
