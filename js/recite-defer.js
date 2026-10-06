@@ -6,24 +6,38 @@
   // 背诵列表里每一首的播放键右侧多一颗「以后再背」。点一下，这一首就当没排过：
   // 它从今天的计划里下去，**背完这一趟再说**（今天不再冒出来）。
   //
-  // 「延后」不是把这一首永久删掉，而是**按作品把后面几天一起顺延**：
+  // 一个动作，两档口径 —— 同一份台账，长短不同：
   //
-  //     一个作品（WorksIndex 里的那一份，课内/集子里的同文异本算同一份）被延后
-  //     一次，它排期的日子就往后挪一天。今天点一次，明天照旧出现；明天再点，
-  //     后天再出现。同一首一天点几次都只算一次（同一份「今日顺延」只记一条）。
+  //   ① **顺延**（默认，短按）：按作品把日子往后挪一天。今天点一次，明天照旧
+  //      出现；明天再点，后天再出现。每天点都只算一天。适合「今天累了 /
+  //      这首今天不想背」。
+  //   ② **先搁一搁**（长按 / 右键，`rest()`）：这一首**这一阵子先别上榜**。
+  //      它就是「课本里还轮不到它、短期也不会背」的那一档 —— 搁 30 天，到
+  //      日子自己回来；到期之前每点一次续 30 天。适合「这首诗压根没学过、
+  //      可能最近几个月半年都不会学」。
   //
-  // 只记**作品号 + 点它的那一天**，不碰背诵进度里的任何一格（level /
+  // 为什么要有②：只靠①「一天一天点」，那些「本来就还轮不到」的诗会**天天**
+  // 占住当天的一个位子（每天点掉它，末尾再补一首别的），孩子等于每天要跟它
+  // 打一次照面、多做一次判断。这一档不是把诗删掉（名单可以列、可以撤），
+  // 只是把「这首我确定暂时不背」这件事说出口。
+  //
+  // 两种点法都只记**作品号 + 一个日期**，不碰背诵进度里的任何一格（level /
   // nextReviewAt / history 都不动）—— 所以：
-  //   · 关掉、刷新、换设备（走同步）都还认得这份延后；
-  //   · 「清空进度」不带它走（它不属于进度）；
+  //   · 关掉、刷新、换设备（走同步）都还认得；
+  //   · 「清空进度」另有一处显式的「连延后名单一起清」；
   //   · 漏掉几天没点，那几天自然不算延后，不会越攒越多。
   //
-  // 顺延怎么用：排期算完拿到一首时，看它被延后过几天 —— 那些天的第二天还没到，
-  // 就放到那一天再说（见 js/today-plan.js 的 buildTodayPlan 与 js/app.js 的
-  // deferToday）。算法本身一个字不改。
+  // 排期那边怎么看：拿到一首时问一句 `holdUntil()` —— 给出「该等到哪一天」，
+  // 到那天之前它就不上榜（见 js/today-plan.js 与 js/app.js 的 deferToday）。
+  // 背诵算法本身一个字不改。
   var KEY = "poem_recite_defer_v1";
   var SYNC_ID = "defer:v1";
   var MAX = 400;
+
+  // 「先搁一搁」搁多久（Issue #481 后续）：一个学期上下。一个月正好是
+  // 「这一阵子别上榜」的粒度 —— 太长会把「半年后想背了」也一起挡掉，太短
+  // 又变成天天要点。到期自己回来；还没到期再点一次就再续一期（可续）。
+  var REST_DAYS = 30;
 
   function ps() {
     return typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
@@ -88,9 +102,13 @@
     return d.getTime();
   }
 
-  function todayStr(now) {
-    var d = new Date(now === undefined ? Date.now() : now);
+  function dayStrOf(ts) {
+    var d = new Date(ts);
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+
+  function todayStr(now) {
+    return dayStrOf(now === undefined ? Date.now() : now);
   }
 
   function stampOf() {
@@ -118,7 +136,19 @@
       var k = wid + "@" + day;
       if (seen[k]) return;
       seen[k] = true;
-      items.push({ wid: wid, day: day, at: Number(it.at) > 0 ? Math.round(Number(it.at)) : 0 });
+      var row = { wid: wid, day: day, at: Number(it.at) > 0 ? Math.round(Number(it.at)) : 0 };
+      // 搁着的那一条另带一个「搁到哪一天」（顺延那条路没有它）——
+      // 有它才是「先搁一搁」，没它就是「今天顺延一天」。
+      // ⚠️ `until` 一律是 `Y-M-D` 这一种写法（不是毫秒），落盘 / 上云 / 读回来
+      // 都走同一个 `dayStrOf()` —— 混两种写法的话，读回来那一趟会被当成
+      // 没有 `until`（于是「搁着」这个词只在本机内存里成立，重启就没了）。
+      var until = parseDay(it.until);
+      if (until != null) {
+        row.until = dayStrOf(until);
+        var span = Number(it.span);
+        row.span = span > 0 ? Math.round(span) : REST_DAYS;
+      }
+      items.push(row);
     });
     items.sort(function (a, b) {
       if (a.day !== b.day) return a.day < b.day ? -1 : 1;
@@ -143,6 +173,10 @@
     return out;
   }
 
+  // 落盘。调用方（`rest` / `defer` / `unrest` / `clearAll`）**必须交出整条**：
+  // 规整 `normalize()` 认全部五格（wid / day / at / until / span），所以入口
+  // 处把 `until` 补上就行 —— 从盘上带过来的行用 `read()` 已经读全了，
+  // 新补的行由 `rest()` 自己写全。
   function write(items, at) {
     var s = store();
     if (!s) return false;
@@ -202,7 +236,69 @@
     return { ok: true, added: true, days: days(wid) };
   }
 
-  // 撤销今天的这一次（孩子点了又后悔）
+  // 「先搁一搁」（长按 / 右键那一档）：不再一天一天点，一次说到底。
+  //
+  // 台账里它仍是**一条记录**，只是「搁到哪一天」写在 `until` 上（顺延那条路
+  // 不写 `until`，所以两条路不打架、互不叠算）。到日子自己回来；没到再点一次
+  // 就往后**续**一期（`until` 往后推 REST_DAYS，不是再记一条）。
+  //
+  // 已经搁着的这一期**不重复记**：同一天连点两次没意义，返回 `added: false`
+  // 并把当前 `until` 带回去，界面照旧能说「搁到哪天」。
+  function rest(poemOrId, now, opt) {
+    if (typeof poemOrId !== "string" && !(poemOrId && poemOrId.id)) {
+      return { ok: false, code: "E_NO_POEM", days: REST_DAYS, until: null };
+    }
+    var wid = widOf(poemOrId);
+    if (!wid) return { ok: false, code: "E_NO_POEM", days: REST_DAYS, until: null };
+    var t = now === undefined ? Date.now() : now;
+    var o = opt || {};
+    var span = Number(o.days) > 0 ? Math.round(Number(o.days)) : REST_DAYS;
+    var data = read();
+    var found = null;
+    data.items.forEach(function (it) {
+      if (it.wid === wid && it.until) found = it;
+    });
+    if (found) {
+      // 已经搁着：同一天不再续（一次点击只算一次），换一天点才续
+      var sameDayAsRest = found.day === todayStr(t);
+      if (!sameDayAsRest) {
+        found.until = dayStrOf(startOfDay(found.until) + span * 24 * 60 * 60 * 1000);
+        found.day = todayStr(t);
+        if (!write(data.items)) {
+          return { ok: false, code: "E_STORAGE", days: span, until: found.until };
+        }
+        return { ok: true, added: true, extended: true, days: span, until: found.until };
+      }
+      return { ok: true, added: false, extended: false, days: span, until: found.until };
+    }
+    var until = dayStrOf(startOfDay(t) + span * 24 * 60 * 60 * 1000);
+    data.items.push({
+      wid: wid,
+      day: todayStr(t),
+      until: until,
+      span: span,
+      at: t
+    });
+    if (!write(data.items)) return { ok: false, code: "E_STORAGE", days: span, until: null };
+    return { ok: true, added: true, days: span, until: until };
+  }
+
+  // 撤掉「先搁一搁」，今天当场回来（长按菜单里那一颗「撤掉」）
+  function unrest(poemOrId) {
+    var wid = widOf(poemOrId);
+    if (!wid) return false;
+    var data = read();
+    var before = data.items.length;
+    data.items = data.items.filter(function (it) {
+      return !(it.wid === wid && it.until);
+    });
+    if (data.items.length === before) return false;
+    write(data.items);
+    return true;
+  }
+
+  // 撤销今天顺延的这一次（孩子点了又后悔）。搁着的那一条不动 —— 那一条要撤
+  // 走 `unrest()`，它跟「今天的顺延」不是一件事。
   function undo(poemOrId, now) {
     var wid = widOf(poemOrId);
     if (!wid) return false;
@@ -210,7 +306,7 @@
     var data = read();
     var before = data.items.length;
     data.items = data.items.filter(function (it) {
-      return !(it.wid === wid && it.day === today);
+      return !(it.wid === wid && it.day === today && !it.until);
     });
     if (data.items.length === before) return false;
     write(data.items);
@@ -235,15 +331,53 @@
     var wid = widOf(poemOrId);
     if (!wid) return null;
     var t0 = startOfDay(now === undefined ? Date.now() : now);
+    var until = null;
     var last = null;
     read().items.forEach(function (it) {
       if (it.wid !== wid) return;
+      // 「先搁一搁」：搁到哪一天，就压到哪一天（到期自己回来）
+      var rest = parseDay(it.until);
+      if (rest != null) {
+        if (until == null || rest > until) until = rest;
+        return;
+      }
       var ts = parseDay(it.day);
-      // 只认今天及今天的点法：昨天的那一次今天已经顺过去了，不该再往后推
+      // 「顺延一天」：只认今天及今天的点法 —— 昨天的那一次今天已经顺过去了，
+      // 不该再往后推
       if (ts != null && ts <= t0) last = ts;
     });
-    if (last == null) return null;
-    return last + 24 * 60 * 60 * 1000;
+    // 两档取更远的那个：搁着的期间里又点了一次顺延，仍按搁到的日子算
+    var deferred = last == null ? null : last + 24 * 60 * 60 * 1000;
+    if (until != null && (deferred == null || until > deferred)) return until;
+    return deferred;
+  }
+
+  // 这一首是不是「搁着」（有 until 且还没到期）—— 界面与列表要用
+  function resting(poemOrId, now) {
+    if (!has(poemOrId)) return false;
+    var wid = widOf(poemOrId);
+    var t0 = startOfDay(now === undefined ? Date.now() : now);
+    var out = false;
+    read().items.forEach(function (it) {
+      if (it.wid !== wid || !it.until) return;
+      var rest = parseDay(it.until);
+      if (rest != null && rest > t0) out = true;
+    });
+    return out;
+  }
+
+  // 搁到哪一天（搁着才有；没搁着回 null）。界面拿它说「搁到 X 月 X 日」
+  function restUntil(poemOrId, now) {
+    if (!has(poemOrId)) return null;
+    var wid = widOf(poemOrId);
+    var t0 = startOfDay(now === undefined ? Date.now() : now);
+    var out = null;
+    read().items.forEach(function (it) {
+      if (it.wid !== wid || !it.until) return;
+      var rest = parseDay(it.until);
+      if (rest != null && rest > t0 && (out == null || rest > out)) out = rest;
+    });
+    return out;
   }
 
   function holdToday(poemOrId, rec, now) {
@@ -287,6 +421,8 @@
   function applyCloud(row, seen) {
     var payload = (row && row.payload) || null;
     if (!payload || typeof payload !== "object") return "skip";
+    // 老客户端推上来的行没有 `until` / `span`（那时候只有「顺延一天」），
+    // 这里一律当它们没有 —— 服务端白名单只放 `wid/day/at`，是新旧同表的缘故
 
     var mem = seen || {};
     var known = Number(mem[SYNC_ID]) || 0;
@@ -332,6 +468,7 @@
     KEY: KEY,
     SYNC_ID: SYNC_ID,
     MAX: MAX,
+    REST_DAYS: REST_DAYS,
 
     physKey: physKey,
     widOf: widOf,
@@ -343,6 +480,10 @@
     holdToday: holdToday,
     deferredToday: deferredToday,
     defer: defer,
+    rest: rest,
+    unrest: unrest,
+    resting: resting,
+    restUntil: restUntil,
     undo: undo,
     clear: clearAll,
 

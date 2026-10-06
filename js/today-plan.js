@@ -78,6 +78,25 @@
     return function () { return []; };
   }
 
+  // 已经压着的（昨天搁的那一首）不该再进池子 —— 池子里有它，补位就可能把
+  // 它自己又捞回来当「新补的一首」，等于搁了没搁。
+  //
+  // 只滤「今天点的那一下」是不够的：`holdUntil` 认的是「该等到哪一天」，
+  // 搁一个月就是一个月都不进池子。延后（顺延一天）另说 —— 那种明天本来就该
+  // 回来，只是今天排期时被 `holdOf` 挡在口子上。
+  function restFilter(list) {
+    var D = deferMod();
+    if (!D || typeof D.holdUntil !== "function") return (list || []).slice();
+    return (list || []).slice().filter(function (p) {
+      if (!p || !p.id) return false;
+      try {
+        return D.holdUntil(p.id, null) == null;
+      } catch (e) {
+        return true;
+      }
+    });
+  }
+
   // 补位从那来：课内主表 + 全站目录（各自去掉不展出的行），**按作品去重**。
   //
   // 目录里课内那 251 首是 `poems-` 前缀的别名（`poems-xx1-01`，等于教材的
@@ -140,11 +159,13 @@
     var grade = Number(o.grade || 0);
     var term = Number(o.term || 0);
     var provider = providerOf(c);
-    var base = o.allPoems && o.allPoems.length ? o.allPoems : baseOf();
+    var raw = o.allPoems && o.allPoems.length ? o.allPoems : baseOf();
+    var base = restFilter(raw);
 
-    var extra = (o.extraPoems || []).filter(function (p) {
+    var rawExtra = (o.extraPoems || []).filter(function (p) {
       return p && !isBookRow(p);
     });
+    var extra = restFilter(rawExtra);
 
     return window.Scheduler.generateDailyPlan({
       grade: grade,
@@ -186,6 +207,7 @@
   }
 
   window.TodayPlan = {
+    restFilter: restFilter,
     conform: conform,
     providerOf: providerOf,
     baseOf: baseOf,

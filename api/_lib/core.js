@@ -1425,6 +1425,10 @@ var DEFER_MAX = 400;
 
 // 「以后再背」（Issue #481）：一条只有「作品号 + 点它的那一天」—— 没有正文、
 // 没有进度，服务端只做裁剪，不做别的判断。
+//
+// 「先搁一搁」那条路另带 `until`（搁到哪一天）与 `span`（搁多少天）——
+// 两个都是**短字符串 / 小整数**，仍然不含正文、不含进度。老客户端推上来的
+// 条目没有这两格，照旧存得下（不补默认值，免得把「顺延一天」写成搁 30 天）。
 function sanitizeDefer(p) {
   var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
   out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
@@ -1442,7 +1446,12 @@ function sanitizeDefer(p) {
     if (seen[key]) return;
     seen[key] = 1;
     var at = Number(it.at);
-    out.items.push({ wid: wid, day: day, at: isFinite(at) && at > 0 ? Math.round(at) : 0 });
+    var row = { wid: wid, day: day, at: isFinite(at) && at > 0 ? Math.round(at) : 0 };
+    var until = refText(it.until, 32).trim();
+    if (until) row.until = until;
+    var span = Number(it.span);
+    if (isFinite(span) && span > 0) row.span = Math.max(1, Math.min(3650, Math.round(span)));
+    out.items.push(row);
   });
   return out;
 }
