@@ -66,6 +66,39 @@ chk(WI.dedupKey('孔子云「何陋之有」') === WI.dedupKey('孔子云何陋�
 chk(WI.repOf('tangshi-ts-1') === 'tangshi-ts-1',
   '纯课外篇目（无课内对应）代表条目就是它自己');
 
+/* ---------------------------------------------------------------------------
+   Issue #480：昭明文选的朝代不许再是空串
+   ---------------------------------------------------------------------------
+   480 条里曾有 145 条 `dynasty` 是空串 —— 录入时只抄了原书的字号署名，
+   没补正史姓名，朝代那一格就跟着空着。列表页那行元信息会少一段
+   （「· 谢灵运 · 《文选》」，朝代的位置空着），搜索也筛不出来。
+   --------------------------------------------------------------------------- */
+{
+  const zm = sb.POEMS_ZHAOMING || [];
+  chk(zm.length === 480, '昭明文选 480 条（实际 ' + zm.length + '）');
+
+  const blank = zm.filter(p => !p.dynasty);
+  chk(blank.length === 0,
+    '每一条都带着朝代，没有空串（实际空 ' + blank.length + ' 条' +
+    (blank.length ? '：' + blank.map(p => p.id).join(', ') : '') + '）');
+
+  /* 朝代取值只用集内已经在用的写法 + 秦 —— 列表索引卡与搜索筛选口径不变。 */
+  const KNOWN = ['东汉', '西汉', '西晋', '东晋', '三国·魏', '三国·蜀', '三国·吴',
+    '南朝·宋', '南朝·齐', '南朝·梁', '战国·楚', '战国·燕', '秦'];
+  const odd = [...new Set(zm.map(p => p.dynasty))].filter(d => KNOWN.indexOf(d) < 0);
+  chk(odd.length === 0, '朝代写法都在既定的那几个里（越界的：' + odd.join(', ') + '）');
+
+  chk(zm.every(p => p.author),
+    '每一条都还有作者那一格（清空的是 dynasty，不是 author）');
+
+  /* 同一位作者，540 条里一个写法只能配一个朝代 —— 防手抄出错。 */
+  const byAuthor = {};
+  zm.forEach(p => { (byAuthor[p.author] = byAuthor[p.author] || new Set()).add(p.dynasty); });
+  const split = Object.keys(byAuthor).filter(a => byAuthor[a].size > 1);
+  chk(split.length === 0,
+    '同一位作者只有一个朝代（分家的：' + split.join(', ') + '）');
+}
+
 const dom0 = { window: null };
 const w0 = { console: console, Date: Date, JSON: JSON, Math: Math };
 w0.window = w0;
