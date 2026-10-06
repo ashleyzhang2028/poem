@@ -650,8 +650,7 @@
         '<button type="button" class="item-later" title="以后再背：点一下 = 从今天挪到明天、末尾补一首新的；长按 = 这一首先搁一搁" ' +
         'aria-label="' + esc(titleOf(p)) + '：以后再背（长按可先搁一搁）">' +
         laterGlyph() + "</button>" +
-        "</div>" +
-        '<div class="item-arrow">' + arrowGlyph() + "</div>";
+        "</div>";
       el.addEventListener("click", function () {
         openPoem(p, item);
       });
@@ -710,14 +709,6 @@
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
       "</span>"
-    );
-  }
-
-  function arrowGlyph() {
-    return (
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M9.8 6.6 15.2 12l-5.4 5.4" /></svg>'
     );
   }
 
