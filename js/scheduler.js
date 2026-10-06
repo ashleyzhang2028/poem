@@ -227,13 +227,33 @@
     const count = opt.count || 5;
     const getRecord = opt.getRecord;
     const now = Date.now();
-    const current = (opt.provider ? opt.provider(grade, term) : []) || [];
-    const allPoems = window.POEMS_ALL || current;
+    let current = (opt.provider ? opt.provider(grade, term) : []) || [];
+    const allPoems = opt.allPoems || window.POEMS_ALL || current;
     const scope = scopeOf(opt.scope);
 
     let pool = poolForScope({ grade: grade, term: term, scope: opt.scope, allPoems: allPoems });
 
     if (!pool.length) pool = current.slice();
+
+    // 「以后再背」（Issue #481）：今天被点过的那几首，排期这一趟就当作已经
+    // 背过了 —— 它们让出的名额，由这一趟自己拿下一首「新学」补上（用户要的
+    // 正是这个「末尾补一篇」）。`holdOf` 给的是**按作品**判断的那一道（课内的
+    // `xx1-01` 与目录里的 `poems-xx1-01` 是同一首，两个号都得压住）。
+    //
+    // 每一处「选一首进来」的口子都要过它 —— 只滤 `pool` 的话，`allPoems` 与
+    // `others` 那两条兜底路会把刚压下去的又捡回来（那正是「压了等于没压」的
+    // 症状）。不带 `holdOf` 的老调用一个字不改。
+    const held = typeof opt.holdOf === "function"
+      ? function (p) { return !!opt.holdOf(p); }
+      : function () { return false; };
+
+    if (typeof opt.holdOf === "function") {
+      const keep = function (list) {
+        return list.filter(function (p) { return !held(p); });
+      };
+      pool = keep(pool);
+      current = keep(current);
+    }
     if (scope.random) {
       pool = shuffle(pool);
     } else {
@@ -282,6 +302,7 @@
       return (ra ? ra.nextReviewAt : 0) - (rb ? rb.nextReviewAt : 0);
     });
     dueAll.forEach(function (p) {
+      if (held(p)) return;
       if (plan.length < count && !used[p.id]) {
         used[p.id] = true;
         const rec = getRecord(p.id);
@@ -297,6 +318,7 @@
     function fillFrom(list, reason) {
       list.forEach(function (p) {
         if (plan.length >= count || used[p.id]) return;
+        if (held(p)) return;
         const rec = getRecord(p.id);
         if (isLearned(rec)) return;
         used[p.id] = true;
@@ -310,7 +332,8 @@
 
     if (plan.length < count) {
       const others = allPoems.filter(function (p) {
-        return !used[p.id] && !(p.grade === grade && p.term === term);
+        if (used[p.id] || (p.grade === grade && p.term === term)) return false;
+        return !held(p);
       });
       others.sort(function (a, b) {
         const da = Math.abs(a.grade - grade) * 10 + Math.abs(a.term - term);
@@ -327,7 +350,7 @@
           return !used[p.id];
         });
       remain.forEach(function (p) {
-        if (plan.length >= count) return;
+        if (plan.length >= count || held(p)) return;
         used[p.id] = true;
         const rec = getRecord(p.id);
         plan.push({

@@ -403,10 +403,11 @@
     var list = pending(seen);
     var reg = familyRow();
     var extra = dailyExtraRow(seen);
+    var defer = deferRow(seen);
     var cols = collectionsRow(seen);
     var pfix = pinyinFixRow(seen);
     var reads = readRows(seen);
-    if (!list.length && !reg && !extra && !cols && !pfix && !reads.length) {
+    if (!list.length && !reg && !extra && !defer && !cols && !pfix && !reads.length) {
       return Promise.resolve({ ok: true, applied: 0 });
     }
 
@@ -415,6 +416,7 @@
     var headRecs = [];
     if (reg) headRecs.push(reg);
     if (extra) headRecs.push(extra);
+    if (defer) headRecs.push(defer);
     if (cols) headRecs.push(cols);
     if (pfix) headRecs.push(pfix);
     reads.forEach(function (r) { headRecs.push(r); });
@@ -464,6 +466,12 @@
       if (row && row.id === DAILY_EXTRA_ROW_ID) {
         var dv = applyRemoteDailyExtra(row);
         if (dv === "applied") { out.applied++; out.dailyExtra = true; }
+        return;
+      }
+
+      if (row && row.id === DEFER_ROW_ID) {
+        var dfv = applyRemoteDefer(row);
+        if (dfv === "applied") { out.applied++; out.defer = true; }
         return;
       }
 
@@ -518,6 +526,8 @@
 
   var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
 
+  var DEFER_ROW_ID = "defer:v1";
+
   var COLLECTIONS_ROW_ID = "collections:v1";
 
   var READ_ROW_PREFIX = "reads:";
@@ -542,6 +552,17 @@
 
   function dailyExtraRow(seen) {
     var D = dailyExtraMod();
+    if (!D) return null;
+    try { return D.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
+  }
+
+  function deferMod() {
+    var D = typeof window !== "undefined" ? window.ReciteDefer : null;
+    return D && typeof D.cloudRow === "function" && typeof D.applyCloud === "function" ? D : null;
+  }
+
+  function deferRow(seen) {
+    var D = deferMod();
     if (!D) return null;
     try { return D.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
@@ -632,6 +653,22 @@
     try { verdict = D.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
 
     if (cloudTs) markSeen(DAILY_EXTRA_ROW_ID, cloudTs);
+    return verdict;
+  }
+
+  function applyRemoteDefer(row) {
+    var D = deferMod();
+    if (!D) return "skip";
+    var seen = readSeen();
+    var known = norm(seen[DEFER_ROW_ID]);
+    var cloudTs = norm(row && row.updatedAt);
+
+    if (cloudTs && known === cloudTs && !row.deleted) return "skip";
+
+    var verdict = "skip";
+    try { verdict = D.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
+
+    if (cloudTs) markSeen(DEFER_ROW_ID, cloudTs);
     return verdict;
   }
 
@@ -888,6 +925,8 @@
 
     dailyExtraRow: dailyExtraRow,
     collectionsRow: collectionsRow,
+    deferRow: deferRow,
+    applyRemoteDefer: applyRemoteDefer,
     readRows: readRows,
     applyRemoteReads: applyRemoteReads,
     applyRemoteCollections: applyRemoteCollections,

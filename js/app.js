@@ -262,8 +262,21 @@
       scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() + "_" +
       dailyExtraKey() +
 
-      "_algo-" + algoKey()
+      "_algo-" + algoKey() +
+      // 「以后再背」点过的也要进 key：不然点完还是命中旧的那一份（Issue #481）
+      "_defer-" + deferKey()
     );
+  }
+
+  function deferKey() {
+    if (!window.ReciteDefer) return "0";
+    try {
+      return window.ReciteDefer.list().map(function (it) {
+        return it.wid + "@" + it.day;
+      }).join(",");
+    } catch (e) {
+      return "0";
+    }
   }
 
   function dailyExtraKey() {
@@ -385,15 +398,7 @@
       }
     }
 
-    const plan = pinTodayDone(withTodayExtra(Scheduler.generateDailyPlan({
-      grade: settings.grade,
-      term: settings.term,
-      count: settings.dailyCount,
-      scope: scopeKey(),
-      provider: provider,
-      getRecord: getRecord,
-      extraPoems: extraPoems()
-    })));
+    const plan = pinTodayDone(withTodayExtra(generateTodayPlan()));
 
     sessionStorage.setItem(
       key,
@@ -404,6 +409,49 @@
       )
     );
     return plan;
+  }
+
+  // 今天的排期：交给 TodayPlan 走「以后再背 + 补位」那一趟（Issue #481）。
+  // TodayPlan 缺席（老页面脚本）时退回原来那一条路，一个字不改。
+  function generateTodayPlan() {
+    const opt = {
+      grade: settings.grade,
+      term: settings.term,
+      count: settings.dailyCount,
+      scope: scopeKey(),
+      provider: provider,
+      getRecord: getRecord,
+      extraPoems: extraPoems()
+    };
+    const T = window.TodayPlan;
+    // TodayPlan 那个「排今天这一趟」的具名入口
+    const fn = T ? T.arrange : null;
+    if (typeof fn === "function") {
+      try {
+        return fn(opt, { provider: provider });
+      } catch (e) {  }
+    }
+    return Scheduler.generateDailyPlan(opt);
+  }
+
+  function deferToday(poem, btn) {
+    const D = window.ReciteDefer;
+    if (!D || !poem || !poem.id) {
+      showToast("本机不支持「以后再背」");
+      return;
+    }
+    const r = D.defer(poem);
+    if (r.ok === false) {
+      showToast("记不下来：本机存储用不了（换一个浏览器试试）");
+      return;
+    }
+    showToast("《" + (poem.custom ? showTitle(poem.title) : poem.title) +
+      "》明天再背 —— 后面补一首新的上来");
+    // 名单变了，计划缓存跟着作废，重排一遍：这一首下去、末尾补上来一首
+    invalidatePlan();
+    rebuildToday();
+    renderAll();
+    if (btn) btn.blur();
   }
 
   function invalidatePlan() {
@@ -499,8 +547,13 @@
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
         "</div>" +
-        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.custom ? showTitle(p.title) : p.title) + '">' +
+        '<div class="item-actions">' +
+        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(titleOf(p)) + '">' +
         playGlyph() + "</button>" +
+        '<button type="button" class="item-later" title="以后再背：从今天挪到明天，末尾补一首新的" ' +
+        'aria-label="' + esc(titleOf(p)) + '：以后再背">' +
+        laterGlyph() + "</button>" +
+        "</div>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () {
         openPoem(p, item);
@@ -509,6 +562,11 @@
       readBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         readOne(p, readBtn);
+      });
+      const laterBtn = el.querySelector(".item-later");
+      laterBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        deferToday(p, laterBtn);
       });
       list.appendChild(el);
     });
@@ -531,6 +589,22 @@
 
     syncTodayReadBtn();
     if (todaySearchUI) todaySearchUI.refresh();
+  }
+
+  function titleOf(p) {
+    return p && p.custom ? showTitle(p.title) : (p && p.title) || "";
+  }
+
+  // 「以后再背」：日历上划一道对钩 —— 日子照走，这一首先搁一搁
+  function laterGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="4.2" y="5.6" width="15.6" height="14.2" rx="2.6" />' +
+      '<path d="M4.2 10.2h15.6M8.6 3.6v3.4M15.4 3.6v3.4" />' +
+      '<path d="M9.3 15.4l2 2 3.6-3.9" />' +
+      "</svg>"
+    );
   }
 
   function playGlyph() {
@@ -1433,6 +1507,7 @@
       if (confirm("确定要清空全部背诵进度吗？此操作不可恢复。")) {
         Storage.clear();
         if (window.DailyExtra) window.DailyExtra.clear();
+        if (window.ReciteDefer) window.ReciteDefer.clear();
         invalidatePlan();
         rebuildToday();
         renderAll();
@@ -1543,8 +1618,15 @@
     window.addEventListener("daily-extra-change", function () {
       invalidateAndRefreshPlan();
     });
+    // 「以后再背」点了 / 撤了 / 从别的设备同步下来了：重排一遍
+    window.addEventListener("recite-defer-change", function () {
+      invalidateAndRefreshPlan();
+    });
     window.addEventListener("storage", function (e) {
-      if (!window.ReciteCollections || e.key !== window.ReciteCollections.KEY) return;
+      const keys = [];
+      if (window.ReciteCollections) keys.push(window.ReciteCollections.KEY);
+      if (window.ReciteDefer) keys.push(window.ReciteDefer.physKey());
+      if (!keys.length || keys.indexOf(e.key) < 0) return;
       invalidatePlan();
       rebuildToday();
     });
