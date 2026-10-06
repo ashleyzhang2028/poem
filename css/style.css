@@ -381,9 +381,18 @@ html, body {
   flex: none;
 
   box-sizing: border-box;
-  width: var(--item-num);
+  /* 序号徽标（Issue #484）：一到两位数是正圆，三位数开始长成胶囊。
+
+     原来是写死的 `width: 17px`，圆环不随字走：两位数以下刚好，三位数时
+     「100」量出来 18.36px（11px 等宽数字），已经比 17px 的直径还宽，
+     数字就压到了圆环上 —— 环的左右两段弧正好切进「1」和最后一个「0」。
+
+     改法：`width` 换成 `min-width` 当直径的下限，再给左右内边距把盒子撑开，
+     圆角走 999px（不足高度时就是圆、超过高度就是胶囊，同一个值两种形状）。
+     一到两位数时盒子仍是 17×17 的正圆，三位数自动长成 17 高的胶囊。 */
+  min-width: var(--item-num);
   height: var(--item-num);
-  border-radius: 50%;
+  border-radius: 999px;
 
   background: none;
   border: 1px solid currentColor;
@@ -392,12 +401,21 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* 一到两位数的正圆就靠这个：盒子不撑开时 `min-width` 生效，正好 17×17，
+     数字在环里居中（「99」11px 量出来 12.25px，环内净宽 15px，站得下）。
+     三位数才会被下面那条规则加内边距撑成胶囊。 */
   padding: 0;
   font-size: 11px;
   line-height: 1;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* 三位数（100 及以上）字号收一档：11px 时「100」要 18.36px，收到 10px 是
+   16.69px，再加左右各 4px 的内边距，胶囊宽 26.69px、高仍是 17px —— 挤得下，
+   也不至于把序号撑得比行首那颗色点还显眼。位数由渲染时挂的 `.is-num-wide`
+   认出来（三位及以上），见 js/app.js 与 js/reader-core.js 里那个 numHTML()。 */
+.item-num.is-num-wide { font-size: 10px; padding: 0 4px; }
 .item.review .item-num { color: var(--amber); }
 .item-meta {
   font-size: 12.5px;

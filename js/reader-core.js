@@ -655,6 +655,13 @@
     });
   }
 
+  /* 列表行首的序号徽标（Issue #484）：同 js/app.js 里的 numHTML —— 三位及以上
+     挂 `.is-num-wide`，样式表把它从圆变成胶囊、字号收一档。 */
+  function numHTML(n) {
+    var t = String(n);
+    return '<span class="item-num' + (t.length > 2 ? " is-num-wide" : "") + '">' + t + "</span>";
+  }
+
   function closeTimeout(t) {
     if (t) clearTimeout(t);
   }
@@ -883,7 +890,7 @@
       el.innerHTML =
         '<div class="item-main">' +
 
-        '<h3 class="item-title"><span class="item-num">' + index + "</span>" + esc(p.title) +
+        '<h3 class="item-title">' + numHTML(index) + esc(p.title) +
         (read && hasReadStore() ? '<span class="item-reason read">' + esc(W.readStoreLabel) + "</span>" : "") +
         (pending ? '<span class="item-reason pending">待补</span>' : "") +
         "</h3>" +
