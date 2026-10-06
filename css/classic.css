@@ -1382,7 +1382,12 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
 .library-group[data-group="renwu"] { --group-tone: var(--blue); }
 .library-group[data-group="changshi"] { --group-tone: var(--amber); }
 
-/* 卡头：齐顶的色条 + 组名 + 一句短注，下面一条细线压住。 */
+/* 卡头：齐顶的色条 + 组名 + 一句短注，下面一条细线压住。
+   Issue #484 第三版：组名的起笔跟课内诗词那张卡对齐。课内诗词的正文
+   起在「卡左 14 + 左边框 3 + 内边距 16 = 33px」；分组卡是「卡左 14 +
+   边框 1」，再加 18px 的内边距就落到 33px —— 所以卡头这里的左内边距
+   要让出卡自己那 18px（`margin: 0 -18px` 已经让出了），只补 18px，
+   不再多给 10px。 */
 .library-group-head {
   position: relative;
   display: flex;
@@ -1391,7 +1396,7 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
   gap: 12px;
   margin: 0 -18px;
 
-  padding: 15px 18px 12px calc(18px + 10px);
+  padding: 15px 18px 12px 18px;
   border-bottom: 1px solid var(--line-2);
 }
 .library-group-head::before {
@@ -1518,7 +1523,7 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
 
 @media (max-width: 360px) {
   .library-group { padding: 0 14px 6px; }
-  .library-group-head { margin: 0 -14px; padding: 13px 14px 11px calc(14px + 10px); }
+  .library-group-head { margin: 0 -14px; padding: 13px 14px 11px 14px; }
   .library-sub { padding: 10px 14px 10px calc(14px + 12px); }
   .library-sub:nth-child(odd) { padding-right: 32px; }
   .library-sub:nth-child(even) { padding-left: 26px; }
