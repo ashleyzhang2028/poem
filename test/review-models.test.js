@@ -110,27 +110,41 @@ chk(RM.subFor('ebbinghaus') === '按艾宾浩斯遗忘曲线复习' &&
 
 chk(JSON.stringify(RM.EBBINGHAUS_INTERVALS) === JSON.stringify([0, 1, 2, 4, 7, 15, 30, 60, 120, 240]),
   '遗忘曲线的间隔表没被动过（0/1/2/4/7/15/30/60/120/240）');
-let eb = null;
-for (let i = 0; i < 3; i += 1) eb = S.review(eb, 'good', 'ebbinghaus');
+
+/* 复核用的「连着几天各背一次」：Issue #481 之后同一天的重复点击只算改判，
+   所以这些「连续记住 N 次」的用例必须**一天一步**地走，否则跑出来的
+   就是同一天连点，测的已经不是原来的事了。 */
+function overDays(n, result, key, rec, startTs) {
+  let cur = rec || null;
+  const t0 = startTs === undefined ? DAYS_T0 : startTs;
+  for (let i = 0; i < n; i += 1) {
+    cur = RM.review(cur, typeof result === 'function' ? result(i) : result, key, t0 + i * DAY);
+  }
+  return cur;
+}
+
+// overDays 的起点 / 最后一步落在哪 —— 断言 nextReviewAt 的落点要用它，
+// 不能拿 Date.now()（那是「今天」，与连着几天走出来的日子对不上）。
+const DAYS_T0 = Date.now();
+
+let eb = overDays(3, 'good', 'ebbinghaus');
 chk(eb.level === 3 && eb.algo === 'ebbinghaus', '遗忘曲线：连续三次记住 → 阶段 3（实际 ' + eb.level + '）');
 const targetEb = (function () {
-  const d = new Date(); d.setHours(0, 0, 0, 0);
+  const d = new Date(DAYS_T0 + 2 * DAY); d.setHours(0, 0, 0, 0);
   return d.getTime() + 4 * DAY + 9 * 3600000;
 })();
 chk(Math.abs(eb.nextReviewAt - targetEb) < 1000,
   '遗忘曲线：阶段 3 的下一次是 4 天后的 09:00（与旧实现同一个落点）');
 
-let ln = null;
-for (let i = 0; i < 3; i += 1) ln = S.review(ln, 'good', 'leitner');
+let ln = overDays(3, 'good', 'leitner');
 chk(ln.box === 3 && ln.algo === 'leitner',
   'Leitner：连对三次 → 3 号盒（实际 box=' + ln.box + '）');
-chk(Math.abs(ln.nextReviewAt - (S.startOfDay(Date.now()) + 8 * DAY + 9 * 3600000)) < 1000,
+chk(Math.abs(ln.nextReviewAt - (S.startOfDay(DAYS_T0 + 2 * DAY) + 8 * DAY + 9 * 3600000)) < 1000,
   'Leitner：3 号盒 = 8 天后再来（盒间隔 1/2/4/8/16）');
 const lnBad = S.review(ln, 'bad', 'leitner');
 chk(lnBad.box === 0, 'Leitner：答错退回 1 号盒（原版的「从头再来」，实际 box=' + lnBad.box + '）');
 chk(lnBad.nextReviewAt - Date.now() < 31 * 60000, 'Leitner：答错 30 分钟后再来');
-let lnTop = null;
-for (let i = 0; i < 9; i += 1) lnTop = S.review(lnTop, 'good', 'leitner');
+let lnTop = overDays(9, 'good', 'leitner');
 chk(lnTop.box === 4, 'Leitner：盒号封顶在第 5 盒（box 最大 4，实际 ' + lnTop.box + '）');
 chk(RM.modelOf('leitner').stageName(ln) === '4 号盒 · 8 天后',
   'Leitner 的阶段名说「几号盒 · 几天后」（实际「' + RM.modelOf('leitner').stageName(ln) + '」）');
@@ -145,8 +159,7 @@ chk(sm2.intervalAfter(0, 2.5, 1) === 1 && sm2.intervalAfter(1, 2.5, 2) === 3 &&
   'SM-2：前三次间隔固定 1 / 3 / 7 天');
 chk(sm2.intervalAfter(7, 2.5, 4) === 18, 'SM-2：第四次起 interval × EF（7 × 2.5 = 18，实际 ' +
   sm2.intervalAfter(7, 2.5, 4) + '）');
-let sm = null;
-for (let i = 0; i < 6; i += 1) sm = S.review(sm, 'good', 'sm2');
+let sm = overDays(6, 'good', 'sm2');
 chk(sm.algo === 'sm2' && sm.interval >= 18 && sm.reviewCount === 6,
   'SM-2：一路记住 → 间隔越长越长（第 6 次后 ' + sm.interval + ' 天）');
 chk(sm.ef > 2.5, 'SM-2：一路「记住」EF 会往上走（实际 ' + sm.ef + '）');
@@ -165,9 +178,9 @@ chk(fsrs.difficultyAfter(5, 'good') < 5 && fsrs.difficultyAfter(5, 'bad') > 5,
   'FSRS：难度随对错升降（记住 ↓、忘了 ↑）');
 chk(fsrs.difficultyAfter(10, 'bad') === 10 && fsrs.difficultyAfter(1, 'good') === 1,
   'FSRS：难度锁在 1-10 之间');
-let fz = S.review(null, 'good', 'fsrs');
+let fz = overDays(2, 'good', 'fsrs');
 const s1 = fz.stability;
-fz = S.review(fz, 'good', 'fsrs');
+fz = RM.review(fz, 'good', 'fsrs', Date.now() + 3 * DAY);
 chk(fz.stability > s1, 'FSRS：连续记住 → 稳定性 S 变长（' + s1 + ' → ' + fz.stability + '）');
 const fzBad = S.review(fz, 'bad', 'fsrs');
 chk(fzBad.stability < fz.stability, 'FSRS：忘了 → 稳定性被打回去（' +
@@ -193,10 +206,7 @@ chk(lnKeep.box === ln.box, 'Leitner：模糊不动盒号');
 const sm2Keep = S.review(sm, 'bad', 'sm2');
 chk(sm2Keep.ef <= sm.ef, 'SM-2：忘记时 EF 下调（判错）');
 
-let deep = null;
-for (let i = 0; i < 7; i += 1) deep = S.review(deep, 'good', 'ebbinghaus');
-deep = S.review(deep, 'bad', 'ebbinghaus');
-deep = S.review(deep, 'bad', 'ebbinghaus');
+let deep = overDays(9, i => (i < 7 ? 'good' : 'bad'), 'ebbinghaus');
 const before = JSON.parse(JSON.stringify(deep));
 
 chk(deep.learned === true && deep.reviewCount === 9 && deep.lapses === 2,
@@ -225,7 +235,7 @@ chk(typeof fzAdopt.stability === 'number' && fzAdopt.stability > 0 &&
   '、D=' + fzAdopt.difficulty + '）');
 
 RM.keys().forEach(k => {
-  const nw = RM.review(RM.adopt(deep, k), 'good', k);
+  const nw = RM.review(RM.adopt(deep, k), 'good', k, Date.now() + DAY);
   const days = (nw.nextReviewAt - Date.now()) / DAY;
   chk(days > 1, '「' + k + '」换算后接着背一次，下一次仍排到 1 天以后（实际 ' +
     Math.round(days * 10) / 10 + ' 天）—— 不是从头再来');
@@ -240,6 +250,96 @@ const never = RM.adopt({ level: 0, learned: false, reviewCount: 0, lapses: 0 }, 
 chk(never.learned === false && never.level === 0,
   '从没背过的记录换算后仍是未学过（不会被算成学过）');
 
+/* ===========================================================================
+   同一天只算一次，以最后一次的选择为准（Issue #481）
+   ---------------------------------------------------------------------------
+   用户 2026-10-06：弹出卡片上「忘记 / 模糊 / 记住」三颗按钮，理论上每天
+   总共只能点一次；再点不要累加结果，而是把那天的结果**改**成新的。
+   例如点完记住再点忘记，数据库里只能留下忘记，掌握度与已复习次数都按
+   最后一次算。
+
+   这里钉三条不变量：
+     ① 同一天连点 N 下，reviewCount 只 +1；
+     ② 记忆阶段 / 遗忘次数 / 下次复习时间全部回到「最后一次」那一份；
+     ③ 跨过 0 点就是新的一天，计数重新 +1（不能把昨天的一起吃掉）。
+   造数里那首「昨天学过、今天还没点」的记录，正是用户截图里那份。
+   =========================================================================== */
 console.log('');
-console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 复习算法测试全部通过');
+{
+  const todayOf = ts => {
+    const d = new Date(ts);
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  };
+  const base = t => ({
+    level: 2, learned: true, nextReviewAt: t, lastReviewAt: t - DAY,
+    reviewCount: 5, lapses: 1, history: [], algo: 'ebbinghaus'
+  });
+
+  chk(RM.dayOf(Date.now()) === todayOf(Date.now()),
+    'dayOf() 就是本地日界那一串（与首页「今天」同一口径）');
+
+  // ① 新学的记录：今天连点五下「记住」，只算一次
+  const t0 = Date.now();
+  let fresh = null;
+  for (let i = 0; i < 5; i += 1) fresh = RM.review(fresh, 'good', 'ebbinghaus', t0 + i * 100);
+  chk(fresh.reviewCount === 1 && fresh.level === 1,
+    '新记录同一天连点五下「记住」：只算一次、只进一格（实际 ' +
+    fresh.reviewCount + ' 次 / 阶段 ' + fresh.level + '）');
+
+  // ② 记住 → 忘记：不累加，按最后那次算
+  let r = RM.review(base(t0), 'good', 'ebbinghaus', t0);
+  chk(r.level === 3 && r.reviewCount === 6 && r.lapses === 1,
+    '昨天学过的今天点「记住」：阶段 3 / 共 6 次 / 忘过 1 次（实际 ' +
+    r.level + ' / ' + r.reviewCount + ' / ' + r.lapses + '）');
+  const mGood = S.mastery(r);
+
+  r = RM.review(r, 'bad', 'ebbinghaus', t0 + 1000);
+  chk(r.reviewCount === 6, '再点「忘记」：复习次数**不累加**，仍是 6（实际 ' + r.reviewCount + '）');
+  chk(r.level === 1 && r.lapses === 2,
+    '再点「忘记」：阶段退回 1、遗忘次数跟着变 2（按最后一次算，实际 ' +
+    r.level + ' / ' + r.lapses + '）');
+  chk(S.mastery(r) < mGood, '改成「忘记」后掌握度跟着往下走（' + mGood + '% → ' + S.mastery(r) + '%）');
+
+  // ③ 忘记 → 记住：回到最初那份，不是「叠加」
+  r = RM.review(r, 'good', 'ebbinghaus', t0 + 2000);
+  chk(r.level === 3 && r.reviewCount === 6 && r.lapses === 1 && S.mastery(r) === mGood,
+    '再改回「记住」：阶段 / 次数 / 遗忘次数 / 掌握度全部回到第一次那份（实际 ' +
+    r.level + ' / ' + r.reviewCount + ' / ' + r.lapses + ' / ' + S.mastery(r) + '%）');
+
+  // ④ 空记录上改判也要对（没有「昨天那份」可回滚时）
+  let nw = RM.review(null, 'good', 'ebbinghaus', t0);
+  nw = RM.review(nw, 'bad', 'ebbinghaus', t0 + 1000);
+  chk(nw.reviewCount === 1 && nw.level === 0 && nw.lapses === 1,
+    '新记录上「记住 → 忘记」：仍是 1 次、阶段 0、忘过 1 次（实际 ' +
+    nw.reviewCount + ' / ' + nw.level + ' / ' + nw.lapses + '）');
+  nw = RM.review(nw, 'fuzzy', 'ebbinghaus', t0 + 2000);
+  chk(nw.reviewCount === 1 && nw.lapses === 0 && nw.nextReviewAt - t0 <= 12 * 3600000 + 3000,
+    '再改「模糊」：遗忘次数也退回去了（实际 ' + nw.lapses + '）、下次排到 12 小时后');
+
+  // ⑤ 跨过 0 点 = 新的一天
+  let d = RM.review(base(t0), 'good', 'ebbinghaus', t0);
+  d = RM.review(d, 'bad', 'ebbinghaus', t0 + 1000);
+  const nextDay = RM.review(d, 'good', 'ebbinghaus', t0 + DAY);
+  chk(nextDay.reviewCount === 7,
+    '第二天再点：计数重新 +1（昨天那几下不算新的，实际 ' + nextDay.reviewCount + '）');
+  const nextDayAgain = RM.review(nextDay, 'bad', 'ebbinghaus', t0 + DAY + 1000);
+  chk(nextDayAgain.reviewCount === 7,
+    '第二天再改判仍不累加（实际 ' + nextDayAgain.reviewCount + '）');
+
+  // ⑥ 判定辅助：今天点过了没 / 点的是哪一个
+  chk(RM.gradedToday(r, t0 + 3000) === true && RM.gradedToday(r, t0 + DAY) === false,
+    'gradedToday()：今天点过为真、明天为假（弹卡片靠它决定要不要提示改判）');
+  chk(RM.todayResult(r, t0 + 3000) === 'good', 'todayResult()：今天最后选的是「记住」');
+  chk(RM.todayResult(RM.review(null, 'fuzzy', 'ebbinghaus', t0), t0) === 'fuzzy',
+    'todayResult() 跟着最后一次走（模糊）');
+
+  // ⑦ 换算法不清今天的「底」：改判照样只更新
+  const cross = RM.review(RM.adopt(d, 'sm2'), 'good', 'sm2', t0 + DAY);
+  const cross2 = RM.review(cross, 'bad', 'sm2', t0 + DAY + 500);
+  chk(cross2.reviewCount === cross.reviewCount,
+    'SM-2 上同日改判同样不累加（实际 ' + cross2.reviewCount + '）');
+}
+
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 复习算法测试全部通过（含同日改判只算一次）');
 process.exit(fails ? 1 : 0);
