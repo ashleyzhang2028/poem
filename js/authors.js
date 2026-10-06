@@ -10,7 +10,8 @@
        返回就回到李白列表。」
 
    三层，全部**就地**展开（不换页、不改 url）：
-     ① 朝代索引卡 + 各朝代段（一段里是这一朝的作者，左名右数）
+     ① 朝代索引卡 + 各朝代段（一段里是这一朝的作者，**一行行胶囊**：
+        只有「名字 + 条数」，一行三个起步 —— 见 `eraCard()`）
      ② 点作者 → 作品列表（空搜索 + 全部 / 未读 + 随机连读，与集子页同构）
      ③ 点作品 → 详情页，上一页 / 下一页**只在该作者的作品里走**
 
@@ -145,7 +146,17 @@
     return sec;
   }
 
-  /* ── ① 各朝代段：段里是这一朝的作者 ───────────────────────────────── */
+  /* ── ① 各朝代段：段里是这一朝的作者 ─────────────────────────────────
+     段里**只有**「作者名 + 条数」两件事，排成一行行的胶囊（一行三个起步）。
+
+     为什么不是一行一位作者：手机上那是一个作者一行、右边一颗箭头一把小字，
+     一部《唐诗》就摆出上百行，读者要点着滚动条把一整朝滤一遍。名册要的是
+     「扫一眼有谁」，不是「读一行的详情」—— 朝代、集子名、条数这些小字
+     全都不进名册，名字自己就是索引。点哪一颗进哪一位的作品列表，
+     该有的信息在②层里一条不少。
+
+     字号 / 字形取搜索页那颗「作者索引」入口那一档（13.5px、UI 黑体），
+     与①层那张朝代索引卡同一族。 */
   function eraCard(g) {
     var people = peopleOf(g.at);
     var sec = document.createElement("section");
@@ -159,44 +170,22 @@
       '<span class="group-count">' + people.length + " 家 · " + g.works + " 条</span>";
     sec.appendChild(head);
 
+    var wrap = document.createElement("div");
+    wrap.className = "author-chips";
     people.forEach(function (w) {
       var el = document.createElement("button");
       el.type = "button";
-      el.className = "item author-item";
+      el.className = "author-chip";
       el.dataset.author = w.name;
       el.innerHTML =
-        '<div class="item-main">' +
-        '<h3 class="item-title">' + esc(w.name) + "</h3>" +
-        '<div class="item-meta">' + eraLine(w) + "</div>" +
-        "</div>" +
-        '<div class="item-actions"><span class="author-count">' + w.items.length + " 条</span></div>" +
-        '<div class="item-arrow">' + CHEVRON + "</div>";
+        '<span class="author-name">' + esc(w.name) + "</span>" +
+        '<span class="author-count">' + w.items.length + "</span>";
       el.addEventListener("click", function () { enterAuthor(w.name); });
-      sec.appendChild(el);
+      wrap.appendChild(el);
     });
+    sec.appendChild(wrap);
 
     return sec;
-  }
-
-  /* 作者名下的那一行小字：朝代 + 收在哪几部集子里（最多三处，多了写「等」）。 */
-  function eraLine(w) {
-    var books = [];
-    var seen = {};
-    w.items.forEach(function (p) {
-      var n = p.bookName || "";
-      if (!n || seen[n]) return;
-      seen[n] = true;
-      books.push(n);
-    });
-    var head = Object.keys(w.dynasties || {}).filter(function (d) { return d; }).slice(0, 1);
-    var parts = [];
-    if (head.length) parts.push(esc(head[0]));
-    if (books.length) {
-      var shown = books.slice(0, 3).join(" / ");
-      if (books.length > 3) shown += " 等 " + books.length + " 部";
-      parts.push(esc(shown));
-    }
-    return parts.join(" · ");
   }
 
   function renderIndex() {

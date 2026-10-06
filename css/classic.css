@@ -2077,10 +2077,20 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
    ① 层是**静态**的两张卡（朝代索引卡 + 各朝代作者名册），不归阅读器管；
    ②③ 层复用 `.toolbar` / `.list` / `.reader`，样式一字不加。
 
-   所以下面只管两件事：
-     · ① 层容器 `.authors-index` 撑成与 `.app` 内容同宽的竖排；
-     · ① 层的作者行 `.author-item` —— 它不是阅读器的 `.item`（那一份的
-       宽度 / 边框规则是按 `.list` 的网格排的），但长相要跟它一个家。
+   这一节只管 ① 层那两件：
+     · 容器 `.authors-index` 撑成与 `.app` 内容同宽的竖排；
+     · 各朝代段里的作者 —— 一行行的**胶囊**（`.author-chip`），不是
+       一行一位作者的行。
+
+   ## 胶囊为什么是胶囊（Issue #480 第三轮）
+
+   用户原话：手机上一行一位作者，一朝的作者要滚上半天；把「作者 + 数量」
+   直接做成行内胶囊，一张卡一行就能放下三个以上，别的一律不要，字号与
+   搜索页那颗「作者索引」入口一样大，字形黑体。
+
+   所以胶囊里只有两样：名字、条数。朝代 / 集子名那一行小字（老 `eraLine()`）
+   整个不进名册 —— 一串小字会把每颗胶囊顶到半屏宽，「一行三个」就没了。
+   名册是拿来扫名字的，详情归②层。
    ========================================================================== */
 
 .authors-index {
@@ -2104,79 +2114,66 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
   margin-top: 0;
 }
 
-/* 作者名册那段里的行：左名右数，右侧一颗箭头。
-   不用 `.list .item` —— `.list` 的网格规则是给 ②层 的作品行用的，
-   两层的列数不一样，混用会把作者行也切成半屏宽。 */
-.authors-index .author-item {
+/* ── 各朝代段里的作者：一行行胶囊 ───────────────────────────────────────
+   `flex-wrap` 让每颗胶囊按自己的名字长短拿宽，一行塞不下就整颗换行 ——
+   不用 grid 的等分列：`李白` 与 `诸葛亮` 差着两个字，等分会把短名字
+   泡在一片空里，一行三个的说法也就成了三个半。
+   `gap` 是行内间距，行距另给一点（`row-gap` 略大于 `column-gap`），
+   免得上下两行粘成一团。 */
+.authors-index .author-chips {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
+  gap: 8px 6px;
+  padding: 2px 12px 12px 12px;
+}
 
-  background: transparent;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-left: 3px solid var(--green);
-  border-radius: 0;
-  box-shadow: none;
-  padding: 11px 10px 11px 12px;
-}
-.authors-index .author-item:first-of-type { border-top-color: color-mix(in srgb, var(--line) 55%, transparent); }
-.authors-index .author-item:hover { background: var(--green-light); }
-.authors-index .author-item .item-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.authors-index .author-item .item-meta {
-  margin-top: 2px;
-  font-size: 11.5px;
-  color: var(--ink-2);
-  line-height: 1.5;
-}
-.authors-index .author-item .author-count {
-  flex: 0 0 auto;
-  /* 「21 条」两字 + 数不许折行 —— 不写这一句，窄屏上两位数会掉到第二行，
-     整段行高参差。 */
-  white-space: nowrap;
-  font-size: 11.5px;
-  color: var(--ink-3);
-}
-.authors-index .author-item .item-arrow {
-  flex: 0 0 auto;
+.authors-index .author-chip {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
+  gap: 5px;
+
+  /* 一颗胶囊自己就是一块可点区，别让 flex 把它拉长 / 压扁 */
+  flex: 0 0 auto;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card-2, transparent);
+
+  font: inherit;
+  /* 与搜索页那颗「作者索引」入口同一档（13.5px），字形走 UI 黑体 ——
+     名册是索引、不是诗文，`--font-ui` 正是那套无衬线。 */
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  line-height: 1.3;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.authors-index .author-chip:hover { background: var(--green-light); }
+.authors-index .author-chip:active { opacity: .7; }
+
+.authors-index .author-chip .author-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* 条数：跟在名字后面，压淡、小一号 —— 它是注解，不该与名字抢眼。 */
+.authors-index .author-chip .author-count {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
-.authors-index .author-item .item-arrow svg { width: 16px; height: 16px; }
 
-/* 宽屏：作者行一行两列（与 `.group-card > .item` 同一档）。 */
-@media (min-width: 768px) {
-  .authors-index .author-era {
-    display: flex;
-    flex-wrap: wrap;
-    column-gap: 22px;
-    row-gap: 0;
-  }
-  .authors-index .author-era > .group-head {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-  .authors-index .author-era > .author-item {
-    flex: 1 1 calc(50% - 11px);
-    max-width: calc(50% - 11px);
-  }
-  .authors-index .author-era > .author-item:nth-of-type(2) { border-top: none; }
-}
-@media (min-width: 1280px) {
-  .authors-index .author-era > .author-item {
-    flex: 1 1 calc(33.333% - 14.667px);
-    max-width: calc(33.333% - 14.667px);
-  }
-  .authors-index .author-era > .author-item:nth-of-type(3n + 3) { border-top: 1px solid var(--line); }
+/* 宽屏：一段宽，胶囊会一直摊到很长的行。卡里给一道上限，读起来像一列，
+   不至于横着扫一整个屏幕。 */
+@media (min-width: 1024px) {
+  .authors-index .author-chips { max-width: 880px; }
 }
