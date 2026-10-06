@@ -214,13 +214,15 @@
   var CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>';
 
-  /* 一张子入口：名字 + 条数，点它就地进集子（与旧卡片同一条路）。 */
+  /* 一条子入口：名字 + 条数 + 右端一枚箭头，点它就地进集子（与旧卡片同一条路）。
+     Issue #484：块状卡片改成目录行，箭头的位移与变色在 CSS 里（.library-sub-go）。 */
   function subItemHtml(it) {
     var tag = it.book ? "button" : "a";
     var attr = it.book ? ' type="button"' : ' href="' + it.page + '"';
     return "<" + tag + ' class="library-sub" data-book="' + it.id + '"' + attr + ">" +
       '<span class="library-sub-name">' + esc(it.name) + "</span>" +
       '<span class="library-sub-count">' + countOf(it.id) + " " + esc(it.unit) + "</span>" +
+      '<span class="library-sub-go" aria-hidden="true">' + CHEVRON + "</span>" +
       "</" + tag + ">";
   }
 
