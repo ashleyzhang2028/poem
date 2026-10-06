@@ -220,7 +220,8 @@
     'stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>';
 
   /* 一条子入口：名字 + 条数 + 右端一枚箭头，点它就地进集子（与旧卡片同一条路）。
-     Issue #484：块状卡片改成目录行，箭头的位移与变色在 CSS 里（.library-sub-go）。 */
+     Issue #484：块状卡片改成目录行；第二版起一行两项，列间距折进行的内边距，
+     箭头的位移与变色都在 CSS 里（.library-sub-go）。 */
   function subItemHtml(it) {
     var tag = it.book ? "button" : "a";
     var attr = it.book ? ' type="button"' : ' href="' + it.page + '"';
@@ -231,7 +232,7 @@
       "</" + tag + ">";
   }
 
-  /* 分组卡：卡头一行名字 + 一句短注，下面是子入口网格，没有 desc。 */
+  /* 分组卡：卡头一行名字 + 一句短注，下面是子入口网格（一行两项），没有 desc。 */
   function groupCardHtml(g) {
     var members = g.members.map(entryOf).filter(Boolean);
     if (!members.length) return "";
