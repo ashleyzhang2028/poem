@@ -333,12 +333,33 @@ MERGES.forEach(function (m) {
 chk((sb.POEMS_SONGCI || []).length === 330,
   '《词》288 首（宋）+ 五代 6 / 清 5 / 金 1 + 历年遗漏 / 大会冷门 / 决赛冷门 + 扬州专辑 5 + 李清照 3 + 苏轼 / 李清照各 5 + 陆游 1 = 330（实际 ' +
   (sb.POEMS_SONGCI || []).length + '）');
-chk((sb.POEMS_GUSHI || []).length === 46,
-  '《古诗「非唐代」》19 首（首轮）+ 偶成 / 登快阁 + 大会冷门 5 + 决赛冷门 5 + 扬州专辑 5 + 陆凯 / 陆游 10 = 46（实际 ' +
+chk((sb.POEMS_GUSHI || []).length === 47,
+  '《古诗「非唐代」》19 首（首轮）+ 偶成 / 登快阁 + 大会冷门 5 + 决赛冷门 5 + 扬州专辑 5 + 陆凯 / 陆游 10 + 曹植《七步诗》1 = 47（实际 ' +
   (sb.POEMS_GUSHI || []).length + '）');
-chk((sb.POEMS_TANGSHI || []).length === 378,
-  '《唐诗》301 首 + 校外补充 66 首 + 扬州专辑 11 首 = 378（并进去的那几条仍在选本列表里；实际 ' +
+chk((sb.POEMS_TANGSHI || []).length === 377,
+  '《唐诗》301 首 + 校外补充 66 首 + 扬州专辑 11 首 − 曹植《七步诗》（非唐，已归位）= 377（实际 ' +
   (sb.POEMS_TANGSHI || []).length + '）');
+
+/* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
+   非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
+const TANG_OK = /唐/;
+const tangBad = (sb.POEMS_TANGSHI || []).filter(p => !TANG_OK.test(p.dynasty || ''));
+chk(tangBad.length === 0, '《唐诗》里每一条的朝代都含「唐」（越界：' +
+  (tangBad.map(p => p.id + '（' + p.dynasty + '）').join('、') || '无') + '）');
+const tangCao = (sb.POEMS_TANGSHI || []).filter(p => p.author === '曹植');
+chk(tangCao.length === 0, '曹植（三国魏）的诗不再出现在《唐诗》里（残留：' +
+  (tangCao.map(p => p.id).join('、') || '无') + '）');
+const gushiCao = (sb.POEMS_GUSHI || []).filter(p => p.author === '曹植' && p.title === '七步诗')[0];
+chk(!!gushiCao && gushiCao.gradeGroup === '汉魏诗',
+  '《七步诗》归位到《古诗「非唐代」· 汉魏诗》，朝代「三国·魏」');
+if (gushiCao) {
+  const t = sb.masterTextOf ? sb.masterTextOf(gushiCao, 'gushi') : gushiCao;
+  chk(!!t.text && t.text.indexOf('本是同根生') >= 0,
+    '《七步诗》正文随归位一并可读（主表取到「本是同根生」）');
+}
+const gushiTang = (sb.POEMS_GUSHI || []).filter(p => (p.dynasty || '').indexOf('唐') >= 0);
+chk(gushiTang.length === 0, '《古诗「非唐代」》里没有唐代的诗（越界：' +
+  (gushiTang.map(p => p.id + '（' + p.dynasty + '）').join('、') || '无') + '）');
 chk(ALL.length === 251, '课内仍 251 首（实际 ' + ALL.length + '）');
 
 console.log('');

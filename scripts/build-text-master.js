@@ -27,6 +27,8 @@ const LOAD = [
   'scripts/data/ci-corpus-471.js',
   /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首（《古诗「非唐代」》9 诗 1 词）。 */
   'scripts/data/gushi-corpus-471b.js', 'scripts/data/ci-corpus-471b.js',
+  /* Issue #480：曹植《七步诗》从《唐诗》归位到《古诗「非唐代」· 汉魏诗》。 */
+  'scripts/data/gushi-corpus-480.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
   /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
@@ -117,6 +119,7 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-471.js', v: 'CIWEN_CORPUS_471', book: 'songci' },
     /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首。 */
     { f: 'scripts/data/gushi-corpus-471b.js', v: 'GUSHI_CORPUS_471B', book: 'gushi' },
+    { f: 'scripts/data/gushi-corpus-480.js', v: 'GUSHI_CORPUS_480', book: 'gushi' },
     { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */

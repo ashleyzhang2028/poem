@@ -331,6 +331,19 @@ chk(norm(yt.text) === norm(JYS), '唐诗三百首《夜思》正文 = 同一份�
 chk(sb.SITE_INDEX.filter(p => String(p.text || '').indexOf('看月光') >= 0).length === 0,
   '全站没有「床前看月光」的残留');
 
+/* Issue #480：《昭明文选》原有 145 条 dynasty 是空串（作者 62 位：孙兴公、
+   王文考、谢惠连、颜延之……），在按朝代铺开的作者索引里会掉出时间轴。
+   已按《文选》李善注所载作者小传补齐，这里守「一条不空」。 */
+const zm = sb.POEMS_ZHAOMING || [];
+const zmEmpty = zm.filter(p => !String(p.dynasty || '').trim());
+chk(zm.length === 480 && zmEmpty.length === 0,
+  '《昭明文选》480 条每一条都有朝代（空串：' + (zmEmpty.map(p => p.id).join('、') || '无') + '）');
+const zmAuthors = {};
+zm.forEach(p => { if (p.dynasty) zmAuthors[p.author] = p.dynasty; });
+chk(zmAuthors['谢灵运'] === '南朝·宋' && zmAuthors['魏武帝'] === '三国·魏' &&
+    zmAuthors['李斯'] === '秦' && zmAuthors['荆卿'] === '先秦',
+  '抽样认人：《文选》作者的朝代对得上（谢灵运 · 南朝宋 / 魏武帝 · 三国魏 / 李斯 · 秦 / 荆轲 · 先秦）');
+
 const html = read('classic/index.html');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
 if (order.indexOf('data/site-index.js') >= 0) {
