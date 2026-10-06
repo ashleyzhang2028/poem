@@ -84,6 +84,20 @@
     return AI.byEra(at).slice().sort(byPinyin);
   }
 
+  /* 一位作者名下可能挂着好几处朝代写法（同一个人在不同选本里写法不同，
+     例如一位唐代诗人被某处误标成「先秦」）。这里取**落在最早那一朝**的那
+     一个写法 —— 与 `data/author-index.js` 里 `w.at` 的取法同源（也是取
+     最早），否则名册页上会出现「先秦 · 骆宾王」，名册自己却把他摆在唐。 */
+  function earliestDynasty(w) {
+    var best = "";
+    var bestAt = 99;
+    Object.keys(w.dynasties || {}).forEach(function (d) {
+      var at = window.AuthorIndex ? window.AuthorIndex.eraOf(d) : 99;
+      if (at < bestAt) { bestAt = at; best = d; }
+    });
+    return best;
+  }
+
   var CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>';
 
@@ -446,7 +460,43 @@
     boot();
   }
 
+  /* 对外的口子。两拨人各要一份：
+
+       · 页面自己（js/authors.js 内的三层）用 `eras` / `people` / `open` /
+         `close` / `current`；
+       · `test/authors.test.js` 那一层要的是**名册数据**（朝代 → 作者 →
+         作品那三张表），就是 `index()`。它不碰 DOM、也不开阅读器会话，
+         所以两拨各留各的，谁也不替谁。
+
+     ⚠️ `open` / `close` 只在挂上 `window.AuthorIndex` 的那一页有意义 ——
+     数据层那份（`index()`）在 Node 沙盒里也能跑。 */
   window.AuthorsPage = {
+    index: function () {
+      if (!AI) return { authors: [], byAuthor: {} };
+      var people = AI.people();
+      var byAuthor = {};
+      /* `dynasty` 是**原写法**（集子里怎么写的就怎么给），`key` 是归并之后的
+         朝代段名 —— 数据层那两张表当年要的就是这两个数，别拿 `key` 冒充
+         `dynasty`（`南宋` 与 `宋` 在这两格上不是一个意思）。
+         `at` 不为 0 的先按时间轴排、再按名字：名册页自己那份顺序另有讲究
+         （朝内按拼音），这里是给数据层用的。 */
+      var ordered = people.slice().sort(function (a, b) {
+        var ra = a.at || 99, rb = b.at || 99;
+        if (ra !== rb) return ra - rb;
+        return byPinyin(a, b);
+      });
+      var rows = ordered.map(function (w) {
+        return {
+          name: w.name,
+          dynasty: earliestDynasty(w),
+          key: AI.eraName(earliestDynasty(w)),
+          works: AI.itemsOf(w)
+        };
+      });
+      rows.forEach(function (r) { byAuthor[r.name] = r; });
+      return { authors: rows, byAuthor: byAuthor };
+    },
+
     eras: function () { return AI ? AI.groups() : []; },
     people: function (at) { return AI ? peopleOf(at) : []; },
     open: function (name) { enterAuthor(name); },

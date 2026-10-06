@@ -212,6 +212,24 @@
     return ALIAS[name] || name;
   }
 
+  /* 判重：同一篇跨集重复只算**第一次**出场的那一条（认 `WorksIndex.widOf`
+     给出的那个「作品 id」）。《静夜思》在《课内诗词》与《唐诗》里各有一条、
+     《乌夜啼》在《词》与别处各有一条 —— 不判重的话，一位作者的作品列表里
+     同一首选本会重出两三遍，详情页的上一篇 / 下一篇也会原地打转。
+
+     ⚠️ 只**收窄**、不**合并**：`repOf` 指过去的那些壳条（例如《鹊桥仙·华灯
+     纵博》挂在集内旧条 sc-281 上）本来就没有独立正文，这里让它们不出场，
+     读者点的是那条有正文的。`WorksIndex` 缺席时（Node 沙盒只挂数据文件）
+     退化成「一条都不判重」—— 名册照旧成表，只是同一首可能重出。 */
+  function isDup(p, seen) {
+    var WI = (typeof window !== "undefined" && window.WorksIndex) || null;
+    if (!WI || !WI.widOf) return false;
+    var wid = WI.widOf(p.id);
+    if (seen[wid]) return true;
+    seen[wid] = true;
+    return WI.repOf && WI.repOf(p.id) !== p.id;
+  }
+
   /* 一位作者的「朝代」：他名下所有条目的 `eraOf` 取**最小**那个 ——
      同一人在两处写法不同时（屈原写过「战国」也写过「先秦」），落到早的
      那一朝，不会因为一处笔误把整份作品拆到两段去。 */
@@ -219,9 +237,12 @@
     var byPerson = {};
     var order = [];
 
+    var seenWid = {};
+
     raw.forEach(function (p) {
       var who = personOf(p);
       if (!who || SKIP[who]) return;
+      if (isDup(p, seenWid)) return;
       if (!byPerson[who]) {
         byPerson[who] = { name: who, at: 99, items: [], dynasties: {} };
         order.push(who);

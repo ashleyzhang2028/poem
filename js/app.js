@@ -262,8 +262,21 @@
       scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() + "_" +
       dailyExtraKey() +
 
-      "_algo-" + algoKey()
+      "_algo-" + algoKey() +
+      // 「以后再背」点过的也要进 key：不然点完还是命中旧的那一份（Issue #481）
+      "_defer-" + deferKey()
     );
+  }
+
+  function deferKey() {
+    if (!window.ReciteDefer) return "0";
+    try {
+      return window.ReciteDefer.list().map(function (it) {
+        return it.wid + "@" + it.day;
+      }).join(",");
+    } catch (e) {
+      return "0";
+    }
   }
 
   function dailyExtraKey() {
@@ -385,15 +398,7 @@
       }
     }
 
-    const plan = pinTodayDone(withTodayExtra(Scheduler.generateDailyPlan({
-      grade: settings.grade,
-      term: settings.term,
-      count: settings.dailyCount,
-      scope: scopeKey(),
-      provider: provider,
-      getRecord: getRecord,
-      extraPoems: extraPoems()
-    })));
+    const plan = pinTodayDone(withTodayExtra(generateTodayPlan()));
 
     sessionStorage.setItem(
       key,
@@ -404,6 +409,146 @@
       )
     );
     return plan;
+  }
+
+  // 今天的排期：交给 TodayPlan 走「以后再背 + 补位」那一趟（Issue #481）。
+  // TodayPlan 缺席（老页面脚本）时退回原来那一条路，一个字不改。
+  function generateTodayPlan() {
+    const opt = {
+      grade: settings.grade,
+      term: settings.term,
+      count: settings.dailyCount,
+      scope: scopeKey(),
+      provider: provider,
+      getRecord: getRecord,
+      extraPoems: extraPoems()
+    };
+    const T = window.TodayPlan;
+    // TodayPlan 那个「排今天这一趟」的具名入口
+    const fn = T ? T.arrange : null;
+    if (typeof fn === "function") {
+      try {
+        return fn(opt, { provider: provider });
+      } catch (e) {  }
+    }
+    return Scheduler.generateDailyPlan(opt);
+  }
+
+  function deferToday(poem, btn) {
+    const D = window.ReciteDefer;
+    if (!D || !poem || !poem.id) {
+      showToast("本机不支持「以后再背」");
+      return;
+    }
+    const r = D.defer(poem);
+    if (r.ok === false) {
+      showToast("记不下来：本机存储用不了（换一个浏览器试试）");
+      return;
+    }
+    showToast("《" + (poem.custom ? showTitle(poem.title) : poem.title) +
+      "》明天再背 —— 后面补一首新的上来");
+    // 名单变了，计划缓存跟着作废，重排一遍：这一首下去、末尾补上来一首
+    invalidatePlan();
+    rebuildToday();
+    renderAll();
+    if (btn) btn.blur();
+  }
+
+  // ---- 「先搁一搁」（长按 / 右键那一档，Issue #481 后续）------------------------
+  //
+  // 列表上那一颗日历键短按 = 顺延一天（上一版的行径，一个字不改）；
+  // **长按 / 右键** = 这一首这一阵子先别上榜。
+  //
+  // 为什么不能只有「顺延一天」：那些「课本里还轮不到、短期内也不会学」的诗，
+  // 一天一天点的话，孩子**每天**都要跟它打一次照面、点一次、再补一首 —— 几十天
+  // 下来一屏全是「点掉它」。搁一档是件要说明的事，所以给一条完整的话：
+  // 「《静夜思》先搁着，X 月 X 日再上榜」，外加一颗「撤掉」。
+  //
+  // 长按不是唯一的入口（长按对键盘、对读屏都不友好）：弹卡片底下那一行
+  // 「先搁一搁」是同一件事的正门。
+
+  var LATER_LONG_MS = 550;
+
+  function fmtDay(ts) {
+    var d = new Date(ts);
+    return (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+  }
+
+  function phraseOf(p) {
+    return "《" + titleOf(p) + "》";
+  }
+
+  // 搁一档 / 撤掉，都从这一条走过：说清楚 + 重排一遍
+  function restPoem(p, btn) {
+    var D = window.ReciteDefer;
+    if (!D || !p || !p.id) {
+      showToast("本机不支持「先搁一搁」");
+      return;
+    }
+    if (D.resting(p)) {
+      D.unrest(p);
+      showToast(phraseOf(p) + "放回来了 —— 明天照旧上榜");
+    } else {
+      var r = D.rest(p);
+      if (r.ok === false) {
+        showToast("记不下来：本机存储用不了（换一个浏览器试试）");
+        return;
+      }
+      showToast(phraseOf(p) + "先搁着，" + fmtDay(Number(r.until)) + "再上榜");
+    }
+    invalidatePlan();
+    rebuildToday();
+    renderAll();
+    if (btn) btn.blur();
+  }
+
+  // 那一颗键的长按 / 右键：短按走原来的 deferToday，长按走 restPoem
+  function bindLaterButton(btn, p) {
+    var timer = null;
+    var longPressed = false;
+
+    var clear = function () {
+      if (timer === null) return;
+      clearTimeout(timer);
+      timer = null;
+      btn.classList.remove("arming");
+    };
+
+    var fire = function () {
+      longPressed = true;
+      btn.classList.remove("arming");
+      timer = null;
+      restPoem(p, btn);
+    };
+
+    btn.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      longPressed = false;
+      btn.classList.add("arming");
+      timer = setTimeout(fire, LATER_LONG_MS);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) {
+      btn.addEventListener(ev, clear);
+    });
+    btn.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+      clear();
+      restPoem(p, btn);
+    });
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (longPressed) {
+        longPressed = false;
+        return;
+      }
+      deferToday(p, btn);
+    });
+    btn.addEventListener("keydown", function (e) {
+      if (e.key >= "1" && e.key <= "9") {
+        e.preventDefault();
+        restPoem(p, btn);
+      }
+    });
   }
 
   function invalidatePlan() {
@@ -499,8 +644,13 @@
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
         "</div>" +
-        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.custom ? showTitle(p.title) : p.title) + '">' +
+        '<div class="item-actions">' +
+        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(titleOf(p)) + '">' +
         playGlyph() + "</button>" +
+        '<button type="button" class="item-later" title="以后再背：点一下 = 从今天挪到明天、末尾补一首新的；长按 = 这一首先搁一搁" ' +
+        'aria-label="' + esc(titleOf(p)) + '：以后再背（长按可先搁一搁）">' +
+        laterGlyph() + "</button>" +
+        "</div>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () {
         openPoem(p, item);
@@ -510,6 +660,9 @@
         e.stopPropagation();
         readOne(p, readBtn);
       });
+      const laterBtn = el.querySelector(".item-later");
+      // 短按 = 顺延一天；长按 / 右键 = 这一阵子先搁着（Issue #481 后续）
+      bindLaterButton(laterBtn, p);
       list.appendChild(el);
     });
 
@@ -531,6 +684,22 @@
 
     syncTodayReadBtn();
     if (todaySearchUI) todaySearchUI.refresh();
+  }
+
+  function titleOf(p) {
+    return p && p.custom ? showTitle(p.title) : (p && p.title) || "";
+  }
+
+  // 「以后再背」：日历上划一道对钩 —— 日子照走，这一首先搁一搁
+  function laterGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="4.2" y="5.6" width="15.6" height="14.2" rx="2.6" />' +
+      '<path d="M4.2 10.2h15.6M8.6 3.6v3.4M15.4 3.6v3.4" />' +
+      '<path d="M9.3 15.4l2 2 3.6-3.9" />' +
+      "</svg>"
+    );
   }
 
   function playGlyph() {
@@ -882,6 +1051,7 @@
             ? "今天加背的，按" + algoShort() + "排下次"
             : "新学，今天先记一遍"
         : "背诵后安排下次复习时间";
+    syncLaterRow(p);
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
@@ -1208,6 +1378,29 @@
     if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
   }
 
+  // 弹卡片底下那一行「先搁一搁」：这颗诗没学过 / 短期不打算学，明说一句。
+  // 已经搁着的，键上直接写「撤掉（X 月 X 日再上榜）」—— 状态与动作在同一个
+  // 地方，不用孩子猜。
+  function syncLaterRow(p) {
+    var row = $("#m-later-row");
+    var btn = $("#m-later-btn");
+    if (!row || !btn) return;
+    var D = window.ReciteDefer;
+    if (!D || !p || !p.id) {
+      row.hidden = true;
+      return;
+    }
+    row.hidden = false;
+    var until = D.restUntil ? D.restUntil(p) : null;
+    if (until) {
+      btn.textContent = "撤掉（" + fmtDay(until) + "再上榜）";
+      btn.dataset.resting = "1";
+    } else {
+      btn.textContent = "先搁一搁";
+      btn.dataset.resting = "0";
+    }
+  }
+
   function handleResult(result) {
     if (!currentPoem) return;
     const rec = Storage.get(currentPoem.id) || Scheduler.createRecord();
@@ -1428,11 +1621,22 @@
       });
     });
 
+    const laterRowBtn = $("#m-later-btn");
+    if (laterRowBtn) {
+      laterRowBtn.addEventListener("click", function () {
+        const p = currentPoem;
+        if (!p) return;
+        restPoem(p, laterRowBtn);
+        syncLaterRow(p);
+      });
+    }
+
     const btnReset = $("#btn-reset");
     if (btnReset) btnReset.addEventListener("click", function () {
       if (confirm("确定要清空全部背诵进度吗？此操作不可恢复。")) {
         Storage.clear();
         if (window.DailyExtra) window.DailyExtra.clear();
+        if (window.ReciteDefer) window.ReciteDefer.clear();
         invalidatePlan();
         rebuildToday();
         renderAll();
@@ -1543,8 +1747,15 @@
     window.addEventListener("daily-extra-change", function () {
       invalidateAndRefreshPlan();
     });
+    // 「以后再背」点了 / 撤了 / 从别的设备同步下来了：重排一遍
+    window.addEventListener("recite-defer-change", function () {
+      invalidateAndRefreshPlan();
+    });
     window.addEventListener("storage", function (e) {
-      if (!window.ReciteCollections || e.key !== window.ReciteCollections.KEY) return;
+      const keys = [];
+      if (window.ReciteCollections) keys.push(window.ReciteCollections.KEY);
+      if (window.ReciteDefer) keys.push(window.ReciteDefer.physKey());
+      if (!keys.length || keys.indexOf(e.key) < 0) return;
       invalidatePlan();
       rebuildToday();
     });

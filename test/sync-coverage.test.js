@@ -192,6 +192,9 @@ chk(/同步到哪/.test(C.row('poem_sync_seen_v1').cap), '记账表不上云的�
 
 console.log('\n=== 八、同步层真的照顾到了每一族（两个方向都要）===');
 chk(/collectionsRow\(seen\)/.test(syncSrc), '推送时把自选集合算进去');
+chk(/deferRow\(seen\)/.test(syncSrc), '推送时把「以后再背」算进去');
+chk(/row\.id === DEFER_ROW_ID[\s\S]{0,200}applyRemoteDefer/.test(syncSrc),
+  '拉取时单独处理「以后再背」（defer:v1 那一行）');
 chk(/applyRemoteCollections/.test(syncSrc), '拉取时单独处理自选集合');
 chk(/readRows\(seen\)/.test(syncSrc), '推送时把已读算进去');
 chk(/applyRemoteReads/.test(syncSrc), '拉取时单独处理已读');

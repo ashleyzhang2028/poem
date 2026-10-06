@@ -2286,15 +2286,6 @@ window.POEMS_TANGSHI = [
     gradeGroup: "卷七 五言绝句",
   },
   {
-    textRef: "tangshi-ts-307",
-    id: "ts-307",
-    title: "七步诗",
-    source: "《唐诗三百首》",
-    dynasty: "唐",
-    author: "曹植",
-    gradeGroup: "卷七 五言绝句",
-  },
-  {
     textRef: "tangshi-ts-308",
     id: "ts-308",
     title: "于易水送人",
