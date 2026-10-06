@@ -329,11 +329,39 @@ chk(!/LATER_LONG_MS/.test(appSrc0) && !/contextmenu/.test(appSrc0) && !/function
   '长按 / 右键那一套整个拆掉了（手机上够不着，留着只会互相打架）');
 chk(!/arming/.test(appSrc0) && !/\.arming/.test(read('css/style.css')),
   '长按的「按住了」反馈也一并删了（不再有长按这条路）');
-chk(/function syncLaterRow\(/.test(appSrc0), '弹卡片上那两行「明日再背 / 月后再背」在');
+chk(/function syncLaterRow\(/.test(appSrc0), '弹卡片上那两颗「明日再背 / 月后再背」在');
 chk(/m-later-day/.test(read('index.html')) && /m-later-month/.test(read('index.html')),
   'index.html 上那两颗键都在');
 chk(!/m-later-btn/.test(read('index.html')), '原来那颗「先搁一搁」换了名字（不再含糊）');
-chk(/\.modal-later/.test(read('css/style.css')), 'CSS 里给它定了样式');
+chk(/\.later-btn/.test(read('css/style.css')), 'CSS 里给它定了样式');
+
+// 用户原话（第四轮）：「今日背诵页，古诗词向上弹出的弹窗中，页面底部有 明日再背
+//                和月后再背两个按钮，将这两个按钮放到该弹窗播放和译文圆形按钮的
+//                中间，使用和列表页一样的 SVG 图标」
+//
+// ① 位置：落在 `#m-actions-icons` 那一排里，且**夹在**朗读与译文之间
+const iconRow = read('index.html').slice(
+  read('index.html').indexOf('id="m-actions-icons"'),
+  read('index.html').indexOf('<pre class="poem-text"'));
+const posRead = iconRow.indexOf('id="m-read-btn"');
+const posDay = iconRow.indexOf('id="m-later-day"');
+const posMonth = iconRow.indexOf('id="m-later-month"');
+const posTrans = iconRow.indexOf('id="m-trans-toggle"');
+chk(posRead >= 0 && posTrans >= 0 && posDay >= 0 && posMonth >= 0,
+  '朗读 / 译文 / 两颗「再背」都在这一排里');
+chk(posRead < posDay && posDay < posMonth && posMonth < posTrans,
+  '次序是 朗读 → 明日再背 → 月后再背 → 译文（正落在两颗圆钮中间）');
+chk(!/modal-later/.test(read('index.html')),
+  '页面底部那一行（modal-later）整个撤掉了（不重复摆一份）');
+chk(!/\.modal-later/.test(read('css/style.css')), '它的样式也一并删了（不留没人认的类）');
+
+// ② 图标：两颗键用的是列表页那两个函数画的同一张 SVG（不是另画一套）
+chk(/dayGlyph\(\)/.test(appSrc0) && /monthGlyph\(\)/.test(appSrc0),
+  '两张 SVG 还是列表页那两份（dayGlyph / monthGlyph）');
+chk(/paintLaterBtn[\s\S]{0,600}?monthTier \? monthGlyph\(\) : dayGlyph\(\)/.test(appSrc0),
+  '弹卡片这两颗键按档取图 —— 与列表行尾同款');
+chk(/later-glyph/.test(read('index.html')) && /\.later-glyph/.test(read('css/style.css')),
+  '图形画进 later-glyph 那个洞（一份图标只在一处维护）');
 
 console.log('');
 console.log('=== 五之三、「我的」页那两个名单：列得出、删得掉、删完回正常次序 ===');

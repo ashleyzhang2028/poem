@@ -1337,38 +1337,57 @@
     if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
   }
 
-  // 弹卡片底下那两行「明日再背 / 月后再背」：这一首今天先不背，明说一句。
+  // 弹卡片上那两颗「明日再背 / 月后再背」（Issue #481）—— 就摆在**朗读与译文
+  // 两颗圆钮中间**，与列表行尾那两颗同款：同一个 SVG（`dayGlyph` / `monthGlyph`）、
+  // 同样大小的圆键，一眼认得出是「列表里熟的那颗」。
   //
-  // 列表上的两颗键只进不出（点完它就下去了），撤的地方在这里：两行各是一颗
-  // 开关，已经按时的那一行写「撤掉（X 月 X 日再上榜）」—— 状态与动作在同一个
-  // 地方，不用孩子猜。
+  // ⚠️ 这两个洞在 index.html 里只留了一个空壳（`<span class="later-glyph">`），
+  // 图由这里画 —— 一份图标只在一个地方维护，不与列表页那两颗走散。
+  //
+  // 列表上的两颗键只进不出（点完它就下去了），撤的地方在这里：已经按时的那一颗
+  // 点亮（`data-resting="1"`，金字金圈 + title 写「撤掉（X 月 X 日再上榜）」），
+  // 状态与动作在同一个地方，不用孩子猜。
   //
   // ⚠️ 撤「月后再背」走 `unrest(p, "month")`，只摘那一档；「明日再背」那条
-  // 是`defer()` 记的，跨过今天自己就过期，所以那一行不提供撤销。
+  // 是`defer()` 记的，跨过今天自己就过期，所以那一颗点了只是重记一遍。
   function syncLaterRow(p) {
-    var row = $("#m-later-row");
-    if (!row) return;
     var D = window.ReciteDefer;
+    var day = $("#m-later-day");
+    var month = $("#m-later-month");
+    if (!day || !month) return;
     if (!D || !p || !p.id) {
-      row.hidden = true;
+      day.hidden = month.hidden = true;
       return;
     }
-    row.hidden = false;
-    paintLaterRow("#m-later-day", "day");
-    paintLaterRow("#m-later-month", "month");
+    day.hidden = month.hidden = false;
+    paintLaterBtn(day, LATER_TIER_DAY, "明日再背：这一首明天再上榜，末尾补一首新的");
+    paintLaterBtn(month, LATER_TIER_MONTH, "月后再背：这一首一个月内不上榜，到日子自己回来");
 
-    function paintLaterRow(sel, tier) {
-      var btn = $(sel);
-      if (!btn) return;
-      var until = D.restUntil ? D.restUntil(p, undefined, tier) : null;
-      var resting = !!(D.restingTier ? D.restingTier(p, tier) : false);
+    function paintLaterBtn(btn, tier, baseTitle) {
+      var monthTier = tier === LATER_TIER_MONTH;
       btn.dataset.tier = tier;
+      btn.innerHTML = '<span class="btn-icon later-glyph" aria-hidden="true">' +
+        (monthTier ? monthGlyph() : dayGlyph()) + "</span>" +
+        '<span class="sr-only">' + (monthTier ? "月后再背" : "明日再背") + "</span>";
+      var resting = !!(D.restingTier ? D.restingTier(p, tier) : false);
       btn.dataset.resting = resting ? "1" : "0";
-      if (tier === LATER_TIER_DAY) {
-        btn.textContent = "明日再背";
-        return;
-      }
-      btn.textContent = until ? "撤掉（" + fmtDay(until) + "再上榜）" : "月后再背";
+      var until = resting && D.restUntil ? D.restUntil(p, undefined, tier) : null;
+      btn.title = rowTitle(baseTitle, resting, until);
+      btn.setAttribute("aria-label", rowLabel(monthTier ? "月后再背" : "明日再背", resting, until));
+    }
+
+    // 已经按时的那一颗：说明白了「点它是撤销」，别让孩子以为再点是一次新的顺延
+    function rowTitle(baseTitle, resting, until) {
+      if (!resting) return baseTitle;
+      return until
+        ? "撤掉「以后再背」——这一首 " + fmtDay(until) + " 再上榜（点它放回来）"
+        : "撤掉「以后再背」——这一首放回来，明天照旧上榜";
+    }
+
+    function rowLabel(name, resting, until) {
+      return resting
+        ? "撤掉" + name + (until ? "（" + fmtDay(until) + "再上榜）" : "")
+        : name;
     }
   }
 
@@ -1592,12 +1611,25 @@
       });
     });
 
+    // 弹卡片上那两颗（朗读与译文圆钮中间）：点亮的再点 = 撤掉这一档
+    // （Issue #481）。「明日再背」那条跨过今天自己就过期，所以那一颗点了
+    // 只是把日子重新钉在明天 —— 与列表页那颗同一个入口。
     const laterDayBtn = $("#m-later-day");
     if (laterDayBtn) {
       laterDayBtn.addEventListener("click", function () {
         const p = currentPoem;
         if (!p) return;
-        deferPoem(p, LATER_TIER_DAY, laterDayBtn);
+        const D = window.ReciteDefer;
+        if (D && D.restingTier && D.restingTier(p, LATER_TIER_DAY)) {
+          D.unrest(p, LATER_TIER_DAY);
+          showToast(phraseOf(p) + "放回来了 —— 明天照旧上榜");
+          invalidatePlan();
+          rebuildToday();
+          renderAll();
+        } else {
+          deferPoem(p, LATER_TIER_DAY, laterDayBtn);
+        }
+        syncLaterRow(p);
       });
     }
     const laterMonthBtn = $("#m-later-month");

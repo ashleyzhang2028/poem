@@ -158,6 +158,14 @@
           </span>
           <span class="sr-only" id="m-read-text">朗读原文</span>
         </button>
+        <button type="button" class="mini-btn later-btn" id="m-later-day" data-tier="day" data-resting="0" title="明日再背：这一首明天再上榜，末尾补一首新的">
+          <span class="btn-icon later-glyph" aria-hidden="true"></span>
+          <span class="sr-only">明日再背</span>
+        </button>
+        <button type="button" class="mini-btn later-btn" id="m-later-month" data-tier="month" data-resting="0" title="月后再背：这一首一个月内不上榜，到日子自己回来">
+          <span class="btn-icon later-glyph" aria-hidden="true"></span>
+          <span class="sr-only">月后再背</span>
+        </button>
         <button type="button" class="mini-btn" id="m-trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
           <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -225,10 +233,6 @@
           </span>记住</button>
       </div>
       <div class="hint" id="m-hint"></div>
-      <div class="modal-later" id="m-later-row">
-        <button type="button" class="btn lite" id="m-later-day">明日再背</button>
-        <button type="button" class="btn lite" id="m-later-month">月后再背</button>
-      </div>
     </div>
   </div>
 
