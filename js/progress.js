@@ -20,6 +20,47 @@
     return window.Storage ? window.Storage.get(id) : null;
   }
 
+  // 「明日再背」/「月后再背」两份名单（Issue #481 第三轮）
+  // ---------------------------------------------------------------------------
+  // 这两份名单原先挂在「我的」页，这一轮搬到这儿 —— 到期日历的正上方，
+  // 因为它们是**日历的两头**：日历管「日子到了自己回来」，这两张卡管
+  // 「日子没到之前我在哪儿」。点过的那一首属于哪一档、哪天回来，一眼看全。
+  //
+  // 台账（js/recite-defer.js）只存作品号 —— 换台设备也对得上；稿子（诗题 /
+  // 作者）由这一页从课内主表与全站目录里现查，出口是 `useRef(fn)`。
+  function laterRef(wid) {
+    var list = (window.POEMS_ALL || []).concat(window.SITE_INDEX || []);
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i], D = window.ReciteDefer;
+      if (!p || !p.id || p.isBook) continue;
+      if (!D || !D.widOf || D.widOf(p.id) !== wid) continue;
+      return {
+        id: p.id,
+        title: showTitle(p.title),
+        author: p.author || "",
+        dynasty: p.dynasty || ""
+      };
+    }
+    return null;
+  }
+
+  // 那一行小字：作者 · 朝代（明日那一档只搁一天，写日子反而是废话；
+  // 月后要写「到哪天」，那是这一档唯一的悬念）。
+  // 「哪天回来」由 `listByTier` 给的毫秒时间戳算 —— 不用 `Y-M-D` 字符串
+  // `new Date()`，那种写法会被当成 UTC，往西的时区上会退回前一天。
+  function fmtDay(ts) {
+    var d = new Date(ts);
+    return (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+  }
+
+  function laterMeta(row, tier) {
+    var parts = [];
+    if (row.author) parts.push(row.author);
+    if (row.dynasty && row.dynasty !== row.author) parts.push(row.dynasty);
+    if (tier === "month" && row.until) parts.push(fmtDay(row.until) + "再上榜");
+    return parts.join(" · ");
+  }
+
   function md(ts) {
     var d = new Date(ts);
     return (d.getMonth() + 1) + "/" + d.getDate();
@@ -45,6 +86,76 @@
 
     tip.textContent = "共 " + o.total + " 首，已学 " + o.learned + " 首" +
       (o.overdue ? "，另有 " + o.overdue + " 首逾期超过一周（另计，不在今天那一格）" : "") + "。";
+  }
+
+  // 一张卡一份名单：`tier` 认的是 `day` / `month` 两档。
+  //
+  // 名单是空的（或干脆没有台账）→ 整张卡收起来：一张写着「暂无」的卡会占掉
+  // 日历上方的位置，而绝大多数人是空的（点过才出现，到日子就走了）。
+  function renderLaterOne(tier, o) {
+    var card = $("#later-" + tier + "-card");
+    var box = $("#later-" + tier + "-box");
+    if (!card || !box) return;
+    var D = window.ReciteDefer;
+    if (!D || !D.listByTier) { card.hidden = true; return; }
+
+    D.useRef(laterRef);
+    var rows = D.listByTier(tier);
+
+    var sub = $("#later-" + tier + "-sub");
+    if (sub) sub.textContent = rows.length ? rows.length + " 篇" : "";
+
+    if (!rows.length) {
+      box.innerHTML = "";
+      card.hidden = true;
+      return;
+    }
+
+    box.innerHTML = rows.map(function (r) {
+      return '<div class="later-row" data-wid="' + escapeHtml(r.wid) + '" data-tier="' + tier + '">' +
+        '<span class="later-main">' +
+        '<span class="later-title">' + escapeHtml(r.title) + "</span>" +
+        '<span class="later-meta">' + escapeHtml(laterMeta(r, tier)) + "</span>" +
+        "</span>" +
+        '<button type="button" class="later-del" aria-label="把《' + escapeHtml(r.title) + '》放回正常次序">删除</button>' +
+        "</div>";
+    }).join("");
+    card.hidden = false;
+  }
+
+  function renderLater(o) {
+    renderLaterOne("day", o);
+    renderLaterOne("month", o);
+  }
+
+  // 名单变了（这一页删掉一条、或另一台设备同步下来）就把两张卡重画一遍。
+  // 日历不用动：被摘掉的那一首本就「还没到日子」，不在日历的账上。
+  function bindLater() {
+    var main = $(".progress-main");
+    if (!main || main.dataset.laterBound) return;
+    main.dataset.laterBound = "1";
+
+    main.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest(".later-del") : null;
+      if (!btn) return;
+      var row = btn.closest(".later-row");
+      var D = window.ReciteDefer;
+      if (!row || !D) return;
+      var title = row.querySelector(".later-title");
+      if (!D.unrest(row.dataset.wid, row.dataset.tier)) return;
+      toast("《" + (title ? title.textContent : "") + "》放回来了 —— 回到正常次序");
+      renderLater();
+    });
+    document.addEventListener("recite-defer-change", function () { renderLater(); });
+  }
+
+  function toast(m) {
+    var t = $("#toast");
+    if (!t) return;
+    t.textContent = m;
+    t.hidden = false;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.hidden = true; }, 2200);
   }
 
   function renderCalendar(o) {
@@ -273,10 +384,12 @@
 
     o.dueList = window.Scheduler.dueList(list, getRecord, { days: DAYS });
     renderStats(o);
+    renderLater(o);
     renderCalendar(o);
     renderDueList(o);
     renderMastery(o);
     renderLevels(o);
+    bindLater();
     bindCalendarJump();
   }
 

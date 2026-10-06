@@ -1626,6 +1626,55 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
   letter-spacing: .5px;
 }
 .progress-sub { flex: none; font-size: 12px; color: var(--ink-3); }
+
+/* 「明日再背」/「月后再背」两张卡（Issue #481 第三轮）：搬到到期日历的正上方。
+   标题 / 小字 / 行都跟这一页别的卡同一副长相 —— `progress-head` 那套现成的
+   （诗题字体、字号、灰色小字），这里只补名单自己那几样：一条一行、右边一颗
+   「删除」。行与行之间不画线，靠左是诗题 + 一行小字（作者 · 朝代 · 到哪天）。 */
+.later-card .progress-head { margin-bottom: 4px; }
+
+.later-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.later-row:last-child { border-bottom: 0; }
+
+.later-main { flex: 1 1 auto; min-width: 0; }
+
+.later-title {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.later-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.later-del {
+  flex: none;
+  height: var(--ctl-h-sm);
+  padding: 0 12px;
+  border-radius: var(--ctl-radius);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.later-del:hover,
+.later-del:focus-visible { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
 .progress-tip,
 .progress-note {
   margin: 10px 0 0;
