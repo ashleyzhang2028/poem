@@ -3187,6 +3187,10 @@ window.POEMS_SONGCI = [
   { textRef: "songci-sc-328", id: "sc-328", title: "添字丑奴儿·窗前谁种芭蕉树", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 添字丑奴儿" },
   { textRef: "songci-sc-329", id: "sc-329", title: "清平乐·年年雪里", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 清平乐" },
   { textRef: "songci-sc-330", id: "sc-330", title: "摊破浣溪沙·病起萧萧两鬓华", source: "《漱玉词》", dynasty: "宋", author: "李清照", gradeGroup: "词牌 · 摊破浣溪沙" },
+
+  /* Issue #471 · 第二轮：陆游《诉衷情·当年万里觅封侯》。
+     正文在 scripts/data/ci-corpus-471b.js，此处只挂 textRef 归属。 */
+  { textRef: "songci-sc-331", id: "sc-331", title: "诉衷情·当年万里觅封侯", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "词牌 · 诉衷情", excerpt: "心在天山，身老沧洲" },
 ];
 
 (function () {

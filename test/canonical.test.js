@@ -47,8 +47,8 @@ const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', '
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 156,
-  '主表里有 156 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
+chk(multiEntries.length === 159,
+  '主表里有 159 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
   'Issue #244 / #308；二批带来源的古文 / 诗篇条目并入原篇，再加《求之不得》↔《人言可畏》一类同源对；' +
   'Issue #339 拆掉 5 组错并（愚公移山 / 卧薪尝胆 / 礼贤下士 / 不自量力 / 东道主），' +
   '又合入 1 组真同篇（卧薪尝胆 ↔ 小古文《卧薪尝胆》），再拆开 众志成城 / 众口铄金 一组；' +
@@ -58,7 +58,9 @@ chk(multiEntries.length === 156,
   '第四轮决赛冷门再添 2 组（子罕弗受玉 ↔ 小古文《子罕辞玉》、近试上张籍水部 ↔ 唐诗《近试上张水部》）；' +
   'Issue #461 古文观止对齐 222 篇：新增 12 组（过秦论上/过秦论、治安策一/治安策、' +
   '上书谏猎/司马相如上书谏猎、春夜宴从弟桃花园序/春夜宴桃李园序、大铁椎传、湖心亭看雪、' +
-  '师说、六国论、游褒禅山记、上枢密韩太尉书 与课内或他集合流）；实际 ' +
+  '师说、六国论、游褒禅山记、上枢密韩太尉书 与课内或他集合流）；' +
+  'Issue #471 第二轮又添 3 组（书愤 / 临安春雨初霁 与课内合流、' +
+  '《鹊桥仙·华灯纵博》与集内旧条 sc-281 合流）；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -198,13 +200,14 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 329,
-  '重复条目恰为 309 条（146 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
+chk(dupEntries.length === 335,
+  '重复条目恰为 315 条（146 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
   'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；' +
   '又拆开 众志成城 / 众口铄金 一组降为 295；' +
   '本轮正文括注搬走后新增 蚌鹬相持/坐收渔利、近水楼台/近水楼台先得月 两组，升为 299；' +
   'Issue #461 补篇后再添 3 组重篇，升为 305；第四轮决赛冷门再添 2 组，升为 309；' +
-  'Issue #461 古文观止对齐 222 篇再添 12 条重篇，升为 329；实际 ' +
+  'Issue #461 古文观止对齐 222 篇再添 12 条重篇，升为 329；' +
+  'Issue #471 第二轮再添 3 条重篇（书愤 / 临安春雨初霁 / 鹊桥仙·华灯纵博），升为 335；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
