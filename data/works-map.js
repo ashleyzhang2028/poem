@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 156 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 159 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -75,6 +75,10 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-139", title: "大铁椎传", titles: ["大铁椎传"], entries: ["classic-gw-139","guwen-gwj-231"] },
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
   { wid: "w-classic-gw-94", title: "子罕辞玉", titles: ["子罕辞玉","子罕弗受玉"], entries: ["classic-gw-94","classic-gw-152"] },
+
+  { wid: "w-poems-gz10-23", title: "书愤", titles: ["书愤"], entries: ["gushi-gs-45","poems-gz10-23"] },
+  { wid: "w-poems-gz10-24", title: "临安春雨初霁", titles: ["临安春雨初霁"], entries: ["gushi-gs-46","poems-gz10-24"] },
+  { wid: "w-gushi-gs-51", title: "鹊桥仙·华灯纵博", titles: ["鹊桥仙·华灯纵博","鹊桥仙"], entries: ["gushi-gs-51","songci-sc-281"] },
 
   { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["guwen-gwj-127","poems-cz9-05"] },
   { wid: "w-poems-gz10-12", title: "前赤壁赋", titles: ["赤壁赋","前赤壁赋"], entries: ["guwen-gwj-139","poems-gz10-12"] },

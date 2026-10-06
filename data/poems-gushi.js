@@ -326,4 +326,17 @@ window.POEMS_GUSHI = [
     author: "郑燮",
     gradeGroup: "元明清诗",
   },
+
+  /* Issue #471 · 第二轮：陆凯《赠范晔诗》与陆游十首。
+     正文在 scripts/data/gushi-corpus-471b.js，此处只挂 textRef 归属。 */
+  { textRef: "gushi-gs-44", id: "gs-44", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-45", id: "gs-45", title: "书愤", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-46", id: "gs-46", title: "临安春雨初霁", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-47", id: "gs-47", title: "关山月", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-48", id: "gs-48", title: "病起书怀", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-49", id: "gs-49", title: "秋波媚·七月十六日晚登高兴亭望长安南山", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-50", id: "gs-50", title: "谢池春·壮岁从戎", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-51", id: "gs-51", title: "鹊桥仙·华灯纵博", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-52", id: "gs-52", title: "鹊桥仙·一竿风月", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-53", id: "gs-53", title: "渔家傲·寄仲高", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
 ];

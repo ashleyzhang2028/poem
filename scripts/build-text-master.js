@@ -25,6 +25,8 @@ const LOAD = [
   'scripts/data/ci-corpus-461d.js',
   /* Issue #471：李清照词补录 —— 如梦令·昨夜雨疏风骤、怨王孙·春暮。 */
   'scripts/data/ci-corpus-471.js',
+  /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首（《古诗「非唐代」》9 诗 1 词）。 */
+  'scripts/data/gushi-corpus-471b.js', 'scripts/data/ci-corpus-471b.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
   /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
@@ -113,6 +115,9 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461d.js', v: 'CIWEN_CORPUS_461D', book: 'songci' },
     { f: 'scripts/data/ci-corpus-471.js', v: 'CIWEN_CORPUS_471', book: 'songci' },
+    /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首。 */
+    { f: 'scripts/data/gushi-corpus-471b.js', v: 'GUSHI_CORPUS_471B', book: 'gushi' },
+    { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */
     { f: 'scripts/data/ci-corpus-461f.js', v: 'CIWEN_CORPUS_461F', book: 'songci' },
