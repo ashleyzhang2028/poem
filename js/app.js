@@ -602,7 +602,7 @@
       el.innerHTML =
         '<div class="item-main">' +
 
-        '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.custom ? showTitle(p.title) : p.title) +
+        '<h3 class="item-title">' + numHTML(idx + 1) + esc(p.custom ? showTitle(p.title) : p.title) +
         '<span class="item-reason ' + (item.reason === "review" ? "review"
           : item.reason === "pinned" ? "pinned" : "") + '">' +
         (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮"
@@ -694,6 +694,14 @@
     });
   }
 
+  /* 列表行首的序号徽标（Issue #484）：一到两位数是正圆，三位及以上加
+     `.is-num-wide` 长成胶囊、字号收一档 —— 见 css/style.css 里的 `.item-num`。
+     位数在渲染时才知道，所以这里顺手挂上那个 class，样式表不用猜。 */
+  function numHTML(n) {
+    const t = String(n);
+    return '<span class="item-num' + (t.length > 2 ? " is-num-wide" : "") + '">' + t + "</span>";
+  }
+
   function metaLine(parts) {
     const out = [];
     (parts || []).forEach(function (v) {
@@ -733,7 +741,7 @@
       el.innerHTML =
         '<div class="item-main">' +
 
-        '<h3 class="item-title"><span class="item-num">' + (i + 1) + "</span>" + esc(p.title) + "</h3>" +
+        '<h3 class="item-title">' + numHTML(i + 1) + esc(p.title) + "</h3>" +
         '<div class="item-meta">' +
         metaLine([p.dynasty, p.author].concat(
 

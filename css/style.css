@@ -381,23 +381,50 @@ html, body {
   flex: none;
 
   box-sizing: border-box;
-  width: var(--item-num);
+  /* 序号徽标（Issue #484）：一到两位数是正圆，三位数开始长成胶囊。
+
+     原来是写死的 `width: 17px`，圆环不随字走：两位数以下刚好，三位数时
+     「100」量出来 18.36px（11px 等宽数字），已经比 17px 的直径还宽，
+     数字就压到了圆环上 —— 环的左右两段弧正好切进「1」和最后一个「0」。
+
+     改法：`width` 换成 `min-width` 当直径的下限，再给左右内边距把盒子撑开，
+     圆角走 999px（不足高度时就是圆、超过高度就是胶囊，同一个值两种形状）。
+     一到两位数时盒子仍是 17×17 的正圆，三位数自动长成 17 高的胶囊。 */
+  min-width: var(--item-num);
   height: var(--item-num);
-  border-radius: 50%;
+  border-radius: 999px;
 
   background: none;
   border: 1px solid currentColor;
   color: var(--green);
 
   display: inline-flex;
-  align-items: center;
+  /* 数字居中是拿**上内边距**压出来的，不是 `align-items: center`（Issue #484
+     「胶囊内数字没有垂直居中」）。`center` 居中的是**行盒**，不是数字的墨迹：
+     本字体 11px 时一行 12px（上行 9、下行 3），数字没下半部，墨迹只占行的
+     1..9、贴着行盒顶。行盒居中了，数字看着仍偏上 —— 量出来上留 2、下留 3。
+     3px 的上内边距把行盒顶下来：环 0..16、数字 10..17，墨迹中点 13.5 对环中线
+     14，正好差那半个像素。17 行（奇）对 8 行墨迹（偶）两不可兼，必差 0.5，
+     取「偏上」这侧 —— 「1」的横脚、「0」的下弧让数字看着下重上轻，抬半像素
+     反而正；试过 3.5px，明显偏低。 */
+  align-items: flex-start;
   justify-content: center;
-  padding: 0;
+  /* 横向 0：一到两位数时盒子不撑开，`min-width` 生效，正好 17×17 的正圆
+     （「99」11px 量出 12.25px，环内净宽 15px，站得下）。三位数才被下一条
+     加左右内边距撑成胶囊。 */
+  padding: 3px 0 0;
   font-size: 11px;
   line-height: 1;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* 三位数（100 及以上）字号收一档：11px 时「100」要 18.36px，收到 10px 是
+   16.69px，再加左右各 4px 的内边距，胶囊宽 26.69px、高仍是 17px —— 挤得下，
+   也不至于把序号撑得比行首那颗色点还显眼。位数由渲染时挂的 `.is-num-wide`
+   认出来（三位及以上），见 js/app.js 与 js/reader-core.js 里那个 numHTML()。 */
+/* 上内边距仍是那 3px（10px 与 11px 同一套字体度量，墨迹落点一致），横向 4px 是留白。 */
+.item-num.is-num-wide { font-size: 10px; padding: 3px 4px 0; }
 .item.review .item-num { color: var(--amber); }
 .item-meta {
   font-size: 12.5px;
