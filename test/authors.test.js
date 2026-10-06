@@ -31,11 +31,14 @@ vm.createContext(sb);
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js',
   'data/poems-classic.js', 'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-gushi.js',
-  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/zhaoming-dynasty.js', 'data/poems-yuanqu.js',
   'data/poems-jinxiandai.js', 'data/poems-chengyu.js', 'data/poems-changshi.js',
   'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
   'data/poems-emperor-cn.js', 'data/poems-emperor-waiguo.js',
-  'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
+  'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
+  // 名册本身那一份（朝代归一表 + 异名表 + 收哪十部）—— `AuthorsPage.index()`
+  // 要的那三张表就是它铺出来的（Issue #480 第二轮并入时补上）
+  'data/author-index.js'
 ].forEach(f => vm.runInContext(read(f), sb, { filename: f }));
 
 vm.runInContext(read('js/authors.js'), sb, { filename: 'js/authors.js' });
@@ -69,22 +72,38 @@ const jys = idx.authors.filter(a => a.works.some(w => w.title === '静夜思' ||
 const jysCount = jys.reduce((n, a) => n + a.works.filter(w => w.title === '静夜思' || w.title === '夜思').length, 0);
 chk(jysCount <= 1, '同一篇跨集重复只算一次（《静夜思》出现 ' + jysCount + ' 次）');
 
-const authorsHtml = read('authors/index.html');
-chk(fs.existsSync(path.join(root, 'authors/index.html')), '/authors/ 页面在');
-chk(authorsHtml.indexOf('js/authors.js') >= 0, '/authors/ 引了 js/authors.js');
-
 const searchHtml = read('search/index.html');
-chk(searchHtml.indexOf('/authors/') >= 0, '搜索页有作者索引入口');
+chk(/id="author-entry"/.test(searchHtml), '搜索页上有「作者索引」的入口（#author-entry）');
+chk(/id="authors-index"/.test(searchHtml), '搜索页上有名册容器（#authors-index）');
 
-const libHtml = read('library/index.html');
+// 名册那一层的阅读器列表与搜索页自己的命中列表是两个容器：
+// 后者不归阅读器，前者归（这样「点作者 → 他的作品」才不会被搜索层抢走）
+chk(/id="site-gw-list"/.test(searchHtml), '搜索页自己的命中列表是 #site-gw-list');
+chk(/id="gw-list"/.test(searchHtml), '作者作品列表是阅读器的 #gw-list');
+
+// ⚠️ 作者索引是 `/search/` 里的**一层**，不是另一个页面（Issue #480 第二轮）——
+// `/authors/` 这个目录已经不存在，chrome 路由表里也不许再有它，
+// 否则它会被认成顶层页、右上角顶一颗「返回课外阅读」的箭头。
+chk(!fs.existsSync(path.join(root, 'authors/index.html')), '/authors/ 目录已撤（它不是一个页面）');
+chk(searchHtml.indexOf('href="/authors/"') < 0, '搜索页的入口不是一条链去 /authors/ 的链接');
+
 const libJs = read('js/library.js');
-chk(libHtml.indexOf('/authors/') < 0 && libJs.indexOf('/authors/') < 0,
-  '课外阅读集子页（/library/）没有作者索引入口');
+chk(libJs.indexOf('id: "authors"') < 0, '课外阅读的入口表里没有「作者索引」这一条');
+chk(!/crossCardHtml/.test(libJs), '课外阅读不再为跨集子入口单开一张卡（crossCardHtml 已删）');
+chk(read('css/classic.css').indexOf('library-cross') < 0, 'CSS 里那条 .library-cross 也删干净了');
 
 const chromeSrc = read('js/chrome.js');
-chk(/authors:\s*"\/authors\/"/.test(chromeSrc), 'chrome.js 注册了 /authors/ 路由');
-chk(/if \(key === "authors"\) return "search";/.test(chromeSrc),
-  '作者索引在底栏高亮「搜索」（挂在搜索下，不单开一格）');
+chk(!/authors:\s*"\/authors\/"/.test(chromeSrc), 'chrome 的路由表里没有 /authors/（它不是一个页面）');
+
+// 入口那件事归 js/authors.js（搜索页那一层）
+const authorsJs = read('js/authors.js');
+chk(/bindEntry\(/.test(authorsJs), 'js/authors.js 里有入口绑定（bindEntry）');
+chk(/setSearchLayer/.test(authorsJs), '名册展开时把搜索层收起来（setSearchLayer）');
+
+// 搜索页自己铺命中行，行的长相从 reader-core 借（不另画一套）
+chk(/window\.ReaderList/.test(read('js/search.js')), '搜索页的行渲染借 window.ReaderList');
+chk(/window\.ReaderList = \{/.test(read('js/reader-core.js')), 'reader-core 暴露了 ReaderList');
+chk(/window\.ReaderSearch = \{/.test(read('js/reader-core.js')), 'reader-core 暴露了 ReaderSearch（按条开阅读器）');
 
 console.log('');
 console.log(fails ? '❌ 作者索引测试失败 ' + fails + ' 项' : '🎉 作者索引测试全部通过');

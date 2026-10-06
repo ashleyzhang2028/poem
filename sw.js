@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v348";
+const CACHE_NAME = "poem-app-v353";
 
 const PRECACHE = [
   "./",
@@ -127,6 +127,13 @@ const PRECACHE = [
   "./zhaoming/",
   "./js/zhaoming.js",
   "./data/poems-zhaoming.js",
+  /* Issue #480：《昭明文选》作者朝代补录 + 作者索引（朝代 → 作者 → 作品）。
+     作者索引挂在 `/search/` 里（第二轮：从搜索页进，不从集子页进），
+     `./search/` 与 `./js/search.js` 本来就在表里 —— 这里补的是它新添的
+     两样：名册数据与那一层的脚本。 */
+  "./data/zhaoming-dynasty.js",
+  "./data/author-index.js",
+  "./js/authors.js",
   "./yuanqu/",
   "./js/yuanqu.js",
   "./data/poems-yuanqu.js",
@@ -156,9 +163,6 @@ const PRECACHE = [
   "./js/library.js",
   "./search/",
   "./js/search.js",
-  /* Issue #480：作者索引 —— 从搜索页进。 */
-  "./authors/",
-  "./js/authors.js",
   "./icons/icon-192.png",
   "./icons/icon-256.png",
   "./icons/icon-384.png",

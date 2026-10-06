@@ -16,6 +16,12 @@
 //      `api.setItems(allItems())` —— 阅读器于是把 5405 行 DOM 建起来，
 //      再拿 keyword 滤出命中集重画一遍。单字（「春」「一」「月」）在
 //      5405 条里命中两千上下，两笔账叠在一起就是秒级。
+//
+// ⚠️ Issue #480 第二轮改过之后，「喂给阅读器」这一步没有了：搜索页自己
+//    铺命中行（`paintHits`），不再借一个 `mount` 出来的会话 —— 所以
+//    ④⑤两节的判据从「有没有把截过的集子交给阅读器」改成「截过之后有没有
+//    直接铺、且一条不落地铺」。
+
 //   ② **每条重算一遍折叠字段**。matchScore 每个字对 5405 条的正文 / 译文 /
 //      释义 / 注脚各折一次大小写 —— 单次翻出去一个字就是十兆字符。
 //
@@ -77,15 +83,17 @@ const renderHits = pick('function renderHits(', 'function suggestMeta(');
 chk(renderHits.length > 0, 'renderHits() 在');
 chk(/all\.length > SEARCH_MAX \? all\.slice\(0, SEARCH_MAX\) : all/.test(renderHits),
   '按**排名**截到 SEARCH_MAX —— 截掉的一定排在展出之后');
-chk(/api\.setItems\(q \? renderHits\(q\) : \[\]\);/.test(src),
-  'renderBody 喂给阅读器的是截过的命中集，不再是 allItems() 全表');
+chk(/var list = renderHits\(q\);/.test(src),
+  '铺给页面的是截过的命中集（renderHits），不再是 allItems() 全表');
+chk(!/api\.setItems\(/.test(src),
+  '搜索页不再借阅读器会话（setItems 一条都不剩）—— 命中行由 paintHits 自己铺');
 
 console.log('');
-console.log('=== 五、keyword 与 items 的顺序（阅读器每次改动都重画列表） ===');
+console.log('=== 五、一次输入只铺一次（不再有「先关键词后条目」那两笔画） ===');
 
 const body = pick('function renderBody()', 'function syncEmptyState(');
-chk(/api\.setKeyword\(""\);\s*\n\s*api\.setItems\(/.test(body),
-  '先清 keyword 再 setItems —— 否则同一批条目会被重画两遍');
+chk(/paintHits\(q\);/.test(body),
+  'renderBody 只调一次 paintHits —— 一次输入铺一次列表');
 
 console.log('');
 console.log('=== 六、命中行上那句「…上下文…」不再每行扫全表 ===');

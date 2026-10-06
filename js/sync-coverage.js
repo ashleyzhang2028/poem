@@ -98,6 +98,15 @@
       why: "乐府集已读 —— 与其余各部同一族（Issue #244 新增集子，同轮补上）。"
     },
     {
+      key: "poem_authors_read_v1", sync: true, row: "reads:poem_authors_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      /* ⚠️ 这一把键有它自己的坑：作者索引页**每换一位作者就换一炉 items**，
+         但 readStore 是同一个（`poem_authors_read_v1`）—— 这是要的：已读
+         跟的是**篇**不是作者，在李白那儿点「已读」的《静夜思》，翻到杜甫
+         那一段时仍该是已读的（那是同一篇）。所以键按页不按作者。 */
+      why: "作者索引已读 —— 与其余各部同一族；键按**页**不按作者（Issue #480）。"
+    },
+    {
       key: "poem_jinxiandai_read_v1", sync: true, row: "reads:poem_jinxiandai_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
       why: "近现代诗词已读 —— 与其余各部同一族（2026-09-19 新增第九部）。"
