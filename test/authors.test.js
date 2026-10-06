@@ -68,6 +68,124 @@ chk(idx.byAuthor['曹植'].works.some(w => w.title === '七步诗' && w.book ===
 chk(!idx.authors.some(a => !a.key), '没有作者掉出时间轴（朝代空的情况：'
   + (idx.authors.filter(a => !a.key).map(a => a.name).join('、') || '无') + '）');
 
+// ── 《论语》那两家写法归一（Issue #480 第三轮，用户 2026-10-06） ──────────
+//
+// 用户看到名册上三条：
+//   孔子及弟子 3 / 孔子及弟子，朱熹 1 / 孔子及其弟子 2
+// 要「剩下的应该合并」。
+//
+// 「孔子及弟子」与「孔子及其弟子」是同一批《论语》条目（gw-64 / gw-111
+// 一种写法，gw-124 / gw-126 / gw-153 另一种写法），归一后应为一位、5 条。
+chk(!idx.authors.some(a => a.name === '孔子及其弟子'),
+  '「孔子及其弟子」不再单独出现（已并到「孔子及弟子」）');
+const kg = idx.byAuthor['孔子及弟子'];
+chk(!!kg, '「孔子及弟子」在册');
+chk(!!kg && kg.works.length === 5,
+  '「孔子及弟子」5 条（两种写法合计；实际 ' + (kg ? kg.works.length : 0) + ' 条）');
+chk(!!kg && kg.key === '先秦',
+  '「孔子及弟子」落在「先秦」段（《论语》的春秋 / 先秦写法归一）');
+// ⚠️ 这里**只认 4 条**：gw-124《子路、曾皙、冉有、公西华侍坐》与课内的
+// `poems-gz12-17` 是同一篇，判重表让它们只出场一次，代表条是 `gz12-17`；
+// 而 `gz12-17` 的 `author` 写的是书名「《论语》」，被 `SKIP` 挡在名册外 ——
+// 于是这一篇名册里一条都不出场。**这不是本次改出来的**（改前也这样：
+// 「孔子及其弟子」名下就只有 gw-126 / gw-153 两条）。
+// 现状写进 docs/todo.md 第 9 条，等用户定：要么把 `gz12-17` 的 `author`
+// 改成「孔子及弟子」，要么让判重在这类「代表条会掉出」时换一条出场。
+chk(!!kg && ['gw-64', 'gw-111', 'gw-126', 'gw-153'].every(function (o) {
+  return kg.works.some(w => w.originId === o);
+}), '4 条在册（gw-64 / gw-111 / gw-126 / gw-153；gw-124 与课内同篇，按判重不出场）');
+
+// ── 《古人谈读书》归属朱熹（Issue #480 第三轮） ────────────────────────
+//
+// 用户原话：「如果确认是朱熹，那这篇文章就归属朱熹，并且移到朱熹的朝代」。
+// 核实的结论是**不能整篇判给朱熹** —— 它正文两段两家（前三句《论语》、
+// 后段朱熹《训学斋规》）。所以：
+//   · 显示与详情页**一个字不改**，照旧读得到「先秦·宋 · 孔子及弟子、朱熹」；
+//   · 名册里挂到「朱熹」名下（用户要的「移进宋朝那一段」）。
+const zw = idx.byAuthor['朱熹'];
+chk(!!zw, '「朱熹」在册');
+chk(!!zw && zw.key === '宋', '「朱熹」落在「宋」段');
+chk(!!zw && zw.works.some(w => w.originId === 'gw-10'),
+  '《古人谈读书》挂在「朱熹」名下（名册里进了宋朝那一段）');
+const gd10 = zw ? zw.works.find(w => w.originId === 'gw-10') : null;
+chk(!!gd10 && gd10.author === '孔子及弟子、朱熹' && gd10.dynasty === '先秦·宋',
+  '《古人谈读书》的 `author` / `dynasty` 仍是如实的双署名（一个字没改）');
+chk(!!kg && !kg.works.some(w => w.originId === 'gw-10'),
+  '《古人谈读书》不再挂在「孔子及弟子」名下（那一边是纯《论语》5 条）');
+
+// ── 「某某等」这一批（Issue #480 第四轮）────────────────────────────────
+//
+// 用户 2026-10-06：
+//   「此外还有一些作者 出现了 等，例如 房玄龄等，吕不韦等，
+//     如果确认无误，保持原样，否则更正」
+//
+// 口径分两类，逐条钉住：
+//   ① 官修史书 / 类书的总裁官（房玄龄等 / 脱脱等 / 宋濂等 / 李昉等）——
+//      「某某等」是这类书在文献上通行的署名，摊开写谁各家不一，凭空挑人
+//      就是编。**原样留在名册上**，只把「等」字注解出来。
+//   ② 先秦子书托名的（吕不韦等 / 刘安等）—— 归到书上那位主人
+//      （《吕氏春秋》吕不韦、《淮南子》刘安），通行写法就题一个人。
+//
+// ⚠️ 归并不改任何一条数据的 `author`（各集子列表页照旧显示「吕不韦等」）。
+
+const EDITORS = [
+  ['房玄龄等', 1], ['脱脱等', 2], ['宋濂等', 1], ['李昉等', 1]
+];
+EDITORS.forEach(function (pair) {
+  const a = idx.byAuthor[pair[0]];
+  chk(!!a && a.works.length === pair[1],
+    '官修书总裁官「' + pair[0] + '」原样留在名册上，' + pair[1] + ' 条（实际 ' +
+    (a ? a.works.length : 0) + ' 条）');
+});
+
+// 「等」字要有注解可读，否则读者对着一个字发愣
+const collected = sb.AuthorIndex.collectedNote;
+EDITORS.forEach(function (pair) {
+  chk(!!(collected && collected(pair[0])),
+    '「' + pair[0] + '」的「等」字有注解（collectedNote 给出出处与总裁官）');
+});
+chk(!collected || !collected('李白'), '别的作者没有这一行注（不是人人都写）');
+
+// 先秦子书：归到书上那位主人，条数一条不丢
+const lvbu = idx.byAuthor['吕不韦'];
+chk(!!lvbu, '「吕不韦等」归到「吕不韦」（《吕氏春秋》）');
+chk(!!lvbu && lvbu.works.length === 6, '吕不韦 6 条（实际 ' + (lvbu ? lvbu.works.length : 0) + ' 条）');
+chk(!idx.byAuthor['吕不韦等'], '名册里不再单独站一个「吕不韦等」');
+
+const liuan = idx.byAuthor['刘安'];
+chk(!!liuan, '「刘安等」归到「刘安」（《淮南子》）');
+chk(!idx.byAuthor['刘安等'], '名册里不再单独站一个「刘安等」');
+chk(!!liuan && liuan.works.some(w => w.title === '塞翁失马')
+  && liuan.works.some(w => w.title === '后羿射日'),
+  '《淮南子》两条（塞翁失马 / 后羿射日）都在刘安名下，一条不丢');
+chk(!!lvbu && lvbu.works.some(w => w.title === '刻舟求剑')
+  && lvbu.works.some(w => w.title === '伯牙鼓琴'),
+  '《吕氏春秋》六条都在吕不韦名下（刻舟求剑 / 伯牙鼓琴……）');
+
+// 那一行小注要**在②③两层都在**：②是列表、③是详情页。
+// 阅读器一开详情页就把顶上那一行按 `CFG.pageSub` 重刷一遍
+// （`js/reader-core.js` 的 `paintSub()`）——所以出处注**必须**同时落在
+// `mountConfig().pageSub` 上，只写 `paintHead()` 的话一点进作品就退回兜底
+// （实测踩过）。
+const authorsJsSrc = read('js/authors.js');
+chk(/pageSub:\s*AI\.collectedNote\(w\.name\)/.test(authorsJsSrc) ||
+    /pageSub:\s*AI\.collectedNote\(w\.name\)\s*\|\|/.test(authorsJsSrc),
+  '作者作品列表的 pageSub 取 collectedNote（点进详情页那一行注还在）');
+chk(/C\.setSub\(AI\.collectedNote\(name\) \|\| name \+ " 的作品"\)/.test(authorsJsSrc),
+  'paintHead() 的小注同源（collectedNote）');
+
+// 数据一个字不动：各集子自己的列表页照旧显示「吕不韦等」
+const classicSrc = read('data/poems-classic.js');
+chk(/author: "吕不韦等"/.test(classicSrc), '数据里仍是「吕不韦等」（归并只影响名册怎么归堆）');
+chk(/author: "刘安等"/.test(classicSrc), '数据里仍是「刘安等」（同上）');
+chk(/author: "房玄龄等"/.test(classicSrc), '数据里仍是「房玄龄等」（原样保留）');
+
+// 名册里不许再出现「某某等」以外的复合写法（那一批已各归各位）
+const composite = idx.authors.filter(a => /等$/.test(a.name))
+  .map(a => a.name).sort().join('、');
+chk(composite === '宋濂等、房玄龄等、李昉等、脱脱等',
+  '名册上带「等」的只剩官修书那四位（实际：' + composite + '）');
+
 const jys = idx.authors.filter(a => a.works.some(w => w.title === '静夜思' || w.title === '夜思'));
 const jysCount = jys.reduce((n, a) => n + a.works.filter(w => w.title === '静夜思' || w.title === '夜思').length, 0);
 chk(jysCount <= 1, '同一篇跨集重复只算一次（《静夜思》出现 ' + jysCount + ' 次）');
