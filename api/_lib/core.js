@@ -1426,9 +1426,11 @@ var DEFER_MAX = 400;
 // 「以后再背」（Issue #481）：一条只有「作品号 + 点它的那一天」—— 没有正文、
 // 没有进度，服务端只做裁剪，不做别的判断。
 //
-// 「先搁一搁」那条路另带 `until`（搁到哪一天）与 `span`（搁多少天）——
-// 两个都是**短字符串 / 小整数**，仍然不含正文、不含进度。老客户端推上来的
-// 条目没有这两格，照旧存得下（不补默认值，免得把「顺延一天」写成搁 30 天）。
+// 两档（「明日再背」`span: 1` 与「月后再背」`span: 30`）都另带 `until`
+// （搁到哪一天）与 `span`（搁多少天）—— 两个都是**短字符串 / 小整数**，仍然
+// 不含正文、不含进度。老客户端推上来的条目没有这两格，照旧存得下
+// （不在这儿补默认值 —— 补了服务端就多知道一件客户端的事，读回来由客户端按
+// 明日档补，见 js/recite-defer.js 的 `normalize()`）。
 function sanitizeDefer(p) {
   var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
   out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;

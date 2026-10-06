@@ -185,6 +185,100 @@
     }).join("");
   }
 
+  // 「以后再背」那两个名单（Issue #481）
+  // ---------------------------------------------------------------------------
+  // 「明日再背」与「月后再背」都在同一份台账里（js/recite-defer.js），这里按
+  // 档列出来给人看、给人删。删掉一条 = 那一首当场回到正常次序（不必等日子到）。
+  //
+  // 名字与作者从**作品**上取，不是从台账上：台账只存作品号（那是有意的，
+  // 换台设备也对得上），稿子由这一页从课内主表与全站目录里现查。
+  function laterRef(wid) {
+    var list = (window.POEMS_ALL || []).concat(window.SITE_INDEX || []);
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (!p || !p.id || p.isBook) continue;
+      var D = window.ReciteDefer;
+      if (!D || !D.widOf || D.widOf(p.id) !== wid) continue;
+      return {
+        id: p.id,
+        title: p.custom && window.Storage && window.Storage.showTitle
+          ? window.Storage.showTitle(p.title) : p.title,
+        author: p.author || "",
+        dynasty: p.dynasty || ""
+      };
+    }
+    return null;
+  }
+
+  function laterMeta(row) {
+    var parts = [];
+    if (row.author) parts.push(row.author);
+    if (row.dynasty && row.dynasty !== row.author) parts.push(row.dynasty);
+    var D = window.ReciteDefer;
+    // 明日那一档只搁一天，写日子反而是废话；月后要写「到哪天」
+    if (D && row.tier === D.DEFER_MONTH && row.until) parts.push(fmtDay(row.until) + "再上榜");
+    return parts.join(" · ");
+  }
+
+  // 名单上那两个日期是**本地日**（`listByTier` 给的毫秒时间戳），走本地时间；
+  // 不拿 `Y-M-D` 字符串去 `new Date()` —— 那种写法会被当成 UTC，往西的时区上
+  // 会退回前一天。
+  function fmtDay(ts) {
+    var d = new Date(ts);
+    return (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+  }
+
+  function renderLater() {
+    var card = $("later-card");
+    var box = $("later-box");
+    if (!card || !box) return;
+    var D = window.ReciteDefer;
+    if (!D || !D.listByTier) { hide(card); return; }
+    D.useRef(laterRef);
+    var day = D.listByTier("day");
+    var month = D.listByTier("month");
+    if (!day.length && !month.length) { hide(card); return; }
+
+    var group = function (title, hint, rows, tier) {
+      if (!rows.length) return "";
+      return '<h3 class="later-group">' + esc(title) +
+        '<span class="later-group-hint">' + esc(hint) + "</span></h3>" +
+        '<div class="later-list">' + rows.map(function (r) {
+          return '<div class="later-row" data-wid="' + esc(r.wid) + '" data-tier="' + esc(tier) + '">' +
+            '<span class="later-main">' +
+            '<span class="later-title">' + esc(r.title) + "</span>" +
+            '<span class="later-meta">' + esc(laterMeta(r)) + "</span>" +
+            "</span>" +
+            '<button type="button" class="later-del" aria-label="把《' + esc(r.title) + '》放回正常次序">删除</button>' +
+            "</div>";
+        }).join("") + "</div>";
+    };
+
+    box.innerHTML =
+      group("明日再背", "明天照旧上榜", day, "day") +
+      group("月后再背", "到日子自己回来", month, "month");
+
+    show(card);
+  }
+
+  function bindLater() {
+    var box = $("later-box");
+    if (!box || box.dataset.bound) return;
+    box.dataset.bound = "1";
+    box.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest(".later-del") : null;
+      if (!btn) return;
+      var row = btn.closest(".later-row");
+      var D = window.ReciteDefer;
+      if (!row || !D) return;
+      var title = row.querySelector(".later-title");
+      if (D.unrest(row.dataset.wid, row.dataset.tier)) {
+        showToast("《" + (title ? title.textContent : "") + "》放回来了 —— 明天照旧上榜");
+      }
+      renderLater();
+    });
+  }
+
     function renderSignedIn(sess) {
     var id = identity();
     if (!id || !id.signedIn) {
@@ -592,6 +686,7 @@
     renderAdmin(id);
     paintEmailToggle();
     renderStats();
+    renderLater();
     renderSignedIn(sess);
     renderVerifyState();
     renderNickname();
@@ -626,6 +721,9 @@
     if (exportFirst) exportFirst.addEventListener("click", function () { onResolve("exportFirst"); });
 
     bindNickname();
+    bindLater();
+    // 在别的页面（或别的设备同步下来）点了「再背」，这一页也跟上
+    document.addEventListener("recite-defer-change", function () { renderLater(); });
     if (document.querySelector("#site-dock .dock-icon")) {
       watchAvatar();
     } else {

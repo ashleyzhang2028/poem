@@ -434,121 +434,93 @@
     return Scheduler.generateDailyPlan(opt);
   }
 
-  function deferToday(poem, btn) {
-    const D = window.ReciteDefer;
-    if (!D || !poem || !poem.id) {
-      showToast("本机不支持「以后再背」");
-      return;
-    }
-    const r = D.defer(poem);
-    if (r.ok === false) {
-      showToast("记不下来：本机存储用不了（换一个浏览器试试）");
-      return;
-    }
-    showToast("《" + (poem.custom ? showTitle(poem.title) : poem.title) +
-      "》明天再背 —— 后面补一首新的上来");
-    // 名单变了，计划缓存跟着作废，重排一遍：这一首下去、末尾补上来一首
-    invalidatePlan();
-    rebuildToday();
-    renderAll();
-    if (btn) btn.blur();
-  }
-
-  // ---- 「先搁一搁」（长按 / 右键那一档，Issue #481 后续）------------------------
+  // 「明日再背」/「月后再背」（Issue #481）
+  // ---------------------------------------------------------------------------
+  // 今日列表行内两颗键，各按各的那一档：明日 = 明天再上榜（末尾补一首新的），
+  // 月后 = 一个月内不上榜（到日子自己回来）。原先是一颗键的短按 / 长按 ——
+  // 手机上长按会先选中文字、右键更是够不着，所以拆成两颗明说的键。
   //
-  // 列表上那一颗日历键短按 = 顺延一天（上一版的行径，一个字不改）；
-  // **长按 / 右键** = 这一首这一阵子先别上榜。
+  // 两档都只是「哪天之前不排」，进度一格不动；点完重排一遍：这一首下去、
+  // 末尾补一首上来，总数照旧每日数量。
   //
-  // 为什么不能只有「顺延一天」：那些「课本里还轮不到、短期内也不会学」的诗，
-  // 一天一天点的话，孩子**每天**都要跟它打一次照面、点一次、再补一首 —— 几十天
-  // 下来一屏全是「点掉它」。搁一档是件要说明的事，所以给一条完整的话：
-  // 「《静夜思》先搁着，X 月 X 日再上榜」，外加一颗「撤掉」。
-  //
-  // 长按不是唯一的入口（长按对键盘、对读屏都不友好）：弹卡片底下那一行
-  // 「先搁一搁」是同一件事的正门。
+  // 长按不是入口了，但**月后那一档要能撤**：撤在弹卡片上（下面那句
+  // 「月后再背」/「撤掉」），以及「我的」页那两个名单上的「删除」。
+  var LATER_TIER_DAY = "day";
+  var LATER_TIER_MONTH = "month";
 
-  var LATER_LONG_MS = 550;
-
-  function fmtDay(ts) {
-    var d = new Date(ts);
-    return (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+  // `until` 从台账里出来一律是 `Y-M-D` 这一种写法（见 js/recite-defer.js），
+  // 所以这里也收字符串 —— 收毫秒的话 `new Date("2026-11-5")` 会被当成 UTC，
+  // 往西的时区上会退回前一天。
+  function fmtDay(v) {
+    var m = String(v == null ? "" : v).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return Number(m[2]) + " 月 " + Number(m[3]) + " 日";
+    var d = new Date(Number(v));
+    return isFinite(d.getTime()) ? (d.getMonth() + 1) + " 月 " + d.getDate() + " 日" : "";
   }
 
   function phraseOf(p) {
     return "《" + titleOf(p) + "》";
   }
 
-  // 搁一档 / 撤掉，都从这一条走过：说清楚 + 重排一遍
-  function restPoem(p, btn) {
-    var D = window.ReciteDefer;
-    if (!D || !p || !p.id) {
-      showToast("本机不支持「先搁一搁」");
+  function deferPoem(poem, tier, btn) {
+    const D = window.ReciteDefer;
+    if (!D || !poem || !poem.id) {
+      showToast("本机不支持「以后再背」");
       return;
     }
-    if (D.resting(p)) {
-      D.unrest(p);
-      showToast(phraseOf(p) + "放回来了 —— 明天照旧上榜");
-    } else {
-      var r = D.rest(p);
-      if (r.ok === false) {
-        showToast("记不下来：本机存储用不了（换一个浏览器试试）");
-        return;
-      }
-      showToast(phraseOf(p) + "先搁着，" + fmtDay(Number(r.until)) + "再上榜");
+    const month = tier === LATER_TIER_MONTH;
+    const r = month ? D.rest(poem) : D.defer(poem);
+    if (r.ok === false) {
+      showToast("记不下来：本机存储用不了（换一个浏览器试试）");
+      return;
     }
+    showToast(phraseOf(poem) + (month
+      ? "月后再背 —— " + fmtDay(r.until) + "自己回来"
+      : "明天再背 —— 后面补一首新的上来"));
+    // 名单变了，计划缓存跟着作废，重排一遍：这一首下去、末尾补上来一首
     invalidatePlan();
     rebuildToday();
     renderAll();
+    syncLaterRow(poem);
     if (btn) btn.blur();
   }
 
-  // 那一颗键的长按 / 右键：短按走原来的 deferToday，长按走 restPoem
-  function bindLaterButton(btn, p) {
-    var timer = null;
-    var longPressed = false;
+  // 全站列表行尾那个「>」（「本年级本学期全部诗词」那一栏、「自选」那一栏都
+  // 用它）—— 与 js/reader-core.js 里的同名函数画同一道。
+  // ⚠️ 今日列表**不用**它（Issue #481 收尾：行尾那格让给「再背」两颗键了）。
+  function arrowGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9.8 6.6 15.2 12l-5.4 5.4" /></svg>'
+    );
+  }
 
-    var clear = function () {
-      if (timer === null) return;
-      clearTimeout(timer);
-      timer = null;
-      btn.classList.remove("arming");
-    };
+  // 「明日再背」：日历上写一个「1」—— 明天见
+  function dayGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="4.2" y="5.6" width="15.6" height="14.2" rx="2.6" />' +
+      '<path d="M4.2 10.2h15.6M8.6 3.6v3.4M15.4 3.6v3.4" />' +
+      '<path d="M12.1 12.9v4.4M10.4 14.1l1.7-1.2" />' +
+      "</svg>"
+    );
+  }
 
-    var fire = function () {
-      longPressed = true;
-      btn.classList.remove("arming");
-      timer = null;
-      restPoem(p, btn);
-    };
-
-    btn.addEventListener("pointerdown", function (e) {
-      if (e.button !== 0) return;
-      longPressed = false;
-      btn.classList.add("arming");
-      timer = setTimeout(fire, LATER_LONG_MS);
-    });
-    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) {
-      btn.addEventListener(ev, clear);
-    });
-    btn.addEventListener("contextmenu", function (e) {
-      e.preventDefault();
-      clear();
-      restPoem(p, btn);
-    });
-    btn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (longPressed) {
-        longPressed = false;
-        return;
-      }
-      deferToday(p, btn);
-    });
-    btn.addEventListener("keydown", function (e) {
-      if (e.key >= "1" && e.key <= "9") {
-        e.preventDefault();
-        restPoem(p, btn);
-      }
-    });
+  // 「月后再背」：同一张日历旁边一道**回环**（转一圈 = 一个月）
+  //
+  // ⚠️ 弧要绕得开：与日历之间留一道缝、开口朝左下，不然那个小圈看着像
+  // 日历上挂了一节链子（12px 的图标上尤其像）。
+  function monthGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="4" y="4.6" width="16" height="15.8" rx="2.6" />' +
+      '<path d="M4 9.2h16M8.3 2.6v3.4M15.7 2.6v3.4" />' +
+      '<path d="M14.5 15.1h2.1a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 1 1-1.3-4.6" />' +
+      "</svg>"
+    );
   }
 
   function invalidatePlan() {
@@ -647,9 +619,12 @@
         '<div class="item-actions">' +
         '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(titleOf(p)) + '">' +
         playGlyph() + "</button>" +
-        '<button type="button" class="item-later" title="以后再背：点一下 = 从今天挪到明天、末尾补一首新的；长按 = 这一首先搁一搁" ' +
-        'aria-label="' + esc(titleOf(p)) + '：以后再背（长按可先搁一搁）">' +
-        laterGlyph() + "</button>" +
+        '<button type="button" class="item-later" data-tier="day" title="明日再背：这一首明天再上榜，末尾补一首新的" ' +
+        'aria-label="' + esc(titleOf(p)) + '：明日再背">' +
+        dayGlyph() + "</button>" +
+        '<button type="button" class="item-later" data-tier="month" title="月后再背：这一首一个月内不上榜，到日子自己回来" ' +
+        'aria-label="' + esc(titleOf(p)) + '：月后再背">' +
+        monthGlyph() + "</button>" +
         "</div>";
       el.addEventListener("click", function () {
         openPoem(p, item);
@@ -659,9 +634,14 @@
         e.stopPropagation();
         readOne(p, readBtn);
       });
-      const laterBtn = el.querySelector(".item-later");
-      // 短按 = 顺延一天；长按 / 右键 = 这一阵子先搁着（Issue #481 后续）
-      bindLaterButton(laterBtn, p);
+      // 两颗「再背」键：明日 / 月后，各按各的那一档（Issue #481）。原先它们是
+      // 同一颗键的短按与长按 —— 手机上长按会先选中文字，右键更够不着。
+      $$(".item-later", el).forEach(function (b) {
+        b.addEventListener("click", function (e) {
+          e.stopPropagation();
+          deferPoem(p, b.dataset.tier, b);
+        });
+      });
       list.appendChild(el);
     });
 
@@ -687,18 +667,6 @@
 
   function titleOf(p) {
     return p && p.custom ? showTitle(p.title) : (p && p.title) || "";
-  }
-
-  // 「以后再背」：日历上划一道对钩 —— 日子照走，这一首先搁一搁
-  function laterGlyph() {
-    return (
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<rect x="4.2" y="5.6" width="15.6" height="14.2" rx="2.6" />' +
-      '<path d="M4.2 10.2h15.6M8.6 3.6v3.4M15.4 3.6v3.4" />' +
-      '<path d="M9.3 15.4l2 2 3.6-3.9" />' +
-      "</svg>"
-    );
   }
 
   function playGlyph() {
@@ -1369,26 +1337,38 @@
     if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
   }
 
-  // 弹卡片底下那一行「先搁一搁」：这颗诗没学过 / 短期不打算学，明说一句。
-  // 已经搁着的，键上直接写「撤掉（X 月 X 日再上榜）」—— 状态与动作在同一个
+  // 弹卡片底下那两行「明日再背 / 月后再背」：这一首今天先不背，明说一句。
+  //
+  // 列表上的两颗键只进不出（点完它就下去了），撤的地方在这里：两行各是一颗
+  // 开关，已经按时的那一行写「撤掉（X 月 X 日再上榜）」—— 状态与动作在同一个
   // 地方，不用孩子猜。
+  //
+  // ⚠️ 撤「月后再背」走 `unrest(p, "month")`，只摘那一档；「明日再背」那条
+  // 是`defer()` 记的，跨过今天自己就过期，所以那一行不提供撤销。
   function syncLaterRow(p) {
     var row = $("#m-later-row");
-    var btn = $("#m-later-btn");
-    if (!row || !btn) return;
+    if (!row) return;
     var D = window.ReciteDefer;
     if (!D || !p || !p.id) {
       row.hidden = true;
       return;
     }
     row.hidden = false;
-    var until = D.restUntil ? D.restUntil(p) : null;
-    if (until) {
-      btn.textContent = "撤掉（" + fmtDay(until) + "再上榜）";
-      btn.dataset.resting = "1";
-    } else {
-      btn.textContent = "先搁一搁";
-      btn.dataset.resting = "0";
+    paintLaterRow("#m-later-day", "day");
+    paintLaterRow("#m-later-month", "month");
+
+    function paintLaterRow(sel, tier) {
+      var btn = $(sel);
+      if (!btn) return;
+      var until = D.restUntil ? D.restUntil(p, undefined, tier) : null;
+      var resting = !!(D.restingTier ? D.restingTier(p, tier) : false);
+      btn.dataset.tier = tier;
+      btn.dataset.resting = resting ? "1" : "0";
+      if (tier === LATER_TIER_DAY) {
+        btn.textContent = "明日再背";
+        return;
+      }
+      btn.textContent = until ? "撤掉（" + fmtDay(until) + "再上榜）" : "月后再背";
     }
   }
 
@@ -1612,12 +1592,29 @@
       });
     });
 
-    const laterRowBtn = $("#m-later-btn");
-    if (laterRowBtn) {
-      laterRowBtn.addEventListener("click", function () {
+    const laterDayBtn = $("#m-later-day");
+    if (laterDayBtn) {
+      laterDayBtn.addEventListener("click", function () {
         const p = currentPoem;
         if (!p) return;
-        restPoem(p, laterRowBtn);
+        deferPoem(p, LATER_TIER_DAY, laterDayBtn);
+      });
+    }
+    const laterMonthBtn = $("#m-later-month");
+    if (laterMonthBtn) {
+      laterMonthBtn.addEventListener("click", function () {
+        const p = currentPoem;
+        if (!p) return;
+        const D = window.ReciteDefer;
+        if (D && D.restingTier && D.restingTier(p, LATER_TIER_MONTH)) {
+          D.unrest(p, LATER_TIER_MONTH);
+          showToast(phraseOf(p) + "放回来了 —— 明天照旧上榜");
+          invalidatePlan();
+          rebuildToday();
+          renderAll();
+        } else {
+          deferPoem(p, LATER_TIER_MONTH, laterMonthBtn);
+        }
         syncLaterRow(p);
       });
     }

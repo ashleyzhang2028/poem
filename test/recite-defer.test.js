@@ -1,4 +1,4 @@
-/* 「以后再背」（Issue #481）
+/* 「明日再背」/「月后再背」（Issue #481）
    ---------------------------------------------------------------------------
    用户原话：
      「背诵列表，在播放键的右侧加一个以后再背的按钮……当用户点击该按钮后，
@@ -6,10 +6,17 @@
        当用户点击一次以后再背按钮减掉一个古诗后，自动在背诵列表的最后补上
        一篇古诗，用以满足每日背诵数量的需求。」
 
-   两件事，一行一条：
-     ① 点一下 = 这一首从今天的计划里下去，**顺延一天**（明天照旧上榜）；
-        进度一格不动 —— 它是「今天不背」，不是「没背过」。
+   第二轮（同一天）原话：
+     「今日背诵按钮右侧的以后再背 右键和长按功能在手机上很难使用，请拆分成
+       明日再背以及月后再背，使用合适的 SVG 图标，这三个图标右对齐……
+       另外，在 我的页面 列出 明日再背和月后再背的古诗词，如果用户删除他们，
+       可以恢复正常背诵次序。」
+
+   三件事，一行一条：
+     ① 两档都是「哪天之前不排」：明日 = 明天再上榜、月后 = 30 天内不上榜；
+        进度一格不动 —— 它们是「这次不背」，不是「没背过」。
      ② 下去一首，末尾补一首：总数还是每日数量（这里取 5）。
+     ③ 「我的」页那两个名单：列得出、删得掉，删完当场回到正常次序。
 
    界面层已按 Issue #278 删除，所以这里跑**真数据 + 真算法**（scheduler 与
    两份新脚本都在 vm 沙盒里），只做静态判据的地方另行标注。
@@ -98,7 +105,7 @@ const idsOf = p => p.map(it => it.poem.id);
 const filterSees = p => !TodayPlan.heldToday(p, { provider: sandbox.getPoemsByGradeTerm }, getRecord);
 
 console.log('');
-console.log('=== 一、点名的那一首从今天的计划里下去（顺延一天） ===');
+console.log('=== 一、点名的那一首从今天的计划里下去（明日再背） ===');
 
 let p1 = plan();
 eq(p1.length, 5, '起手排 5 首（每日数量）');
@@ -107,7 +114,7 @@ chk(!!ReciteDefer, 'js/recite-defer.js 在（名单有地方落）');
 chk(ReciteDefer.days(first) === 0, '还没点过，「延后天数」是 0');
 
 const r = ReciteDefer.defer(first);
-chk(r.ok && r.added, '点了「以后再背」，记下来了');
+chk(r.ok && r.added, '点了「明日再背」，记下来了');
 chk(ReciteDefer.days(first) === 1, '这一首延后 1 天');
 chk(ReciteDefer.holdToday(first, getRecord), '今天压着不排');
 chk(ReciteDefer.deferredToday(first), '同一天点第二次只算一次');
@@ -147,7 +154,7 @@ ReciteDefer.clear();
 Storage.clear();
 chk(!Storage.get(first.id), '这一首在进度里还是空的（没被写成学过了）');
 ReciteDefer.defer(first);
-ReciteDefer.undo(first);
+ReciteDefer.unrest(first);
 chk(ReciteDefer.days(first) === 0, '撤销今天这一次，延后台账清了');
 
 // 今天已经背掉的：即使被点过也不能从计划里掉（否则环形进度会掉数）
@@ -161,7 +168,7 @@ chk(!TodayPlan.heldToday(done, {}, getRecord), '排期那一道 filter 也放行
 chk(filterSees(done), '这一首照旧进得了候选池 —— 它是被「今天背过了」挡下的，不是被延后挡下的');
 
 console.log('');
-console.log('=== 四、顺延是「明天照旧」，不是拉黑 ===');
+console.log('=== 四、明日再背是「明天照旧」，不是拉黑 ===');
 
 ReciteDefer.clear();
 const later = 24 * 60 * 60 * 1000;
@@ -171,12 +178,22 @@ ReciteDefer.defer(one);
 chk(ReciteDefer.holdToday(one, null), '今天压着');
 chk(!ReciteDefer.holdToday(one, null, tomorrow), '第二天它自己回来了（不再压着）');
 
-// 连点两天 = 顺延两天
+// 明天再点一次 = 又往后挪一天（原先「顺延一天」那条路）
+// 一天只算一次、一档只留最近那一次（`days()` 数的是「点过几档」，不是几笔）
 ReciteDefer.defer(one, tomorrow);
-chk(ReciteDefer.days(one) === 2, '第二天再点一次，共 2 天');
+eq(ReciteDefer.days(one), 1, '同一档仍只算一天（改的是那一条的日子，不是又记一笔）');
 chk(ReciteDefer.holdToday(one, null, tomorrow), '第二天点了，第二天仍压着');
-ReciteDefer.undo(one, tomorrow);
-chk(ReciteDefer.days(one) === 1, '撤掉第二天那一次，回到 1 天');
+// 「顺延一天」搁到第二天（含）为止，所以第二天再点一次之后，第三天还在。
+// `tomorrow` 是「现在 + 24 小时」、不是 0 点，往前多算一格会落到第三天下午 ——
+// 那时它已经回来了，所以判据只看「第二天那天的最后一刻」。
+const tomorrowEnd = new Date(tomorrow).setHours(23, 59, 59, 999);
+chk(ReciteDefer.holdToday(one, null, tomorrowEnd), '第二天点了，第二天到最后一刻仍压着');
+chk(!ReciteDefer.holdToday(one, null, tomorrowEnd + 1), '第三天它自己回来');
+// 同一天在明日那一档上连点两次：不叠算
+ReciteDefer.clear();
+ReciteDefer.defer(one, tomorrow);
+ReciteDefer.defer(one, tomorrow);
+eq(ReciteDefer.list().length, 1, '同一天在明日那一档上点两次只有一条（一次点击只算一天）');
 
 console.log('');
 console.log('=== 五、名单落盘、可清、能上云 ===');
@@ -190,8 +207,8 @@ chk(ReciteDefer.physKey() === 'poem_recite_defer_v1', '名单落在 localStorage
 chk(JSON.parse(store['poem_recite_defer_v1']).items.length === 1, '那一份就是刚才那一条');
 const row = ReciteDefer.cloudRow({});
 chk(!!row && row.id === 'defer:v1' && row.updatedAt > 0, '推得出一行 defer:v1 给同步层');
-eq(Object.keys(row.payload.items[0]).sort().join(','), 'at,day,wid',
-  '「顺延一天」那条只带作品号与日期（不带正文、不带进度）');
+eq(Object.keys(row.payload.items[0]).sort().join(','), 'at,day,span,until,wid',
+  '「明日再背」那条只带作品号 / 日期 / 搁到哪天 / 搁多少天（不带正文、不带进度）');
 
 // 从云端来一份（另一台设备上点了另一首）
 const today = new Date();
@@ -201,7 +218,8 @@ const remote = {
   updatedAt: (row.updatedAt || Date.now()) + 1000,
   deleted: false,
   payload: { v: 1, updatedAt: row.updatedAt + 1000, items: [
-    { wid: ReciteDefer.widOf(two2.id), day: dayStr, at: Date.now() }
+    { wid: ReciteDefer.widOf(two2.id), day: dayStr, at: Date.now(),
+      until: dayStr, span: ReciteDefer.DEFER_DAYS }
   ] }
 };
 const verdict = ReciteDefer.applyCloud(remote, {});
@@ -209,18 +227,18 @@ eq(verdict, 'applied', '云端那一条并进来了');
 chk(ReciteDefer.days(two2) >= 1, '另一台设备上点的那一首，这一台也认');
 chk(ReciteDefer.days(one2) === 1, '本机原来那条没被冲掉（并集）');
 
-chk(ReciteDefer.clear() >= 1, '「清空进度」连带清掉延后台账');
+chk(ReciteDefer.clear() >= 1, '「清空进度」连带清掉这两个名单');
 eq(ReciteDefer.count(), 0, '清完是空的');
 
 console.log('');
-console.log('=== 五之二、先搁一搁：没学过的那一档（Issue #481 后续） ===');
+console.log('=== 五之二、月后再背：没学过的那一档 ===');
 
 // 用户原话：「还有一种情况，是这首诗压根没学过，可能短期内也不会背……
 //            这首诗在背诵范围内，但可能最近几个月半年都没学也不主动学」
 //
-// 只靠「顺延一天」的话，这种诗**每天**都要被点一次（点掉它 → 补一首），
-// 孩子天天要跟它打一次照面。搁一档是「这一阵子别上榜」：搁 30 天，到期自己
-// 回来，没到期再点一次就续一期。
+// 只靠「明日再背」的话，这种诗**每天**都要被点一次（点掉它 → 补一首），
+// 孩子天天要跟它打一次照面。月后这一档是「这一阵子别上榜」：搁 30 天，到期
+// 自己回来，没到期再点一次就续一期。
 ReciteDefer.clear();
 Storage.clear();
 
@@ -231,7 +249,7 @@ const t0 = Date.now();
 chk(!ReciteDefer.resting(restPoem, t0), '起手它不是搁着的');
 
 const rr = ReciteDefer.rest(restPoem, t0);
-chk(rr.ok && rr.added, '点了「先搁一搁」，记下来了');
+chk(rr.ok && rr.added, '点了「月后再背」，记下来了');
 eq(rr.days, ReciteDefer.REST_DAYS, '默认搁 30 天');
 chk(ReciteDefer.resting(restPoem, t0), '它是搁着的');
 chk(ReciteDefer.holdToday(restPoem, null, t0), '今天不排它');
@@ -240,7 +258,7 @@ chk(ReciteDefer.holdToday(restPoem, null, t0 + 29 * REST_DAY), '第 29 天还不
 chk(!ReciteDefer.holdToday(restPoem, null, t0 + 31 * REST_DAY), '第 31 天它自己回来了（到日子就上）');
 chk(!ReciteDefer.resting(restPoem, t0 + 31 * REST_DAY), '到日子就不是「搁着」了');
 
-// 一天点一次不叠算（与顺延同一个规矩）
+// 一天点一次不叠算（与明日那一档同一个规矩）
 ReciteDefer.rest(restPoem, t0);
 eq(ReciteDefer.list().filter(it => it.until).length, 1, '同一天再点一次还是一条');
 
@@ -259,11 +277,11 @@ chk(!ReciteDefer.holdToday(restPoem, null, until2), '到期当天自己回来');
 chk(ReciteDefer.holdToday(restPoem, null, t0 + 35 * REST_DAY), '第 35 天仍未回来（续过）');
 
 // 撤掉：当天就回来
-chk(ReciteDefer.unrest(restPoem), '「撤掉」把它从搁着里放出来');
+chk(ReciteDefer.unrest(restPoem), '「撤掉」把它从月后那一档里放出来');
 chk(!ReciteDefer.resting(restPoem, t0), '撤完就不是搁着了');
 chk(!ReciteDefer.holdToday(restPoem, null, t0), '撤完当天就能上榜');
 
-// 搁着的这一首不能从「补位池」里再捞回来（捞回来 = 搁了没搁）
+// 月后这一首不能从「补位池」里再捞回来（捞回来 = 搁了没搁）
 ReciteDefer.clear();
 ReciteDefer.rest(restPoem, t0);
 const basePool = TodayPlan.baseOf();
@@ -303,14 +321,82 @@ eq(ReciteDefer.applyCloud(rremote, {}), 'applied', '云端那条搁着的并进�
 chk(ReciteDefer.resting(restPoem, t0), '这一台也认「它是搁着的」');
 chk(ReciteDefer.holdToday(restPoem, null, t0 + 10 * REST_DAY), '并进来的搁着一样压得住');
 
-// 界面层：长按走 restPoem、弹卡片那一行说的是「先搁一搁」
+// 界面层：两档各走各的（原先是一颗键的短按 / 长按）
 const appSrc0 = read('js/app.js');
-chk(/LATER_LONG_MS/.test(appSrc0) && /function restPoem\(/.test(appSrc0),
-  '长按那一档在（restPoem + 长按阈值）');
-chk(/contextmenu/.test(appSrc0), '右键也能到（长按对键盘 / 读屏不友好，得有个替代）');
-chk(/function syncLaterRow\(/.test(appSrc0), '弹卡片上那一行「先搁一搁」在');
-chk(/m-later-btn/.test(read('index.html')), 'index.html 上有那颗键');
+chk(/function deferPoem\(/.test(appSrc0) && /LATER_TIER_MONTH/.test(appSrc0),
+  '两颗键共用一个入口（deferPoem 按 tier 分档）');
+chk(!/LATER_LONG_MS/.test(appSrc0) && !/contextmenu/.test(appSrc0) && !/function restPoem\(/.test(appSrc0),
+  '长按 / 右键那一套整个拆掉了（手机上够不着，留着只会互相打架）');
+chk(!/arming/.test(appSrc0) && !/\.arming/.test(read('css/style.css')),
+  '长按的「按住了」反馈也一并删了（不再有长按这条路）');
+chk(/function syncLaterRow\(/.test(appSrc0), '弹卡片上那两行「明日再背 / 月后再背」在');
+chk(/m-later-day/.test(read('index.html')) && /m-later-month/.test(read('index.html')),
+  'index.html 上那两颗键都在');
+chk(!/m-later-btn/.test(read('index.html')), '原来那颗「先搁一搁」换了名字（不再含糊）');
 chk(/\.modal-later/.test(read('css/style.css')), 'CSS 里给它定了样式');
+
+console.log('');
+console.log('=== 五之三、「我的」页那两个名单：列得出、删得掉、删完回正常次序 ===');
+
+// 用户原话：「在 我的页面 列出 明日再背和月后再背的古诗词，如果用户删除他们，
+//            可以恢复正常背诵次序。」
+//
+// 台账只存作品号（换台设备也对得上），稿子由页面现查 —— 这里给一份假的 refOf。
+ReciteDefer.clear();
+const listPoem = sandbox.POEMS_ALL.filter(x => x.id === 'xx3-01')[0];
+const listPoem2 = sandbox.POEMS_ALL.filter(x => x.id === 'xx3-02')[0];
+const REF = {};
+[listPoem, listPoem2].forEach(p => {
+  REF[ReciteDefer.widOf(p.id)] = {
+    id: p.id, title: p.title, author: p.author || '', dynasty: p.dynasty || ''
+  };
+});
+ReciteDefer.useRef(wid => REF[wid] || null);
+
+ReciteDefer.defer(listPoem, t0);
+ReciteDefer.rest(listPoem2, t0);
+
+const dayList = ReciteDefer.listByTier('day', t0);
+const monthList = ReciteDefer.listByTier('month', t0);
+eq(dayList.length, 1, '「明日再背」那一档列得出 1 条');
+eq(monthList.length, 1, '「月后再背」那一档列得出 1 条');
+eq(dayList[0].title, listPoem.title, '条上有标题（不是只有作品号）');
+eq(dayList[0].author, listPoem.author, '条上有作者');
+eq(monthList[0].span, ReciteDefer.REST_DAYS, '月后那条带着「搁多少天」');
+chk(monthList[0].until > t0, '月后那条带着「到哪天」');
+chk(dayList[0].tier !== monthList[0].tier, '两档各归各的名单（一条只在一个名单里）');
+eq(dayList.length + monthList.length, ReciteDefer.count(), '两个名单加起来就是台账全部');
+
+// 到期的**不列**：日子一到它就自己上榜了，还挂着会让人以为它没回来
+chk(!ReciteDefer.listByTier('day', t0 + 3 * REST_DAY).length,
+  '到期之后「明日再背」名单里不再有它');
+chk(!ReciteDefer.listByTier('month', t0 + 31 * REST_DAY).length,
+  '到期之后「月后再背」名单里不再有它');
+
+// 删除 = 只摘那一档，当场回到正常次序
+chk(ReciteDefer.unrest(listPoem2, 'month'), '「删除」摘掉月后那一档');
+eq(ReciteDefer.listByTier('month', t0).length, 0, '那一档的名单空了');
+eq(ReciteDefer.listByTier('day', t0).length, 1, '另一档不受影响（只摘点的那一档）');
+chk(!ReciteDefer.holdToday(listPoem2, null, t0), '删完当天就能上榜（不必等到日子）');
+
+// 两档都删掉 → 计划里照旧有它俩
+ReciteDefer.unrest(listPoem, 'day');
+eq(ReciteDefer.count(), 0, '两个名单都清空了');
+const p4 = plan();
+chk(idsOf(p4).indexOf(listPoem.id) >= 0 || idsOf(p4).indexOf(listPoem2.id) >= 0,
+  '删完它们又回到正常次序里（不是被拉黑）');
+
+// 名单上的「删除」走的是 ReciteDefer 的具名出口，页面不自己动台账
+const mineSrc = read('js/mine.js');
+chk(/listByTier/.test(mineSrc), '「我的」页走 listByTier 列表');
+chk(/\$\('later-card'\)|\$\("later-card"\)|later-card/.test(read('mine/index.html')),
+  'index.html 上有那张卡');
+chk(/useRef/.test(mineSrc), '稿子由页面注入（台账只存作品号）');
+chk(/unrest\(row\.dataset\.wid, row\.dataset\.tier\)/.test(mineSrc),
+  '「删除」按作品 + 档位摘，不自己动台账');
+chk(/recite-defer-change/.test(mineSrc), '别处点了「再背」，这一页也跟上');
+chk(/site-index\.js/.test(read('mine/index.html')) && /works-index\.js/.test(read('mine/index.html')),
+  '这一页为查稿子引了全站目录（作品号 → 标题）');
 
 console.log('');
 console.log('=== 六、补位要过集子自己的口径（不补「整部书」那种行） ===');
@@ -342,36 +428,61 @@ chk(new Set(base.map(p => p.id)).size === base.length, '池子里没有重复 id
 chk(base.some(p => p.grade === 3 && p.term === 1), '课内那几首在里面（补位能找到本学期的）');
 
 console.log('');
-console.log('=== 七、静态判据：按钮真在播放键右侧 ===');
+console.log('=== 七、静态判据：三颗键一排、右对齐、各有各的 SVG ===');
 
 const appSrc = read('js/app.js');
 const css = read('css/style.css');
-chk(/item-read/.test(appSrc) && /item-later/.test(appSrc), '两颗粒按钮都在（朗读 + 以后再背）');
-chk(appSrc.indexOf('class="item-read"') < appSrc.indexOf('class="item-later"'),
-  '「以后再背」排在播放键**右侧**');
-chk(/bindLaterButton\(laterBtn, p\)/.test(appSrc), '那一颗键走 bindLaterButton（短按 / 长按两条路）');
-chk(/function bindLaterButton[\s\S]{0,1200}?deferToday\(p, btn\)/.test(appSrc),
-  '短按仍是原来的 deferToday（上一版的行径一个字不改）');
-chk(/function bindLaterButton[\s\S]{0,600}?restPoem\(p, btn\)/.test(appSrc),
-  '长按走 restPoem（这一阵子先搁着）');
-chk(/item-later/.test(css), 'CSS 里给它定了样式（不是让浏览器摆烂）');
+const todayRow = appSrc.slice(appSrc.indexOf('function renderToday()'), appSrc.indexOf('function titleOf('));
+chk(/#today-list \.item-main \{ flex: 0 1 auto; min-width: 0; \}/.test(css),
+  '今日列表先压正文、再给键让位（窄屏不折行）');
+
+// 一排三颗：朗读、明日再背、月后再背，都在 item-actions 里，按这个次序
+const order = ['class="item-read"', 'data-tier="day"', 'data-tier="month"'].map(function (k) {
+  return todayRow.indexOf(k);
+});
+chk(order[0] >= 0 && order[1] >= 0 && order[2] >= 0, '三颗键都在今日列表那一行里');
+chk(order[0] < order[1] && order[1] < order[2],
+  '次序是 朗读 → 明日再背 → 月后再背（都在播放键右侧）');
+
+// 两颗「再背」键走同一个入口，按 data-tier 分档
+chk(/\$\$\("\.item-later", el\)\.forEach/.test(todayRow),
+  '两颗键一起绑（不再只绑一颗、靠长按分）');
+chk(/deferPoem\(p, b\.dataset\.tier, b\)/.test(todayRow),
+  '点哪颗走哪档（data-tier 决定明日还是月后）');
+
+// 右对齐：这一排推到行尾，里面的键自己靠拢
+const actionsFix = css.slice(css.indexOf('.item-actions {'), css.indexOf('#today-list .item-main'));
+chk(/margin-left:\s*auto/.test(actionsFix),
+  '这一排 margin-left: auto —— 被推到行尾（不是贴着左侧的正文）');
+chk(/justify-content:\s*flex-end/.test(actionsFix), '排内的键向右靠拢');
+chk(/gap:\s*var\(--item-gap\)/.test(actionsFix), '键与键之间只有一个间距（不散开）');
+
+chk(/item-later/.test(css), 'CSS 里给它们定了样式（不是让浏览器摆烂）');
 chk(/\.item-later\s*\{[\s\S]{0,400}?width:\s*var\(--item-btn\)/.test(css),
   '与朗读键同一个尺寸（一排圆键）');
-const laterGlyphSrc = appSrc.slice(appSrc.indexOf('function laterGlyph()'), appSrc.indexOf('function playGlyph()'));
-chk(/<svg/.test(laterGlyphSrc), '「以后再背」用的是 SVG 图标（不是字符 / emoji）');
-chk(laterGlyphSrc.indexOf('d="M4.2 10.2h15.6') > 0, '图是日历（日子照走）而不是叉 / 垃圾桶（不是拉黑）');
-chk(/#today-list \.item-main \{ flex: 0 1 auto; \}/.test(css),
-  '今日列表先压正文、再给两颗键让位（窄屏不折行）');
+
+// 两个图标都是 SVG，而且看得出是两件事（一个「1」、一道绕回来的弧）
+const glyphSrc = appSrc.slice(appSrc.indexOf('function dayGlyph()'), appSrc.indexOf('function playGlyph()'));
+chk(/<svg/.test(glyphSrc), '两个图标都是 SVG（不是字符 / emoji）');
+chk(/function dayGlyph\(\)/.test(appSrc) && /function monthGlyph\(\)/.test(appSrc),
+  '两档各有一个画图标的函数（不再是一张图两用）');
+chk(!/function laterGlyph\(/.test(appSrc), '那个含糊的 laterGlyph 一并删了（不留没人调的函数）');
+const daySrc = glyphSrc.slice(0, glyphSrc.indexOf('function monthGlyph()'));
+chk(/d="M4\.2 10\.2h15\.6/.test(daySrc), '「明日再背」图是日历（日子照走，不是拉黑）');
+chk(/M12\.1 12\.9v4\.4/.test(daySrc), '日历里写着「1」= 明天');
+chk(/M14\.5 15\.1h2\.1a2\.3 2\.3 0 1 1 0 4\.6/.test(glyphSrc),
+  '「月后再背」是日历旁边一道回环（转一圈 = 一个月）');
 
 console.log('');
 console.log('=== 八、今日列表不再挂行尾的「>」（Issue #481 收尾） ===');
 
-const todayRow = appSrc.slice(appSrc.indexOf('function renderToday()'), appSrc.indexOf('function titleOf('));
 chk(!/item-arrow/.test(todayRow), '今日列表这一行里没有 item-arrow 了（行内空出这一格）');
 chk(!/arrowGlyph/.test(todayRow), '也不再画那个「>」图标');
-chk(todayRow.indexOf('class="item-later"') < todayRow.indexOf('</div>";'),
-  '一行以两颗键的 item-actions 收尾（后面不再接东西）');
-chk(!/function arrowGlyph/.test(appSrc), 'app.js 里那个 arrowGlyph 一并删了（不留没人调的函数）');
+chk(todayRow.indexOf('data-tier="month"') < todayRow.indexOf('</div>";'),
+  '一行以三颗键的 item-actions 收尾（后面不再接东西）');
+// ⚠️ `arrowGlyph()` 还在：它给「本年级本学期全部诗词」那一栏用（今日列表不挂它）
+chk(/function arrowGlyph\(/.test(appSrc), '列表行尾那个「>」还留着（别的列表在用）');
+chk(!/item-arrow/.test(todayRow), '但今日列表那一行不挂它');
 chk(!/\.item-arrow/.test(css), 'style.css 里的 .item-arrow 规则也删了');
 
 console.log('');
