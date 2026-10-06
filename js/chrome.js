@@ -289,7 +289,11 @@
     return ROUTES.home;
   }
 
-    var BACK_ROUTES = {
+    /* ⚠️ 这里**没有** `authors` 这一条：作者索引不是一页，是 `/search/` 里的
+     一层（Issue #480 第二轮 —— 用户要它从搜索页进，不从课外阅读集子页进）。
+     它不是顶层页，所以「返回」那颗箭头交给 js/authors.js 自己管
+     （`setPageAction`），chrome 不掺和。 */
+  var BACK_ROUTES = {
     poems: routeHref("library"),
     classic: routeHref("library"),
     yuefu: routeHref("library"),

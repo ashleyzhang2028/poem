@@ -2315,9 +2315,15 @@
       "</svg>";
   }
 
+  /* ⚠️ 这三处（`reciteItemBtn` 与两个 sync）用的词表是 `W` —— 也就是
+     **当前会话**的 `words`。搜索页没有会话（它自己铺命中行），所以这里
+     兜一个底：没有会话时用默认词表。默认词表与搜索页那份 `words` 在
+     这两条文案上本来就是同一个值（「加入自选集合 / 已在背诵」）。 */
+  function words() { return W || DEFAULT_WORDS; }
+
   function reciteItemBtn(p) {
     var on = reciteState(p).in;
-    var label = on ? W.reciteIn : W.reciteAdd;
+    var label = on ? words().reciteIn : words().reciteAdd;
     return '<button type="button" class="item-recite" data-recite="' + esc(p.id) + '"' +
       ' data-on="' + (on ? "1" : "0") + '"' +
       ' title="' + esc(label) + '" aria-label="' + esc(p.title) + "：" + esc(label) + '"' +
@@ -2331,7 +2337,7 @@
       if (!p) return;
       var on = reciteState(p).in;
       b.dataset.on = on ? "1" : "0";
-      var label = on ? W.reciteIn : W.reciteAdd;
+      var label = on ? words().reciteIn : words().reciteAdd;
       b.title = label;
       b.setAttribute("aria-label", p.title + "：" + label);
       b.setAttribute("aria-pressed", on ? "true" : "false");
@@ -2349,7 +2355,7 @@
     var on = reciteState(current).in;
     btn.classList.toggle("is-in", on);
     btn.dataset.on = on ? "1" : "0";
-    var label = on ? W.reciteIn : W.reciteAdd;
+    var label = on ? words().reciteIn : words().reciteAdd;
     btn.title = label;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     var lab = btn.querySelector(".sr-only");
@@ -2532,6 +2538,129 @@
         textToHtml: textToHtml,
 
         tableIssues: tableIssues
+  };
+
+  /* ==========================================================================
+     搜索页：按条开阅读器（Issue #480 第二轮）
+     --------------------------------------------------------------------------
+     搜索页要的不是「一层一层点进去的列表会话」，是「输入即出命中 → 点一条
+     就读」。所以它不调 `mount`，调下面这个：
+
+       ReaderSearch.open(p, byId)   —— 就地叠一层只装这一条的阅读器
+       ReaderSearch.close()         —— 收起来，回到搜索结果
+
+     实现上还是借 `mount` 一个会话，只是：
+
+       · 会话挂在搜索页的阅读器节点上，`items` 就是**当前展出的那一段命中** ——
+         所以详情页的上一篇 / 下一篇在搜索结果里走（用户搜「春」，按下一篇
+         就是下一条命中），读完一路退回到搜索框，词还在；
+       · `root` 用 `null` —— 把 `[data-gw-root]` 给 `root: null` 会让
+         `querySelector` 收到 null 抛错，所以这里直接传**文档里那个
+         `.app` 节点**，与搜索页自己的 `#site-gw-list` 各占一间屋；
+       · 关掉列表渲染（`mount` 出来的会话不必再画一份列表，那 100 行已经
+         由 js/search.js 铺好了）——`ReaderSearch.open` 只借它那一层阅读器。
+     ========================================================================== */
+  var searchSession = null;
+
+  function searchRoot() {
+    return document.querySelector("[data-gw-root]") || document.querySelector(".app") || document.body;
+  }
+
+  function childPlayable(it) {
+    return it && it.kind === "child" && !!it.sel;
+  }
+
+  window.ReaderSearch = {
+    open: function (p, byId) {
+      if (!p || !p.id) return;
+
+      if (searchSession) {
+        window.ReaderEngine.unmount(searchSession.root);
+        searchSession = null;
+      }
+      var root = searchRoot();
+
+      /* 当前展出这一整段命中 —— 详情页的上一篇 / 下一篇就在这一段里走。 */
+      var list = [];
+      var map = byId || {};
+      Object.keys(map).forEach(function (k) { list.push(map[k]); });
+      if (!list.length) list = [p];
+      var at = -1;
+      for (var i = 0; i < list.length; i++) if (list[i].id === p.id) at = i;
+      if (at > 0) list = list.slice(at).concat(list.slice(0, at));
+
+      searchSession = window.ReaderEngine.mount({
+        id: "search",
+        items: list,
+        allowEmpty: true,
+        root: root,
+        reader: "#gw-reader",
+        groupOrder: [],
+        setTitle: false,
+        pageTitle: "搜索",
+        pageSub: "全站篇目，一搜就到",
+        extraFields: ["text", "translation", "bookName", "gradeGroup", "meaning", "gloss"],
+        noTranslationBooks: ["changshi", "mingshu", "mingren", "mingren-waiguo", "dwang", "dwang-waiguo"],
+        words: {
+          list: "篇目",
+          unit: "篇",
+          loadingFailed: "全站篇目索引加载失败",
+          empty: "输入篇名、作者或诗句，即可搜遍全部集子",
+          matchGroup: "",
+          backToList: "返回搜索结果",
+          countInvalid: "全站篇目索引加载失败",
+          readStore: "",
+          playerTitle: "朗读",
+          searchPlaceholder: "搜索篇名 / 作者 / 诗句（全站）"
+        }
+      });
+      if (!searchSession) return;
+      searchSession.open(p.id);
+    },
+
+    /* 「播放这一篇」那颗小按钮：与集子页点行上那颗同一个动作 —— 开正文
+       并起读。这里不另起一条语音路径，开出来的会话自己接朗读。 */
+    play: function (p) {
+      if (!p || !p.id) return;
+      window.ReaderSearch.open(p, null);
+      var btn = document.querySelector("#gw-reader .mini-btn[data-gw='read']");
+      if (btn) btn.click();
+    },
+
+    close: function () {
+      if (!searchSession) return;
+      window.ReaderEngine.unmount(searchSession.root);
+      searchSession = null;
+    }
+  };
+
+  /* ==========================================================================
+     搜索页的行渲染（Issue #480 第二轮）
+     --------------------------------------------------------------------------
+     搜索页上一颗搜索框、下面一堆命中行。这些行原来由阅读器建（页面借一个
+     `mount` 出来的会话，把命中集喂给它的 `setItems`）。现在搜索页不借阅读器
+     了 —— 阅读器那一套是**一层一层点进去**的地方（作者索引的②③层），而搜索
+     页的字面是「输入即出」，两者混在同一个 `#gw-list` 上会互相取消。
+
+     但行的长相、已读点、三颗小按钮都要与集子页一模一样，所以那些现成的
+     构造函数从这里借出去 —— **只借，不复制**：样式与行为只有一份，改一处
+     两处一起变。下面每一个都是直通内部那一个，没有另起一份。
+
+     ⚠️ 这里给出去的都是**当次调用**的读法（`isRead` / `reciteState` 现读
+     localStorage），不是快照 —— 所以搜索页上点过「标记已读」再搜一次，
+     行上的已读点就是新的。
+     ========================================================================== */
+  window.ReaderList = {
+    esc: esc,
+    playGlyph: playGlyph,
+    arrowGlyph: arrowGlyph,
+
+    isRead: isRead,
+    reciteState: reciteState,
+
+    dailyBtn: dailyItemBtn,
+    reciteBtn: reciteItemBtn,
+    reportBtn: reportItemBtn
   };
 
   window.ClassicProse = {

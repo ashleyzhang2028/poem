@@ -1,0 +1,456 @@
+/* ==========================================================================
+   作者索引页（Issue #480）
+   --------------------------------------------------------------------------
+   用户原话：
+
+     「搜索大类功能，增加作者作品索引页，按时间朝代顺序，将中国所有作品的
+       作者列在一页，上面是朝代索引列表，点击朝代可以下面的具体朝代，
+       朝代下面是各个作者，例如唐代 李白，点击李白，显示李白所有作品列表，
+       再点击列表，进入详情页，详情页的上一页下一页都是该作者的作品。
+       返回就回到李白列表。」
+
+   三层，全部**就地**展开（不换页、不改 url）：
+     ① 朝代索引卡 + 各朝代段（一段里是这一朝的作者，左名右数）
+     ② 点作者 → 作品列表（空搜索 + 全部 / 未读 + 随机连读，与集子页同构）
+     ③ 点作品 → 详情页，上一页 / 下一页**只在该作者的作品里走**
+
+   返回键一层退一层：③ → ② → ①。
+
+   ## 入口在搜索页，不在课外阅读
+
+   这一页挂在 `/search/` 里（Issue #480 第二轮：用户要「从搜索页进，不是从
+   课外阅读集子页进」）。所以搜索页上有**三件**东西：顶上那颗搜索框、下面
+   一行「作者索引」入口、再下面的全站结果列表 —— 它们各归各的：
+
+     · 顶上那颗搜索框 `#site-search` 走 js/search.js 自己那一套（输入即出
+       候选与结果，结果铺进 `#site-gw-list`）；
+     · 下面那颗 `#gw-search` 与 `#gw-list` 是**阅读器的**，只服务②③两层。
+
+   ①层展开时把搜索页那两件收起来（加 `hidden` 不是删），退回①层（或从
+   详情页一路退回到搜索页）再放回 —— 搜索关键词与滚动位置都还在。
+   `setSearchLayer()` 一处管这件事。
+
+   ## 这一页与集子页的关系
+
+   列表与阅读器还是 js/reader-core.js 那一套（`window.ReaderEngine.mount`）。
+   不同的只有两处，都不动引擎：
+
+     1. **第一层不是阅读器的列表** —— 它是「朝代表 + 作者名册」两张静态卡。
+        引擎只在②③这两层出场。所以第一层直接铺 DOM，`enterAuthor()` 才
+        把引擎挂上、`data-gw` 那些节点才第一次被填内容。
+
+     2. **详情页的「上一篇 / 下一篇」按作者切** —— 引擎的 `allItems()` 吃的是
+        mount 时给的 `items`，所以进②时把 `items` 换成**这一位作者的作品**，
+        上一页 / 下一页自然就不跨作者了（这正是用户要的）。退回①时
+        `unmount()` 掉整个会话 —— 下一位作者是下一次 mount、另起一炉。
+
+   ⚠️ 一处踩过的坑：**不能**反复 `mount` 同一组 `root` / `reader` 而不卸载。
+   引擎按 `(root, cfg)` 认会话，`cfg` 是每次新建的对象，认不出来就再挂一个，
+   挂到第五个的时候 `$()` 会从最早那个会话里取节点。所以 `enterAuthor()`
+   第一件事是 `unmount()` 上一次，`leaveAuthor()` 同样。
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  var AI = null;
+  var listEl = null;        /* ②③ 两层的列表容器（阅读器的 [data-gw="list"]） */
+  var readerBox = null;
+  var indexPath = null;     /* ① 那一层：朝代索引卡 + 作者名册 */
+  var api = null;           /* 当前 mount 出来的阅读器会话 */
+  var current = null;       /* 当前这一位作者（②③ 层）；①层时为 null */
+  var leaving = false;
+
+  /* 搜索页自己那一套（Issue #480 第二轮）：作者索引展开时它们让位，
+     退回来再放回。 */
+  var searchNodes = null;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* 拼音序：手机、电脑、Node 三处跑出来一样。`sensitivity:"base"` 让
+     「曹」与「艹」类不因声调分家 —— 这里排的是人名，不是生僻字表。 */
+  function byPinyin(a, b) {
+    try {
+      return String(a.name).localeCompare(String(b.name), "zh-Hans-CN", { sensitivity: "base" });
+    } catch (e) {
+      return String(a.name) < String(b.name) ? -1 : 1;
+    }
+  }
+
+  function peopleOf(at) {
+    return AI.byEra(at).slice().sort(byPinyin);
+  }
+
+  var CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>';
+
+  /* ── 搜索页那两件：作者索引展开时让位，退回来再放回 ──────────────────
+     这里**只加 hidden、不删 DOM** —— 搜索框里那个关键词、结果列表的滚动
+     位置，回来的时候都还在（用户按一下作者索引是来看名册的，不是要把自己
+     刚搜的东西清掉）。
+
+     ⚠️ 搜索的 hero（顶上那颗搜索框）收起时要连**可见性**一起收 —— 它
+     有一份「键盘顶起来时把 hero 抬走」的定位逻辑（js/search.js 的
+     `syncHeroState`），留着它、只把作者名册塞在下面，手机上会被那块
+     抬起来的定位盖住。 */
+  function setSearchLayer(on) {
+    if (!searchNodes) return;
+    searchNodes.forEach(function (el) {
+      if (!el) return;
+      el.hidden = !!on;
+    });
+  }
+
+  /* ── ① 朝代索引卡 ────────────────────────────────────────────────────
+     与集子列表页顶上那张 `.group-index-card` 同一份长相、同一份交互
+     （左名右数、手机竖屏一行两列、点一格就地滚到那一段并给一道高亮）。
+     `data-index-group` 那个属性名也照旧 —— ① 层是这一页自己铺的 DOM，
+     所以点击由本文件的 handler 接（不是引擎里那个）。 */
+  function indexCard(groups) {
+    var sec = document.createElement("section");
+    sec.className = "group-index-card";
+    sec.setAttribute("data-index-card", "1");
+    sec.innerHTML =
+      '<div class="group-index-head">' +
+      '<p class="group-index-tag">朝代</p>' +
+      '<span class="group-index-count">' + groups.length + " 朝</span>" +
+      "</div>" +
+      '<div class="group-index-list">' +
+      groups.map(function (g) {
+        return '<button type="button" class="group-index-pick"' +
+          ' data-index-group="' + esc(g.name) + '"' +
+          ' aria-label="跳到 ' + esc(g.name) + '">' +
+          '<span class="group-index-name">' + esc(g.name) + "</span>" +
+          '<span class="group-index-num">' + g.count + " 家</span>" +
+          "</button>";
+      }).join("") +
+      "</div>";
+    return sec;
+  }
+
+  /* ── ① 各朝代段：段里是这一朝的作者 ───────────────────────────────── */
+  function eraCard(g) {
+    var people = peopleOf(g.at);
+    var sec = document.createElement("section");
+    sec.className = "group-card author-era";
+    sec.dataset.group = g.name;
+
+    var head = document.createElement("div");
+    head.className = "group-head";
+    head.innerHTML =
+      '<span class="group-name">' + esc(g.name) + "</span>" +
+      '<span class="group-count">' + people.length + " 家 · " + g.works + " 条</span>";
+    sec.appendChild(head);
+
+    people.forEach(function (w) {
+      var el = document.createElement("button");
+      el.type = "button";
+      el.className = "item author-item";
+      el.dataset.author = w.name;
+      el.innerHTML =
+        '<div class="item-main">' +
+        '<h3 class="item-title">' + esc(w.name) + "</h3>" +
+        '<div class="item-meta">' + eraLine(w) + "</div>" +
+        "</div>" +
+        '<div class="item-actions"><span class="author-count">' + w.items.length + " 条</span></div>" +
+        '<div class="item-arrow">' + CHEVRON + "</div>";
+      el.addEventListener("click", function () { enterAuthor(w.name); });
+      sec.appendChild(el);
+    });
+
+    return sec;
+  }
+
+  /* 作者名下的那一行小字：朝代 + 收在哪几部集子里（最多三处，多了写「等」）。 */
+  function eraLine(w) {
+    var books = [];
+    var seen = {};
+    w.items.forEach(function (p) {
+      var n = p.bookName || "";
+      if (!n || seen[n]) return;
+      seen[n] = true;
+      books.push(n);
+    });
+    var head = Object.keys(w.dynasties || {}).filter(function (d) { return d; }).slice(0, 1);
+    var parts = [];
+    if (head.length) parts.push(esc(head[0]));
+    if (books.length) {
+      var shown = books.slice(0, 3).join(" / ");
+      if (books.length > 3) shown += " 等 " + books.length + " 部";
+      parts.push(esc(shown));
+    }
+    return parts.join(" · ");
+  }
+
+  function renderIndex() {
+    if (!indexPath) return;
+    var groups = AI.groups();
+    indexPath.innerHTML = "";
+    indexPath.appendChild(indexCard(groups));
+    groups.forEach(function (g) { indexPath.appendChild(eraCard(g)); });
+  }
+
+  /* 就地滚到某一朝那一段 —— 与引擎里 `jumpToGroup` 同一份做法、同一道
+     `.group-card.flash` 高亮。 */
+  function jumpToEra(name) {
+    if (!indexPath) return;
+    var hit = null;
+    Array.prototype.slice.call(indexPath.querySelectorAll(".group-card")).forEach(function (c) {
+      if (!hit && c.getAttribute("data-group") === name) hit = c;
+    });
+    if (!hit) return;
+    try { hit.scrollIntoView({ block: "start", behavior: "smooth" }); }
+    catch (e) { hit.scrollIntoView(true); }
+    hit.classList.remove("flash");
+    void hit.offsetWidth;
+    hit.classList.add("flash");
+    setTimeout(function () { hit.classList.remove("flash"); }, 1200);
+  }
+
+  /* 作者列表顶上再摆一张「这一朝有谁」的小卡？不做 —— 一朝的作者本来就在
+     同一屏里排开，名字就是索引，再拿名字索引名字就成了同义反复。 */
+
+  /* ── ② 点作者 → 作品列表（阅读器引擎接手）────────────────────────── */
+  function mountConfig(w) {
+    var items = AI.itemsOf(w);
+    return {
+      id: "authors",
+      items: items,
+      allowEmpty: true,
+      root: "[data-gw-root]",
+      reader: "#gw-reader",
+
+      /* 不给分组顺序：一位作者的作品不该再分卷 —— 集的顺序（SITE_INDEX 的
+         顺序）就是这一位作者的顺序。`groupOrder: []` 会让 allItems() 原样返回。 */
+      groupOrder: [],
+
+      pageTitle: "作者索引",
+      pageSub: "朝代 · 作者 · 作品，三级都在这一页",
+      extraFields: ["text", "translation", "authorName"],
+
+      words: {
+        list: "作品",
+        unit: "条",
+        loadingFailed: "作者作品索引加载失败",
+        empty: "这一位还没有收作品",
+        matchGroup: "",
+        backToList: "返回" + w.name,
+        countInvalid: "作者作品索引加载失败",
+
+        readStore: "poem_authors_read_v1",
+        playerTitle: "朗读",
+        searchPlaceholder: "搜索篇名 / 出处 / 集子"
+      }
+    };
+  }
+
+  function enterAuthor(name) {
+    var w = AI.byName(name);
+    if (!w || !window.ReaderEngine) return;
+    var items = AI.itemsOf(w);
+    if (!items.length) return;
+
+    leaveAuthor(true);
+    current = w;
+
+    indexPath.hidden = true;
+    setSearchLayer(true);
+    document.querySelector("[data-lib-view='author']").hidden = false;
+
+    var cfg = mountConfig(w);
+    /* 详情页里那个「返回」回到**这一位作者的作品列表**（不是回大索引）：
+       reading 时按一下退一层，正是用户要的「返回就回到李白列表」。 */
+    cfg.openFrom = function () {
+      if (api && api.isOpen && api.isOpen()) return null;
+      return function () { leaveAuthor(); };
+    };
+    cfg.onHideReader = function () { return leaving ? "drop-list" : true; };
+
+    api = window.ReaderEngine.mount(cfg);
+    if (!api) { leaveAuthor(); return; }
+    window.ReaderEngine.current = api;
+
+    paintHead(w.name);
+    paintBack();
+    window.scrollTo(0, 0);
+  }
+
+  function leaveAuthor(silent) {
+    leaving = true;
+    if (window.ReaderEngine && window.ReaderEngine.current &&
+        window.ReaderEngine.current.isOpen && window.ReaderEngine.current.isOpen()) {
+      window.ReaderEngine.current.hideReader();
+    }
+    leaving = false;
+
+    if (window.ReaderEngine && window.ReaderEngine.unmount) {
+      window.ReaderEngine.unmount(listEl);
+      window.ReaderEngine.current = null;
+    }
+    api = null;
+    current = null;
+    if (listEl) listEl.innerHTML = "";
+
+    var rail = document.querySelector("[data-lib-view='author']");
+    if (rail && !silent) rail.hidden = true;
+    if (indexPath && !silent) indexPath.hidden = false;
+    if (!silent) setSearchLayer(false);
+
+    if (!silent) {
+      paintHead("");
+      paintBack();
+      renderIndex();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  /* ① 层是搜索页里的一层，不是另一个页面 —— 所以标题也跟着分：
+     名册展开时，顶上写「作者索引」；退回来自动还给搜索页自己那一份
+     （`body[data-page]` 上的原话，chrome 认它）。 */
+  function paintHead(name) {
+    var C = window.SiteChrome;
+    if (!C) return;
+    if (!name) {
+      C.setPage(null);
+      C.setSub("");
+      return;
+    }
+    C.setPage(name === "作者索引" ? "搜索 · 作者索引" : name);
+    C.setSub(name === "作者索引" ? "朝代 · 作者 · 作品" : name + " 的作品");
+  }
+
+  /* 顶上那颗返回。三层各有各的落点：
+
+       · 名册（①）→ 回**搜索**（这个词是这一层从搜索页借来的，不还回去
+         它就一直是「搜索」这个词条页）；
+       · 作者的作品列表（②）→ 回名册；
+       · 详情页（③）→ 回**这一位作者的作品列表**（「返回就叫『返回李白』」，
+         正是用户要的「返回就回到李白列表」）。
+
+     ②③ 两层由 `current` 认（`current` 非空即在这两层里），点一下退一层。 */
+  function paintBack() {
+    if (!window.SiteChrome || !window.SiteChrome.setPageAction) return;
+
+    if (!current) {
+      /* ① 名册这一层：回搜索页。名册是 `/search/` 里的一层，所以这里
+         不跳转、只把这一层收起来 —— 搜索框与命中行原样还在下面。 */
+      if (indexPath && !indexPath.hidden) {
+        window.SiteChrome.setPageAction({
+          label: "返回搜索",
+          onclick: function () {
+            indexPath.hidden = true;
+            setSearchLayer(false);
+            paintHead("");
+            paintBack();
+            window.scrollTo(0, 0);
+          }
+        });
+      } else {
+        window.SiteChrome.setPageAction(null);
+      }
+      return;
+    }
+
+    window.SiteChrome.setPageAction({
+      label: "返回作者索引",
+      onclick: function () { leaveAuthor(); }
+    });
+  }
+
+  /* 「作者索引」那颗入口（搜索页 hero 里那一行）：点开名册本身。
+     入口不止一个（顶上那颗搜索框所在的那一行），所以按 id 接一次就够 ——
+     节点是静态的，不会随 renderIndex() 重建。 */
+  function bindEntry() {
+    var btn = document.getElementById("author-entry");
+    if (!btn) return;
+    /* 入口条虽然只在搜索层露着，但它也可能在**名册还开着**的时候被点到
+       （退回搜索层后没刷新、又有缓存的 DOM；或者用户从浏览器历史回来）。
+       所以这里不假设当前是哪一层：一律收成「名册根 + 滚到顶」。 */
+    btn.addEventListener("click", function () {
+      if (current) leaveAuthor();
+      try { history.pushState({ authors: "1" }, ""); } catch (e) {  }
+      indexPath.hidden = false;
+      setSearchLayer(true);
+      paintHead("作者索引");
+      paintBack();
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function bind() {
+    /* ① 层的点击：索引卡的「跳到某一朝」与作者卡。
+       ⚠️ 都在 **document** 上接、用 closest 判归属，因为 ① 层的 DOM 每次
+       `renderIndex()` 都重建一遍 —— 接在节点上的 handler 会跟着丢。 */
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+
+      var idx = t.closest("[data-index-group]");
+      if (idx && indexPath && indexPath.contains(idx)) {
+        e.preventDefault();
+        jumpToEra(idx.getAttribute("data-index-group"));
+        return;
+      }
+
+      var a = t.closest("[data-author]");
+      if (a && indexPath && indexPath.contains(a)) {
+        e.preventDefault();
+        enterAuthor(a.getAttribute("data-author"));
+      }
+    });
+  }
+
+  function boot() {
+    AI = window.AuthorIndex;
+    if (!AI) return;
+    indexPath = document.getElementById("authors-index");
+    listEl = document.getElementById("gw-list");
+    readerBox = document.getElementById("gw-reader");
+    if (!indexPath || !listEl) return;
+
+    searchNodes = [
+      document.getElementById("search-hero"),
+      document.getElementById("site-gw-list")
+    ].filter(Boolean);
+
+    bindEntry();
+    renderIndex();
+    bind();
+    paintHead("");
+    paintBack();
+
+    /* 返回键（浏览器 / 手机手势）在这一页上 = 退一层，不是离开这一页：
+       详情页 → 作者的作品列表 → 名册 → 搜索。不接这一个，一路退回去会
+       直接跳出 `/search/`（这一层是「就地」铺的，url 没变过），用户就
+       把自己刚搜的词丢了。只在真有层可退时拦，退到搜索层就放行。 */
+    window.addEventListener("popstate", function () {
+      if (!current && (!indexPath || indexPath.hidden)) return;
+      history.pushState({ authors: "1" }, "");
+      if (current) leaveAuthor();
+      else {
+        indexPath.hidden = true;
+        setSearchLayer(false);
+        paintHead("");
+        paintBack();
+        window.scrollTo(0, 0);
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+
+  window.AuthorsPage = {
+    eras: function () { return AI ? AI.groups() : []; },
+    people: function (at) { return AI ? peopleOf(at) : []; },
+    open: function (name) { enterAuthor(name); },
+    close: function () { leaveAuthor(); },
+    current: function () { return current ? current.name : ""; }
+  };
+})();

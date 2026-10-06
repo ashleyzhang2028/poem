@@ -160,7 +160,8 @@
   gap: 0;
 }
 
-#gw-list .item .item-main { flex: 0 1 auto; }
+#gw-list .item .item-main,
+#site-gw-list .item .item-main { flex: 0 1 auto; }
 
 .group-card .item:first-of-type { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 
@@ -360,38 +361,56 @@
   }
 }
 
-#gw-list .item { border-left-color: var(--blue); }
-#gw-list .item.in-book { border-left-color: var(--green); }
-#gw-list .item.done { opacity: .62; }
-#gw-list .item.done .item-title { text-decoration: none; }
+/* 列表行的着色规则：`#gw-list`（阅读器那一层）与搜索页的 `#site-gw-list`
+   共用一份 —— 两处的行是一个长相、一个家（Issue #480 第二轮把搜索页的
+   命中行从阅读器手里接了过来，长相不许走样）。 */
+#gw-list .item,
+#site-gw-list .item { border-left-color: var(--blue); }
+#gw-list .item.in-book,
+#site-gw-list .item.in-book { border-left-color: var(--green); }
+#gw-list .item.done,
+#site-gw-list .item.done { opacity: .62; }
+#gw-list .item.done .item-title,
+#site-gw-list .item.done .item-title { text-decoration: none; }
 
-#gw-list .item-num { color: var(--blue); }
-#gw-list .item.in-book .item-num { color: var(--green); }
-#gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
+#gw-list .item-num,
+#site-gw-list .item-num { color: var(--blue); }
+#gw-list .item.in-book .item-num,
+#site-gw-list .item.in-book .item-num { color: var(--green); }
+#gw-list .item-reason.read,
+#site-gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
 
-#gw-list .item-reason.pending {
+#gw-list .item-reason.pending,
+#site-gw-list .item-reason.pending {
   background: transparent;
   color: var(--ink-3);
   border: 1px solid var(--line);
   font-weight: 400;
 }
-#gw-list .item.pending .item-title { color: var(--ink-3); }
+#gw-list .item.pending .item-title,
+#site-gw-list .item.pending .item-title { color: var(--ink-3); }
 
-#gw-list .item-read { color: var(--blue); }
-#gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
+#gw-list .item-read,
+#site-gw-list .item-read { color: var(--blue); }
+#gw-list .item-read[data-on="1"],
+#site-gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-#gw-list .item.reading {
+#gw-list .item.reading,
+#site-gw-list .item.reading {
   background: var(--blue-light);
 }
-#gw-list .item.reading::before { background: var(--blue); }
-#gw-list .item-meta span:last-child {
+#gw-list .item.reading::before,
+#site-gw-list .item.reading::before { background: var(--blue); }
+#gw-list .item-meta span:last-child,
+#site-gw-list .item-meta span:last-child {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#gw-list .item-meta .item-selection {
+#gw-list .item-meta .item-selection,
+#site-gw-list .item-meta .item-selection {
   color: var(--muted, #9a9a92);
 }
 
@@ -991,7 +1010,12 @@ body.reader-open .dock { display: none; }
 
   z-index: auto;
 
-  min-height: calc(var(--hero-box-h) + 4px);
+  /* 块高：搜索框 + 10px 缝 + 入口条那一行（38px）。下面 `.search-hero
+     .search-toolbar` 的垂直居中按的就是这一块 —— 入口条是这一页的常驻
+     一件，所以它也算进「居中」的高度里，否则搜索框会偏上。 */
+  --hero-entry-h: 38px;
+  --hero-gap: 10px;
+  min-height: calc(var(--hero-box-h) + var(--hero-gap) + var(--hero-entry-h) + 4px);
 
   --hero-input-h: 52px;
   --hero-box-h: 52px;
@@ -1018,10 +1042,72 @@ body.reader-open .dock { display: none; }
   left: 50%;
   transform: translateX(-50%);
 
+  /* 居中要连入口条一起算：往上挪「一半块高」，再往下让出入口条那一行 ——
+     只按搜索框自己居中，整块会看着偏上。 */
   top: 50%;
-  margin-top: calc(var(--hero-box-h) / -2);
+  margin-top: calc((var(--hero-box-h) + var(--hero-gap) + var(--hero-entry-h)) / -2);
   width: min(520px, 100%);
 
+}
+
+/* ── 「作者索引」那一行入口（搜索页 hero 里）─────────────────────────────
+   与搜索框同宽、居中在同一列上 —— 它讲的是「除了搜，还可以按人找」，
+   所以摆在搜索框正下方，不抢搜索框的位置（不高亮、不描边、无底色，
+   悬停才浮起来一点）。 */
+.search-entry {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  box-sizing: border-box;
+
+  /* 上边贴着搜索框下沿 10px：搜索框居中后其底边 = 50% + hero-box-h/2，
+     所以这里也用同一个基准往下量。 */
+  top: calc(50% + var(--hero-box-h) / 2 + var(--hero-gap));
+  height: var(--hero-entry-h);
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 12px;
+
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink-2);
+}
+.search-entry:hover { background: var(--green-light); }
+.search-entry-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.search-entry-title {
+  flex: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--green);
+}
+.search-entry-note {
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-entry-icon {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-3);
+}
+.search-entry-icon svg { width: 15px; height: 15px; }
+
+/* 细屏：入口条那句小字放不下就只留名字 —— 「作者索引」四个字本身已经
+   说清是什么，小字是给宽屏补的意思。 */
+@media (max-width: 380px) {
+  .search-entry-note { display: none; }
 }
 
 .search-hero .search-wrap { flex: 1 1 auto; }
@@ -1035,13 +1121,32 @@ body.reader-open .dock { display: none; }
 
 body[data-nav="search"] { --search-list-gap: 14px; }
 
-body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap); }
-body[data-nav="search"] .search-hero.search-active ~ #gw-list,
-body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap); }
+/* ==========================================================================
+   搜索页（Issue #480 第二轮）
+   --------------------------------------------------------------------------
+   页面上现在有三件东西，各占一处：
 
+     · `.search-hero`（顶上那颗搜索框）—— 搜索页自己的；**收起 / 抬起**
+       那一套照旧，一字未改，只是选择器认的不再是 `~ #gw-list`（那是
+       阅读器的列表），而是旁边的 `~ #site-gw-list` —— 全站命中行。
+     · `#author-entry`（hero 里那一行「作者索引」）—— 进名册；
+     · `.authors-index`（名册本身）与它下面的 `[data-lib-view="author"]`
+       （作者的作品列表）—— 归 js/authors.js，见文件尾那一节。
+
+   ⚠️ `#site-gw-list` 是**全站命中行**；`#gw-list` 是阅读器那一层
+   （作者的作品列表）。两者都挂 `data-gw="list"`，样式差在缩进与底色上，
+   所以下面凡是按 `#gw-list` 写的老规则都逐条对到该对的那一个上。
+   ========================================================================== */
+
+body[data-nav="search"] #site-gw-list { padding-top: var(--search-list-gap); }
+body[data-nav="search"] .search-hero.search-active ~ #site-gw-list,
+body[data-nav="search"] .search-hero.kb-open ~ #site-gw-list { padding-top: var(--search-list-gap); }
+
+body[data-nav="search"] #site-gw-list .item,
 body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; gap: 0; }
 
-#gw-list .item-hit {
+#gw-list .item-hit,
+#site-gw-list .item-hit {
   color: var(--ink-3);
   font-style: normal;
 }
@@ -1136,7 +1241,7 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; gap: 0; }
   }
 }
 
-body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
+body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] {
   font-size: 0;
   line-height: 0;
   padding: 0;
@@ -1176,6 +1281,20 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
 body[data-nav="search"] .search-hero.search-active .search-wrap,
 body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
 
+/* 搜索**进行中**（搜索框里真有字了）入口条收起来：这时候用户是来搜的，
+   hero 也要缩成顶上粘着的一条，多留一行只会把命中行往下挤。
+
+   ⚠️ 判据得是「`html[data-searching]`（搜索框里有字）」，**不能**用
+   `.search-active`（那一档只要访问过一次搜索页就置上，清空搜索框回到
+   空态它也还在 —— 拿它当判据，用户回到空态时就再也看不到入口条了），
+   也**不能**只用 `.kb-open`（那一档认的是「键盘真的抬起来了」，而带外接
+   键盘的桌面端、以及无头浏览器里 `visualViewport` 会一直报有键盘，于是
+   它就常驻，入口条在空态也是收着的）。
+
+   `html[data-searching]` 由 js/search.js 的 `syncHeroState()` 一处维护：
+   `input.value.trim()` 非空即置 1。 */
+html[data-searching] body[data-nav="search"] .search-hero .search-entry { display: none; }
+
 body[data-nav="search"] .search-hero .search-input {
   border-color: var(--line);
   background: #fffdf6;
@@ -1191,12 +1310,12 @@ body[data-nav="search"] .search-hero .search-input:focus-visible {
   outline-offset: 0;
 }
 
-body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
-body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty="idle"] {
+body[data-nav="search"] .search-hero.kb-open ~ #site-gw-list .empty[data-empty="idle"],
+body[data-nav="search"] .search-hero.search-active ~ #site-gw-list .empty[data-empty="idle"] {
   height: 0;
 }
 
-#gw-list .search-empty {
+#site-gw-list .search-empty {
   text-align: left;
   padding: 6px 2px 0;
   font-size: 13px;
@@ -1204,7 +1323,7 @@ body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty=
   color: var(--ink-3);
 }
 
-body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
+body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
 
 .library-grid {
   display: flex;
@@ -1238,6 +1357,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 .library-group[data-group="wen"] { border-left-color: var(--gold); }
 .library-group[data-group="renwu"] { border-left-color: var(--blue); }
 .library-group[data-group="changshi"] { border-left-color: var(--ink-3); }
+.library-group[data-group="cross"] { border-left-color: var(--celadon, var(--green)); }
 
 .library-group-head {
   display: flex;
@@ -1777,4 +1897,114 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   box-shadow: 0 0 0 2px var(--green), var(--shadow);
   background: var(--green-light);
   transition: box-shadow .25s, background .25s;
+}
+
+/* ==========================================================================
+   作者索引页（Issue #480）
+   --------------------------------------------------------------------------
+   ① 层是**静态**的两张卡（朝代索引卡 + 各朝代作者名册），不归阅读器管；
+   ②③ 层复用 `.toolbar` / `.list` / `.reader`，样式一字不加。
+
+   所以下面只管两件事：
+     · ① 层容器 `.authors-index` 撑成与 `.app` 内容同宽的竖排；
+     · ① 层的作者行 `.author-item` —— 它不是阅读器的 `.item`（那一份的
+       宽度 / 边框规则是按 `.list` 的网格排的），但长相要跟它一个家。
+   ========================================================================== */
+
+.authors-index {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.authors-index[hidden] { display: none; }
+
+[data-lib-view="author"] { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+[data-lib-view="author"] > .toolbar,
+[data-lib-view="author"] > .list { padding-left: 0; padding-right: 0; }
+[data-lib-view="author"][hidden] { display: none !important; }
+
+/* ⚠️ 作者索引是 `/search/` 里的**一层**（Issue #480 第二轮），不是另一个
+   页面 —— 所以「作者的作品列表」那一段（`[data-lib-view="author"]`）在
+   搜索页上不能用 `.app > *` 那套「页面级间距」（它默认是给一整页一份的）。
+   这里只把上下的间距归零，行本身的样式一个不动。 */
+body[data-nav="search"] [data-lib-view="author"] > .toolbar {
+  /* 顶上那颗搜索框（hero）在名册展开时已经收起来了，所以这里不必再让位。 */
+  margin-top: 0;
+}
+
+/* 作者名册那段里的行：左名右数，右侧一颗箭头。
+   不用 `.list .item` —— `.list` 的网格规则是给 ②层 的作品行用的，
+   两层的列数不一样，混用会把作者行也切成半屏宽。 */
+.authors-index .author-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 11px 10px 11px 12px;
+}
+.authors-index .author-item:first-of-type { border-top-color: color-mix(in srgb, var(--line) 55%, transparent); }
+.authors-index .author-item:hover { background: var(--green-light); }
+.authors-index .author-item .item-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.authors-index .author-item .item-meta {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.authors-index .author-item .author-count {
+  flex: 0 0 auto;
+  /* 「21 条」两字 + 数不许折行 —— 不写这一句，窄屏上两位数会掉到第二行，
+     整段行高参差。 */
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.authors-index .author-item .item-arrow {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-3);
+}
+.authors-index .author-item .item-arrow svg { width: 16px; height: 16px; }
+
+/* 宽屏：作者行一行两列（与 `.group-card > .item` 同一档）。 */
+@media (min-width: 768px) {
+  .authors-index .author-era {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 22px;
+    row-gap: 0;
+  }
+  .authors-index .author-era > .group-head {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .authors-index .author-era > .author-item {
+    flex: 1 1 calc(50% - 11px);
+    max-width: calc(50% - 11px);
+  }
+  .authors-index .author-era > .author-item:nth-of-type(2) { border-top: none; }
+}
+@media (min-width: 1280px) {
+  .authors-index .author-era > .author-item {
+    flex: 1 1 calc(33.333% - 14.667px);
+    max-width: calc(33.333% - 14.667px);
+  }
+  .authors-index .author-era > .author-item:nth-of-type(3n + 3) { border-top: 1px solid var(--line); }
 }

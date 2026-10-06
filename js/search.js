@@ -1,3 +1,17 @@
+/* ==========================================================================
+   全站搜索页（/search/）
+   --------------------------------------------------------------------------
+   页面上有**两颗**搜索框，各管各的（Issue #480 第二轮）：
+
+     · `#site-search`（顶上、`search-hero` 里那颗）—— 本文件这一套。输入即出
+       候选与结果，结果铺进 `#site-gw-list`。它不借阅读器：搜索页的字面就是
+       「输入即出」，用户要的是**马上看到命中**，不是先挂一个列表会话等着。
+     · `#gw-search`（下一层「作品」那一行里那颗）—— **阅读器的**，服务
+       作者索引的②③两层（点作者 → 他的作品列表 → 详情页）。本文件不碰它。
+
+   `#site-gw-list` 与 `#gw-list` 因此都挂 `data-gw="list"`：前者归本文件，
+   后者归阅读器（js/authors.js 持有 `#gw-list` 这个引用）。
+   ========================================================================== */
 (function () {
   "use strict";
 
@@ -23,7 +37,7 @@
   var EMPTY_IDLE = "输入篇名、作者或诗句，即可搜遍全部集子";
   var EMPTY_MISS = "没有找到匹配的篇目";
 
-  var api = null;
+  var hitDocs = {};         /* 当前展出那一段命中：id → 条目（点行时按 id 取回） */
   var suggestIndex = -1;
 
   function esc(s) {
@@ -160,6 +174,116 @@
     return all.length > SEARCH_MAX ? all.slice(0, SEARCH_MAX) : all;
   }
 
+  /* ---------------------------------------------------------------------------
+     命中行：自己铺
+
+     行的长相、已读点、三颗小按钮（报告 / 加背 / 自选）都从 `window.ReaderList`
+     借 —— 与集子页同一份构造函数，不另画一套（见 js/reader-core.js 的
+     `window.ReaderList`）。差别只有两处，都写在下面：
+
+       · 行上不挂序号（`.item-num`）—— 搜索结果是按排名排的，一排到就露出
+         「第 3 条」这种与篇目本身无关的数，读着像在数页码；
+       · 不挂 `CFG.noTranslationBooks` 那套「待补」判断 —— 搜索页展出的是
+         混着十部集子的条目，一条词条式集子的条目不该挂「待补」。判据这里
+         简单摆明：集子自己就没打算给译文的那几部，不算缺。
+     --------------------------------------------------------------------------- */
+
+  var NO_TRANS_BOOKS = ["changshi", "mingshu", "mingren", "mingren-waiguo", "dwang", "dwang-waiguo"];
+
+  function canTrans(p) {
+    return NO_TRANS_BOOKS.indexOf(p.book) < 0;
+  }
+
+  function itemHtml(p, R) {
+    var read = R.isRead(p.id);
+    var pending = !p.text || (!p.translation && canTrans(p));
+    var authorTag = p.author || "";
+    if (p.authorName && p.authorName !== p.author) {
+      authorTag = p.author + "（" + p.authorName + "）";
+    }
+
+    var excerpt = p.excerpt != null && String(p.excerpt) !== ""
+      ? String(p.excerpt)
+      : (p.text ? String(p.text).replace(/\n/g, "").slice(0, 16) + "…" : "");
+
+    return '<div class="item' + (read ? " done" : "") + (pending ? " pending" : "") + '"' +
+      ' data-id="' + R.esc(p.id) + '">' +
+      '<div class="item-main">' +
+      '<h3 class="item-title">' + R.esc(p.title) +
+      (read ? '<span class="item-reason read">已读</span>' : "") +
+      (pending ? '<span class="item-reason pending">待补</span>' : "") +
+      "</h3>" +
+      '<div class="item-meta">' +
+      (p.dynasty ? "<span>" + R.esc(p.dynasty) + "</span>" : "") +
+      (authorTag ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + R.esc(authorTag) + "</span>" : "") +
+      (p.bookName ? (p.dynasty || authorTag ? "<span>·</span>" : "") +
+        "<span><em>" + R.esc(p.bookName) + "</em></span>" : "") +
+      (excerpt ? "<span>·</span><span>" + R.esc(excerpt) + "</span>" : "") +
+      "</div></div>" +
+      '<div class="item-actions">' +
+      R.reportBtn(p) + R.dailyBtn(p) + R.reciteBtn(p) +
+      '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + R.esc(p.title) + '">' +
+      R.playGlyph() + "</button>" +
+      "</div>" +
+      '<div class="item-arrow">' + R.arrowGlyph() + "</div>" +
+      "</div>";
+  }
+
+  function paintHits(q) {
+    var listEl = document.querySelector("#site-gw-list");
+    if (!listEl) return;
+
+    var R = window.ReaderList;
+    hitDocs = {};
+
+    if (!q) {
+      listEl.innerHTML = "";
+      return;
+    }
+    if (!R) {
+      listEl.innerHTML = '<div class="empty">' + esc(EMPTY_MISS) + "</div>";
+      return;
+    }
+
+    var list = renderHits(q);
+    if (!list.length) {
+      listEl.innerHTML = '<div class="empty">' + esc(EMPTY_MISS) + "</div>";
+      return;
+    }
+    list.forEach(function (p) { hitDocs[p.id] = p; });
+    listEl.innerHTML = list.map(function (p) { return itemHtml(p, R); }).join("");
+
+    /* 点行开读。三颗小按钮自己 `stopPropagation`（与集子页一样），所以
+       点到它们不会误开正文。 */
+    Array.prototype.slice.call(listEl.querySelectorAll(".item")).forEach(function (el) {
+      el.addEventListener("click", function () { openHit(el.dataset.id); });
+    });
+
+    var playables = listEl.querySelectorAll(".item-read");
+    Array.prototype.slice.call(playables).forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openHit(b.closest(".item").dataset.id, true);
+      });
+    });
+  }
+
+  /* 点开一条命中。搜索页不借阅读器会话、也不整页跳走 —— 就地叠一层
+     阅读器，读完返回，搜索框里的词还在。
+
+     ⚠️ 这里**不自己画阅读器**：那一层（标题 / 正文 / 注音 / 译文 / 朗读 /
+     上一篇下一篇）是阅读器引擎的活，几十处状态。搜索页只是「按条开一个
+     只装这一条的会话」，`window.ReaderSearch.open(p)` 就是给它留的口子
+     （见 js/reader-core.js）。 */
+  function openHit(id, play) {
+    var p = hitDocs[id];
+    if (!p) return;
+    var RS = window.ReaderSearch;
+    if (!RS) return;
+    if (play && typeof RS.play === "function") { RS.play(p); return; }
+    RS.open(p, hitDocs);
+  }
+
   function suggestItems(kw) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
@@ -201,7 +325,7 @@
   }
 
   function setExpanded(on) {
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     if (input) input.setAttribute("aria-expanded", on ? "true" : "false");
   }
 
@@ -239,7 +363,8 @@
     var ids = suggestIds();
     if (i < 0 || i >= ids.length) return false;
     noteSearchAction();
-    if (api) api.open(ids[i]);
+    /* 选一条候选 = 点开那一条（与点行同一个动作）。 */
+    openHit(ids[i]);
     hideSuggest();
     return true;
   }
@@ -282,18 +407,12 @@
   }
 
   function renderBody() {
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     var kw = input ? input.value : "";
     var q = String(kw == null ? "" : kw).trim();
 
     syncHeroState();
-    if (api) {
-
-      /* keyword 在前、items 在后：阅读器每次改动都会重画一遍列表，
-         这次只画一次。 */
-      api.setKeyword("");
-      api.setItems(q ? renderHits(q) : []);
-    }
+    paintHits(q);
     annotateMatches(q);
     syncEmptyState(q);
 
@@ -301,7 +420,7 @@
   }
 
   function syncEmptyState(q) {
-    var listEl = document.querySelector("#gw-list");
+    var listEl = document.querySelector("#site-gw-list");
     if (!listEl) return;
     var empty = listEl.querySelector(".empty");
     if (!empty) return;
@@ -319,11 +438,11 @@
 
   function annotateMatches(kw) {
     var q = String(kw || "").trim();
-    var listEl = document.querySelector("#gw-list");
+    var listEl = document.querySelector("#site-gw-list");
     if (!listEl || !q) return;
     /* 每行一份、只建一次 —— 原来在 forEach 里 each 各扫一遍全表
        找同一条（每页两三千次 × 5405）。 */
-    var slots = document.querySelectorAll("#gw-list .item");
+    var slots = document.querySelectorAll("#site-gw-list .item");
     var byIdMap = {};
     var hits = hitSet(q);
     hits.forEach(function (p) { byIdMap[p.id] = p; });
@@ -373,7 +492,7 @@
   function heroEl() { return document.getElementById("search-hero"); }
 
   function hasKeyword() {
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     return !!input && !!String(input.value || "").trim();
   }
 
@@ -388,9 +507,18 @@
   function syncHeroState() {
     var hero = heroEl();
     if (!hero) return;
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     var focused = !!input && document.activeElement === input;
     var space = keyboardSpace();
+
+    /* 搜索框里有没有字 —— 挂在 `<html>` 上给 CSS 用（入口条收放的判据）。
+       比 `.search-active` / `.kb-open` 都靠得住：那两个认的是「来过 / 键盘
+       抬起来了」，而这里认的是用户此刻手里真有的东西。 */
+    try {
+      var html = document.documentElement;
+      if (input && String(input.value || "").trim()) html.setAttribute("data-searching", "1");
+      else html.removeAttribute("data-searching");
+    } catch (e) {  }
 
     var lifted = focused || space > 0 || searchedThisVisit;
     setLift(lifted, onLiftLost);
@@ -433,7 +561,7 @@
   }
 
   function bindLightFocus() {
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     if (!input) return;
 
     input.addEventListener("pointerdown", function () {
@@ -448,7 +576,7 @@
       if (SLASH_KEYS.indexOf(e.key) < 0) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.defaultPrevented) return;
-      var input = document.getElementById("gw-search");
+      var input = document.getElementById("site-search");
       if (!input) return;
       var t = e.target;
       if (t === input) return;
@@ -464,7 +592,7 @@
   }
 
   function bindKeyboardWatchers() {
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
     var hero = heroEl();
     if (hero && input) {
       input.addEventListener("focus", function () {
@@ -501,52 +629,15 @@
     });
   }
 
-  function mountCfg() {
-    return {
-      id: "search",
-      items: [],
-      allowEmpty: true,
-      root: "[data-gw-root]",
-      reader: "#gw-reader",
-
-      groupOrder: [],
-      pageTitle: "搜索",
-      pageSub: "全站篇目，一搜就到",
-      extraFields: ["text", "translation", "bookName", "gradeGroup", "meaning", "gloss"],
-      // 词条式集子（文学常识 / 名著导读 / 历代名家）：正文即词条，本就没有白话译文
-      // —— 不这么说，那几百条的列表行上会各挂一个「待补」，而它们什么都不缺
-      noTranslationBooks: ["changshi", "mingshu", "mingren", "mingren-waiguo", "dwang", "dwang-waiguo"],
-      words: {
-        list: "篇目",
-        unit: "篇",
-        loadingFailed: "全站篇目索引加载失败",
-
-        empty: EMPTY_IDLE,
-        matchGroup: "",
-        backToList: "返回搜索结果",
-
-        countInvalid: "全站篇目索引加载失败",
-
-        readStore: "",
-        playerTitle: "朗读",
-        searchPlaceholder: "搜索篇名 / 作者 / 诗句（全站）"
-      }
-    };
-  }
-
   function boot() {
-    if (!window.ReaderEngine) return;
     var all = allItems();
-    var listEl = document.querySelector('[data-gw="list"]');
+    var listEl = document.querySelector("#site-gw-list");
     if (!all.length) {
       if (listEl) listEl.innerHTML = '<div class="empty">全站篇目索引加载失败</div>';
       return;
     }
 
-    api = window.ReaderEngine.mount(mountCfg());
-    if (!api) return;
-
-    var input = document.getElementById("gw-search");
+    var input = document.getElementById("site-search");
 
     if (input) {
       var last = readKeyword();
@@ -604,7 +695,7 @@
   }
 
   function bindSuggestDismiss() {
-    var listEl = document.querySelector("#gw-list");
+    var listEl = document.querySelector("#site-gw-list");
     if (listEl) {
       var timer = 0;
       listEl.addEventListener("scroll", function () {
@@ -655,7 +746,7 @@
     suggest: function (kw) { return suggestItems(kw); },
 
     keyword: function () {
-      var input = document.getElementById("gw-search");
+      var input = document.getElementById("site-search");
       return input ? input.value : "";
     },
 
