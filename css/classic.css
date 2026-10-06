@@ -330,7 +330,27 @@
   margin-right: 6px;
 }
 
-.item-actions {
+/* 首页今日列表那一排（朗读 + 明日再背 + 月后再背）：一排圆键、右对齐，
+   与 css/style.css 里的 `.item-actions` 同一条规矩 —— 这一条排在 classic 后面，
+   把上面那套 grid 的写法盖回去。 */
+#today-list .item-actions {
+  display: flex;
+  flex-flow: row nowrap;
+  grid-template-columns: none;
+  gap: var(--item-gap);
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+#today-list .item-actions > .item-later { margin: 0; }
+
+/* 集子列表那一排键（.list > .item 里的朗读 / 加背 / 报告）。
+   `:not(#today-list *)` 把首页今日列表排掉 —— 那一边是另一套（css/style.css：
+   一排圆键 `margin-left: auto` 推到行尾），两张表都要吃 `.item-actions` 这个
+   class，不排掉就被这里的 grid + margin-right 顶掉了。 */
+.item-actions:not(#today-list *) {
   display: grid;
   grid-template-columns: repeat(2, var(--item-btn));
     grid-auto-rows: calc(var(--item-btn) + var(--item-gap));
@@ -352,7 +372,7 @@
 
 /* Desktop has room for the buttons in one row; stacking them overlapped the snippet. */
 @media (min-width: 1024px) {
-  .item-actions {
+  .item-actions:not(#today-list *) {
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: var(--item-btn);
