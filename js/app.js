@@ -1039,13 +1039,18 @@
     }
     $("#m-progress").innerHTML = info.join("");
 
-    $("#m-hint").textContent = planItem
-      ? planItem.reason === "review"
-        ? "这一首按" + algoShort() + "到期"
-        : planItem.reason === "pinned"
-          ? "今天加背的，按" + algoShort() + "排下次"
-          : "新学，今天先记一遍"
-      : "背诵后安排下次复习时间";
+    paintResultButtons(rec);
+
+    const picked = window.ReviewModels ? window.ReviewModels.todayResult(rec) : "";
+    $("#m-hint").textContent = picked
+      ? "今天已选「" + RESULT_LABEL[picked] + "」，再点只改不算新的一次"
+      : planItem
+        ? planItem.reason === "review"
+          ? "这一首按" + algoShort() + "到期"
+          : planItem.reason === "pinned"
+            ? "今天加背的，按" + algoShort() + "排下次"
+            : "新学，今天先记一遍"
+        : "背诵后安排下次复习时间";
     syncLaterRow(p);
 
     $("#modal").hidden = false;
@@ -1399,17 +1404,21 @@
   function handleResult(result) {
     if (!currentPoem) return;
     const rec = Storage.get(currentPoem.id) || Scheduler.createRecord();
+    // 今天已经点过一次 → 这一下是**改判**：只更新，不累加（Issue #481）。
+    const regrade = !!(window.ReviewModels && window.ReviewModels.gradedToday(rec));
 
     const next = Scheduler.review(rec, result, algoKey());
     Storage.set(currentPoem.id, next);
 
-    showToast(window.ReviewModels
+    const hint = window.ReviewModels
       ? window.ReviewModels.resultHint(algoKey(), result, next)
       : {
         good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
         fuzzy: "有点模糊，12 小时后再复习一次",
         bad: "没关系，30 分钟后再复习一次"
-      }[result]);
+      }[result];
+    showToast(regrade ? "已改为「" + RESULT_LABEL[result] + "」 · " + hint
+      : hint + "（今天再点只改不算新的一次）");
 
     todayPlan = todayPlan.map(function (it) {
       if (it.poem.id === currentPoem.id) it.reviewRound = next.level + 1;
@@ -1418,6 +1427,21 @@
     closeModal();
     renderToday();
     renderAll();
+  }
+
+  const RESULT_LABEL = { good: "记住", fuzzy: "模糊", bad: "忘记" };
+
+  // 弹卡片时把「今天选的是哪一个」摆出来：那颗按钮点亮，提示语换成「再点
+  // 就是改判，不会算成新一次」。没点过的照旧三颗平等。
+  function paintResultButtons(rec) {
+    const done = window.ReviewModels && window.ReviewModels.gradedToday(rec);
+    const picked = done ? window.ReviewModels.todayResult(rec) : "";
+    $$(".actions .btn").forEach(function (b) {
+      const on = done && b.dataset.result === picked;
+      b.classList.toggle("done", on);
+      if (on) b.setAttribute("aria-pressed", "true");
+      else b.removeAttribute("aria-pressed");
+    });
   }
 
   function saveAndRefresh(rebuild) {

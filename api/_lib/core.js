@@ -1635,16 +1635,37 @@ function sanitizePayload(p, poemId) {
   if (readRowKeyOf(poemId)) return sanitizeReads(p);
 
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
-  if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
   if (typeof p.nextReviewAt === "number") out.nextReviewAt = Math.max(0, Math.round(p.nextReviewAt));
+  if (typeof p.lastReviewAt === "number") out.lastReviewAt = Math.max(0, Math.round(p.lastReviewAt));
   if (typeof p.learned === "boolean") out.learned = p.learned;
-  if (typeof p.reps === "number") out.reps = Math.max(0, Math.min(100000, Math.round(p.reps)));
+  if (typeof p.attempted === "boolean") out.attempted = p.attempted;
+
+  // 「已复习 N 次」「忘过 N 次」是界面上直接给用户看的数（Issue #481）。
+  // 原先只认一个 `reps` —— 那是改名前的旧字段，客户端早就写 `reviewCount`
+  // 了，于是这两个数（还有算法与各算法的参量）一到云端就被悄悄抹掉，
+  // 换台设备就成了空白。这里按客户端**实际会写**的字段收。
+  if (typeof p.reviewCount === "number") out.reviewCount = Math.max(0, Math.min(100000, Math.round(p.reviewCount)));
+  if (typeof p.lapses === "number") out.lapses = Math.max(0, Math.min(100000, Math.round(p.lapses)));
+
+  if (typeof p.algo === "string" && /^[a-z0-9]{1,16}$/.test(p.algo)) out.algo = p.algo;
+
+  if (typeof p.box === "number") out.box = Math.max(0, Math.min(99, Math.round(p.box)));
+  if (typeof p.interval === "number") out.interval = Math.max(0, Math.min(100000, Math.round(p.interval)));
+  if (typeof p.ef === "number") out.ef = Math.max(1, Math.min(10, Math.round(p.ef * 100) / 100));
+  if (typeof p.stability === "number") out.stability = Math.max(0, Math.min(100000, Math.round(p.stability * 100) / 100));
+  if (typeof p.difficulty === "number") out.difficulty = Math.max(0, Math.min(100, Math.round(p.difficulty * 100) / 100));
+
+  // 当天点过哪一天（同日改判靠它判「今天已经算过一次」）。快照 dayBaseRec
+  // 是本机的事，不上云 —— 计数跟日期走，不跟快照走。
+  if (typeof p.dayBase === "string" && /^\d{4}-\d{1,2}-\d{1,2}$/.test(p.dayBase)) out.dayBase = p.dayBase;
+
   if (Array.isArray(p.history)) {
     out.history = p.history.slice(-200).map(function (h) {
       if (!h || typeof h !== "object") return null;
       var r = {};
       if (typeof h.at === "number") r.at = Math.round(h.at);
       if (typeof h.level === "number") r.level = Math.round(h.level);
+      if (h.result === "good" || h.result === "fuzzy" || h.result === "bad") r.result = h.result;
       return r;
     }).filter(Boolean);
   }

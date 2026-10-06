@@ -1221,94 +1221,169 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 [data-lib-view="book"] > .toolbar,
 [data-lib-view="book"] > .list { padding-left: 0; padding-right: 0; }
 
-/* 课内诗词单列一张卡，其余三组各一张分组卡 —— 分组卡里是一格一格的子入口，
-   没有介绍文字（Issue #407）。 */
+/* 课内诗词单列一张卡，其余三组各一张分组卡 —— 分组卡里是一栏一栏的子入口，
+   没有介绍文字。分组卡与子入口都在 Issue #484 重做过一遍：分组卡改成
+   「色条 + 标题 + 细线 + 目录栏」，子入口从淡绿圆角块改成一条条目录行
+   （名字用宋体、条数衬线数字、右端留一枚划过去的箭头）。 */
 .library-solo { width: 100%; }
 
 .library-group {
+  --group-tone: var(--green);
   box-sizing: border-box;
-  padding: 14px 16px 16px;
+
+  padding: 0 18px 6px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--green);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-.library-group[data-group="wen"] { border-left-color: var(--gold); }
-.library-group[data-group="renwu"] { border-left-color: var(--blue); }
-.library-group[data-group="changshi"] { border-left-color: var(--ink-3); }
+/* 三组的主色，取全站已用的三个传统色，不新造颜色。 */
+.library-group[data-group="wen"] { --group-tone: var(--autumn); }
+.library-group[data-group="renwu"] { --group-tone: var(--blue); }
+.library-group[data-group="changshi"] { --group-tone: var(--amber); }
 
+/* 卡头：齐顶的色条 + 组名 + 一句短注，下面一条细线压住。 */
 .library-group-head {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin: 0 -18px;
+
+  padding: 15px 18px 12px calc(18px + 10px);
+  border-bottom: 1px solid var(--line-2);
+}
+.library-group-head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--group-tone);
 }
 .library-group-name {
   font-family: var(--font-poem);
   font-size: 17px;
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: .5px;
+  letter-spacing: .1em;
 }
 .library-group-note {
   flex: none;
-  font-size: 12px;
+  font-size: 11.5px;
+  letter-spacing: .04em;
   color: var(--ink-3);
 }
 
 .library-subs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0 -18px;
 }
 
 .library-sub {
+  position: relative;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   box-sizing: border-box;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px 12px calc(18px + 12px);
   font: inherit;
   font-size: inherit;
   text-align: left;
   cursor: pointer;
-  background: var(--green-light);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+
+  border-bottom: 1px solid var(--line-2);
+  border-radius: 0;
   color: inherit;
-  transition: background .18s, border-color .18s;
+  text-decoration: none;
+  transition: background .18s, color .18s;
 }
-.library-sub:hover { background: var(--card); border-color: var(--green); }
-.library-sub:active { transform: scale(.995); }
+
+/* 名字前的一枚小方点，鼠标过去才点着。 */
+.library-sub::before {
+  content: "";
+  position: absolute;
+  left: calc(18px + 3px);
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  background: var(--group-tone);
+  opacity: .34;
+  transition: opacity .18s, transform .18s;
+}
+.library-sub:hover { background: rgba(47, 96, 85, .045); }
+.library-sub:hover::before { opacity: 1; transform: scale(1.35); }
+.library-sub:active { background: rgba(47, 96, 85, .075); }
+.library-sub:focus-visible {
+  outline: none;
+  background: rgba(47, 96, 85, .06);
+  box-shadow: inset 0 0 0 2px var(--group-tone);
+}
+
+.library-subs > .library-sub:last-child { border-bottom: none; }
+
 .library-sub-name {
-  font-size: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
+  letter-spacing: .02em;
   line-height: 1.5;
 }
 .library-sub-count {
   flex: none;
   font-size: 11.5px;
+
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
   color: var(--ink-3);
 }
 
+.library-sub-go {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  display: inline-flex;
+  transform: translate(-3px, -50%);
+  color: var(--group-tone);
+  opacity: 0;
+  transition: opacity .18s, transform .18s;
+}
+.library-sub-go svg { width: 15px; height: 15px; display: block; }
+.library-sub:hover .library-sub-go,
+.library-sub:focus-visible .library-sub-go {
+  opacity: .8;
+  transform: translate(0, -50%);
+}
+
 @media (max-width: 360px) {
-  .library-sub { padding: 9px 10px; }
-  .library-sub-name { font-size: 13px; }
-  .library-sub-count { font-size: 11px; }
+  .library-group { padding: 0 14px 6px; }
+  .library-group-head { margin: 0 -14px; padding: 13px 14px 11px calc(14px + 10px); }
+  .library-sub { padding: 10px 12px 10px calc(14px + 12px); }
+  .library-sub::before { left: calc(14px + 3px); }
+  .library-sub-name { font-size: 14px; }
 }
 
+/* 两组及以上：一栏条目排在卡左，右半留白 —— 全站窄栏（720px）里
+   两栏会把「古诗「非唐代」」这类名字挤折行。 */
 @media (min-width: 560px) {
-  .library-subs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
+  .library-subs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+  }
 
-@media (min-width: 768px) {
-  .library-subs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .library-sub { padding-right: calc(18px + 24px); }
+  .library-subs > .library-sub:nth-child(odd):nth-last-child(2) { border-bottom: none; }
 }
 
 .library-card {
@@ -1777,4 +1852,56 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   box-shadow: 0 0 0 2px var(--green), var(--shadow);
   background: var(--green-light);
   transition: box-shadow .25s, background .25s;
+}
+
+/* ==========================================================================
+   搜索页 · 作者索引入口（Issue #480）
+   --------------------------------------------------------------------------
+   用户裁决：作者索引**从搜索页进**。这一颗就是那个门 —— 空手站在搜索页时
+   它在搜索框下方静静摆着，一旦敲字（hero 抬起 / 键盘弹开）就收起来，
+   不跟候选、结果抢地方。
+   ========================================================================== */
+.search-author-entry {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  top: 50%;
+  margin-top: calc(var(--hero-box-h) / 2 + 12px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fffdf6;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background .15s, border-color .15s;
+}
+.search-author-entry:active { background: var(--green-light); }
+.search-author-icon {
+  flex: none;
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  color: var(--green);
+}
+.search-author-icon svg { width: 26px; height: 26px; }
+.search-author-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.search-author-name { font-size: 14.5px; font-weight: 600; }
+.search-author-note { font-size: 12px; color: var(--ink-3); }
+
+body[data-nav="search"] .search-hero.search-active .search-author-entry,
+body[data-nav="search"] .search-hero.kb-open .search-author-entry {
+  position: static;
+  transform: none;
+  margin-top: 10px;
+  width: auto;
+}
+body[data-nav="search"] .search-hero.search-active .search-author-entry,
+body[data-nav="search"] .search-hero.kb-open .search-author-entry { display: none; }
+
+@media (min-width: 768px) {
+  .search-author-entry { max-width: 520px; }
 }
