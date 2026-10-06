@@ -8,6 +8,21 @@
   var FUZZY_HOURS = 12;
   var BAD_MINUTES = 30;
 
+  // 一天只算一次，且以**最后一次**的选择为准（Issue #481）。
+  //
+  // 用户一天之内可以对同一首反复改判（记住 → 忘记 → 记住）：记忆阶段、
+  // 遗忘次数、下次复习时间、复习次数都按最后一次那个选择算。做法是把
+  // 「今天头一次点击之前」的那份记录留在 `dayBase` 里，改判时先退回它、
+  // 再按新选择算一遍 —— 于是三条一起翻，不会出现「阶段是忘记的、遗忘
+  // 次数却算了两次」这种自相矛盾。
+  //
+  // 跨过 0 点 `dayBase` 作废（日期对不上），下一次点击是全新的一天，
+  // 复习次数才 +1。日界用本地时间，与首页的「今天」、每日加背的归零同一口径。
+  function dayOf(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+
   function startOfDay(ts) {
     var d = new Date(ts);
     d.setHours(0, 0, 0, 0);
@@ -236,6 +251,13 @@
 
     out.level = level;
 
+    // 今天的「底」跟着记录走（与 reviewCount 同一域），换算法不清 ——
+    // 否则换一次算法就等于把今天改判的能力丢了。
+    if (typeof src.dayBase === "string" && src.dayBase) out.dayBase = src.dayBase;
+    if (src.dayBaseRec && typeof src.dayBaseRec === "object") {
+      out.dayBaseRec = JSON.parse(JSON.stringify(src.dayBaseRec));
+    }
+
     if (target.key === "leitner") {
 
       var box = Math.max(0, Math.min(MODELS.leitner.boxes.length - 1, Math.floor(level / 2)));
@@ -264,8 +286,22 @@
     var src = rec && typeof rec === "object" ? rec : null;
     var modelKey = known(key) ? key : (src && known(src.algo) ? src.algo : DEFAULT_KEY);
     var model = modelOf(modelKey);
+    var today = dayOf(t);
 
-    var r = src ? adopt(src, modelKey) : null;
+    // 今天已经点过一次 → 这是改判。先退回「今天头一次点击之前」那份，
+    // 再按新选择算一遍：阶段 / 遗忘次数 / 下次复习时间一起翻，只留最后一次。
+    // ⚠️ 头一次点的可能是一张**空记录**（新学的一首），所以「有底」不能靠
+    //    dayBaseRec 有没有值来判，得看 dayBase 这个日期标记 —— 它就是为
+    //    了把「今天点过、且底是一张白纸」这件事记下来。
+    // ⚠️ 判定只认 `dayBase` 这个日期，不看 `dayBaseRec` 在不在：跨设备拉下来
+    //    的记录可能只有日期没有底（快照是本机的事，不上云）。这种情况下
+    //    `reviewCount` 仍照「一天只加一次」走 —— 计数跟的是日期，不是底。
+    var regrade = !!src && typeof src.lastReviewAt === "number" &&
+      src.dayBase === today && dayOf(src.lastReviewAt) === today;
+    var base = regrade && src.dayBaseRec ? src.dayBaseRec : (regrade ? null : src);
+    var counted = regrade && typeof src.reviewCount === "number";
+
+    var r = base && typeof base === "object" ? adopt(base, modelKey) : null;
     if (!r) {
       r = {
         level: 0, nextReviewAt: t, lastReviewAt: null, reviewCount: 0,
@@ -276,12 +312,20 @@
       r.algo = modelKey;
     }
 
+    // 今天的「底」：头一次点击时留一份「点之前」的原样；改判时把它带过去
+    // （adopt 读的是底本身，底里没有底，不显式搬一次第二次改判就丢了）。
+    r.dayBase = regrade ? src.dayBase : today;
+    if (regrade) r.dayBaseRec = src.dayBaseRec || null;
+    else if (src) r.dayBaseRec = JSON.parse(JSON.stringify(src));
+    else r.dayBaseRec = null;
+
     r.lastReviewAt = t;
-    r.reviewCount = (r.reviewCount || 0) + 1;
+    // 一天只算一次：改判原样留着今天那头一次加的那个数，跨天才 +1。
+    r.reviewCount = counted ? Math.max(1, src.reviewCount) : (r.reviewCount || 0) + 1;
     r.learned = true;
 
-    var elapsedDays = src && src.lastReviewAt
-      ? Math.max(0, (t - src.lastReviewAt) / DAY)
+    var elapsedDays = base && base.lastReviewAt
+      ? Math.max(0, (t - base.lastReviewAt) / DAY)
       : 0;
 
     if (result === "fuzzy") {
@@ -359,6 +403,28 @@
   function pushHistory(r, result, t) {
     if (!Array.isArray(r.history)) r.history = [];
     r.history.push({ at: t, result: result, level: r.level, algo: r.algo });
+  }
+
+  // 今天点过了吗 —— 首页/详情页据此把「改判」这件事说出来（点过就提示
+  // 「今天已选过，再点只改不算新的一次」）。
+  function gradedToday(rec, now) {
+    if (!rec || typeof rec !== "object") return false;
+    var t = now === undefined ? Date.now() : now;
+    if (typeof rec.lastReviewAt !== "number") return false;
+    return dayOf(rec.lastReviewAt) === dayOf(t) && !!rec.dayBase;
+  }
+
+  // 今天选的是哪一个 —— 弹卡片时把那颗按钮点亮，用户一眼看见自己上次点的
+  // 是「忘记」而不是「记住」，再点就是改判（Issue #481）。
+  function todayResult(rec, now) {
+    if (!gradedToday(rec, now)) return "";
+    var h = Array.isArray(rec.history) ? rec.history : [];
+    for (var i = h.length - 1; i >= 0; i--) {
+      if (h[i] && dayOf(h[i].at) === dayOf(now === undefined ? Date.now() : now)) {
+        return h[i].result || "";
+      }
+    }
+    return "";
   }
 
   function subFor(key) {
@@ -442,6 +508,9 @@
     allowedKeys: allowedKeys,
     adopt: adopt,
     review: review,
+    dayOf: dayOf,
+    gradedToday: gradedToday,
+    todayResult: todayResult,
     subFor: subFor,
     resultHint: resultHint,
     describe: describe,

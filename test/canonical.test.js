@@ -341,8 +341,8 @@ chk(zm.length === 480 && zmEmpty.length === 0,
 const zmAuthors = {};
 zm.forEach(p => { if (p.dynasty) zmAuthors[p.author] = p.dynasty; });
 chk(zmAuthors['谢灵运'] === '南朝·宋' && zmAuthors['魏武帝'] === '三国·魏' &&
-    zmAuthors['李斯'] === '秦' && zmAuthors['荆卿'] === '先秦',
-  '抽样认人：《文选》作者的朝代对得上（谢灵运 · 南朝宋 / 魏武帝 · 三国魏 / 李斯 · 秦 / 荆轲 · 先秦）');
+    zmAuthors['李斯'] === '秦' && zmAuthors['荆卿'] === '战国·燕',
+  '抽样认人：《文选》作者的朝代对得上（谢灵运 · 南朝宋 / 魏武帝 · 三国魏 / 李斯 · 秦 / 荆轲 · 战国燕）');
 
 const html = read('classic/index.html');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
