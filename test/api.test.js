@@ -709,15 +709,28 @@ async function main() {
     eq(bad.body.code, "E_BAD_REC", "错误码 E_BAD_REC");
 
     const clean = core.sanitizePayload({
-      level: 1e9, reps: -5, name: "《静夜思》", __proto__: { bad: 1 },
+      level: 1e9, reviewCount: -5, lapses: -3, ef: 99, interval: 1e9,
+      algo: "sm2", dayBase: "2026-10-06",
+      name: "《静夜思》", __proto__: { bad: 1 },
       history: [{ at: t, level: 2, junk: "x" }, "not-an-object"]
     });
     eq(clean.level, 99, "level 上限被卡到 99");
-    eq(clean.reps, 0, "reps 负数被卡到 0");
+    eq(clean.reviewCount, 0, "reviewCount 负数被卡到 0（「已复习 N 次」给用户看的数）");
+    eq(clean.lapses, 0, "lapses 负数被卡到 0（「忘过 N 次」）");
+    eq(clean.ef, 10, "SM-2 的简易度封顶 10（不给一个能把界面算爆的野值）");
+    eq(clean.interval, 100000, "间隔封顶（分钟级的天文数字也收进来）");
+    eq(clean.algo, "sm2", "换算法之后那一支要跟着上云（否则别的设备读回来自相矛盾）");
+    eq(clean.dayBase, "2026-10-06", "当天点过哪一天跟着上云 —— 同日改判靠它判「今天算过」");
     chk(!("name" in clean), "载荷里不相干的字段被丢掉");
     chk(!("junk" in clean.history[0]), "history 里不相干的字段被丢掉");
     eq(clean.history.length, 1, "history 里的脏条目被过滤");
     eq(clean.history[0].level, 2, "history 认识的字段留着");
+
+    const dirty = core.sanitizePayload({
+      algo: "../../etc/passwd", dayBase: "不是日期", ef: "高", reviewCount: "三次"
+    }, "p1");
+    chk(!("algo" in dirty) && !("dayBase" in dirty) && !("ef" in dirty) && !("reviewCount" in dirty),
+      "认不出来的一律不落库（算法名 / 日期串 / 非数都挡在外面）");
 
     const many = await core.syncPush(dd, {
       deviceId: "C", recs: new Array(2001).fill({ id: "x", payload: {}, updatedAt: t })
