@@ -2647,35 +2647,27 @@ html, body {
 .item-later svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
 .item-later:active { transform: scale(.94); background: var(--amber-light); border-color: var(--amber); }
 
-/* 明说「这一首先不背」的那两行（弹卡片底下）：两颗次一级的键，不做成主按钮 */
-.modal-later {
-  margin: 10px 0 0;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+/* 弹卡片上那两颗「明日再背 / 月后再背」（Issue #481）：就摆在朗读与译文两颗
+   圆钮**中间**，颜色走金 —— 它不是「听」也不是「看译文」，是「这次先放过我」。
+   与列表行尾那两颗同款：同尺寸的圆键、同一张图标（`dayGlyph` / `monthGlyph`
+   由 js/app.js 画进 `.later-glyph` 那个洞里）。 */
+.modal-box .reader-actions.icon-row > .mini-btn.later-btn { color: var(--amber); }
+.modal-box .reader-actions.icon-row > .mini-btn.later-btn .later-glyph {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0 auto;
 }
-
-.modal-later[hidden] { display: none; }
-
-.modal-later .btn.lite {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink-2);
-  font-size: var(--ctl-font-sm);
-  height: var(--ctl-h-sm);
-  padding: 0 14px;
-  border-radius: var(--ctl-radius);
-  cursor: pointer;
+.modal-box .reader-actions.icon-row > .mini-btn.later-btn .later-glyph svg {
+  display: block;
+  width: 17px;
+  height: 17px;
 }
-
-.modal-later .btn.lite:hover { background: var(--bg-soft); color: var(--ink); }
-
-/* 按时的那一行（这首已经压着了）：弹卡片上要说清楚「为什么它没上榜」，
-   并把这颗键变成「撤掉」 */
-.modal-later .btn.lite[data-resting="1"] {
+/* 按时的那一颗：点亮（金字金圈），title 已写清「点它是撤掉」 */
+.modal-box .reader-actions.icon-row > .mini-btn.later-btn[data-resting="1"] {
+  background: var(--amber-light);
   border-color: var(--amber);
   color: var(--amber);
-  background: var(--amber-light);
 }
 
 .item-read .play-glyph,
