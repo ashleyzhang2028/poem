@@ -90,6 +90,8 @@
     dwang: "/dwang/",
     "dwang-waiguo": "/dwang-waiguo/",
     search: "/search/",
+    /* Issue #480：作者索引 —— 从搜索页进，不在底栏单开一格。 */
+    authors: "/authors/",
     mine: "/mine/",
     settings: "/settings/",
     login: "/login/",
@@ -120,6 +122,7 @@
     if (/^\/poems\/?$/.test(p) || /^\/poems\/index\.html$/.test(p)) return "poems";
     if (/^\/dahui\/?$/.test(p) || /^\/dahui\/index\.html$/.test(p)) return "game";
     if (/^\/search\/?$/.test(p) || /^\/search\/index\.html$/.test(p)) return "search";
+    if (/^\/authors\/?$/.test(p) || /^\/authors\/index\.html$/.test(p)) return "authors";
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
     if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
@@ -341,6 +344,7 @@
     if (k === "poems") return "课内古诗词";
     if (k === "mine") return "我的";
     if (k === "search") return "搜索";
+    if (k === "authors") return "作者索引";
     if (k === "classic") return "古文";
     if (k === "yuefu") return "乐府集";
     if (k === "tangshi") return "唐诗";
@@ -385,6 +389,8 @@
         if (key === "poems") return "library";
 
     if (key === "progress") return "home";
+    /* Issue #480：作者索引挂在搜索之下，底栏高亮「搜索」。 */
+    if (key === "authors") return "search";
     return key;
   }
 

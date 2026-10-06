@@ -1853,3 +1853,55 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   background: var(--green-light);
   transition: box-shadow .25s, background .25s;
 }
+
+/* ==========================================================================
+   搜索页 · 作者索引入口（Issue #480）
+   --------------------------------------------------------------------------
+   用户裁决：作者索引**从搜索页进**。这一颗就是那个门 —— 空手站在搜索页时
+   它在搜索框下方静静摆着，一旦敲字（hero 抬起 / 键盘弹开）就收起来，
+   不跟候选、结果抢地方。
+   ========================================================================== */
+.search-author-entry {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  top: 50%;
+  margin-top: calc(var(--hero-box-h) / 2 + 12px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fffdf6;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background .15s, border-color .15s;
+}
+.search-author-entry:active { background: var(--green-light); }
+.search-author-icon {
+  flex: none;
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  color: var(--green);
+}
+.search-author-icon svg { width: 26px; height: 26px; }
+.search-author-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.search-author-name { font-size: 14.5px; font-weight: 600; }
+.search-author-note { font-size: 12px; color: var(--ink-3); }
+
+body[data-nav="search"] .search-hero.search-active .search-author-entry,
+body[data-nav="search"] .search-hero.kb-open .search-author-entry {
+  position: static;
+  transform: none;
+  margin-top: 10px;
+  width: auto;
+}
+body[data-nav="search"] .search-hero.search-active .search-author-entry,
+body[data-nav="search"] .search-hero.kb-open .search-author-entry { display: none; }
+
+@media (min-width: 768px) {
+  .search-author-entry { max-width: 520px; }
+}

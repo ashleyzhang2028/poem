@@ -156,6 +156,9 @@ const PRECACHE = [
   "./js/library.js",
   "./search/",
   "./js/search.js",
+  /* Issue #480：作者索引 —— 从搜索页进。 */
+  "./authors/",
+  "./js/authors.js",
   "./icons/icon-192.png",
   "./icons/icon-256.png",
   "./icons/icon-384.png",

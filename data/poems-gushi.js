@@ -339,4 +339,9 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-51", id: "gs-51", title: "鹊桥仙·华灯纵博", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-52", id: "gs-52", title: "鹊桥仙·一竿风月", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-53", id: "gs-53", title: "渔家傲·寄仲高", source: "《放翁词》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+
+  /* Issue #480：曹植《七步诗》从《唐诗》归位——他（192—232）是三国魏人，
+     这首诗本是《世说新语》所载的托名之作，不是唐诗。正文在
+     scripts/data/gushi-corpus-480.js，此处只挂 textRef 归属。 */
+  { textRef: "gushi-gs-54", id: "gs-54", title: "七步诗", source: "《世说新语·文学》", dynasty: "三国·魏", author: "曹植", gradeGroup: "汉魏诗" },
 ];
