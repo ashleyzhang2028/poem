@@ -78,7 +78,7 @@
     return out;
   }
 
-  function suggestBox() { return document.getElementById("search-suggest"); }
+  function suggestBox() { return document.getElementById("site-search-suggest"); }
 
   /* ---------------------------------------------------------------
      匹配：**建索引、不建行**
@@ -728,7 +728,7 @@
 
       if (wrap && t && (t === wrap || wrap.contains(t))) return;
 
-      if (t && t.closest && t.closest("#search-suggest")) return;
+      if (t && t.closest && t.closest("#site-search-suggest")) return;
       hideSuggest();
     }
     document.addEventListener("mousedown", onTap, true);
