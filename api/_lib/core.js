@@ -1419,6 +1419,34 @@ function sanitizeCollections(p) {
   return out;
 }
 
+var DEFER_ROW_ID = "defer:v1";
+
+var DEFER_MAX = 400;
+
+// 「以后再背」（Issue #481）：一条只有「作品号 + 点它的那一天」—— 没有正文、
+// 没有进度，服务端只做裁剪，不做别的判断。
+function sanitizeDefer(p) {
+  var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
+  out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
+  out.deleted = (p && p.deleted) ? 1 : 0;
+
+  var list = (p && Array.isArray(p.items)) ? p.items.slice(0, DEFER_MAX) : [];
+  out.items = [];
+  var seen = {};
+  list.forEach(function (it) {
+    if (!it || typeof it !== "object") return;
+    var wid = refText(it.wid, 80).trim();
+    var day = refText(it.day, 32).trim();
+    if (!wid || !day) return;
+    var key = wid + "\u0000" + day;
+    if (seen[key]) return;
+    seen[key] = 1;
+    var at = Number(it.at);
+    out.items.push({ wid: wid, day: day, at: isFinite(at) && at > 0 ? Math.round(at) : 0 });
+  });
+  return out;
+}
+
 var PINYIN_FIX_ROW_ID = "pinyin_fix:v1";
 
 var PINYIN_FIX_MAX = 500;
@@ -1593,6 +1621,7 @@ function sanitizePayload(p, poemId) {
   if (poemId === "family:v1") return sanitizeFamily(p);
   if (poemId === DAILY_EXTRA_ROW_ID) return sanitizeDailyExtra(p);
   if (poemId === COLLECTIONS_ROW_ID) return sanitizeCollections(p);
+  if (poemId === DEFER_ROW_ID) return sanitizeDefer(p);
   if (poemId === PINYIN_FIX_ROW_ID) return sanitizePinyinFix(p);
   if (readRowKeyOf(poemId)) return sanitizeReads(p);
 
@@ -2950,6 +2979,9 @@ module.exports = {
   COLLECTIONS_MAX: COLLECTIONS_MAX,
   COLLECTIONS_ITEMS_MAX: COLLECTIONS_ITEMS_MAX,
   sanitizeCollections: sanitizeCollections,
+  DEFER_ROW_ID: DEFER_ROW_ID,
+  DEFER_MAX: DEFER_MAX,
+  sanitizeDefer: sanitizeDefer,
   READ_ROW_PREFIX: READ_ROW_PREFIX,
   READ_ROW_MAX: READ_ROW_MAX,
   readRowKeyOf: readRowKeyOf,

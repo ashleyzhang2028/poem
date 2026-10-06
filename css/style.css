@@ -342,7 +342,18 @@ html, body {
 .item.done { opacity: .55; }
 .item.done .item-title { text-decoration: line-through; text-decoration-color: rgba(0,0,0,.25); }
 
-.item-main { flex: 1; min-width: 0; }
+.item-main { flex: 1 1 auto; min-width: 0; }
+
+/* 今日列表每行右侧两颗键（朗读 + 以后再背，Issue #481）与集子列表的
+   `.item-actions` 是同一个意思：一排圆键、行内不换行。窄屏上先把正文压到
+   0 再让键让位，别让键挤到下一行去。 */
+.item-actions {
+  flex: 0 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--item-gap);
+}
+#today-list .item-main { flex: 0 1 auto; }
 .item-title {
 
   margin: 0;
@@ -2600,6 +2611,27 @@ html, body {
 }
 
 .item-read svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
+
+/* 「以后再背」（Issue #481）：与朗读键同一档，只是颜色走金 —— 它不是「听」
+   也不是「背」，是「这次先放过我」。 */
+.item-later {
+  flex: none;
+  width: var(--item-btn);
+  height: var(--item-btn);
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--amber);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform .14s, background .18s, border-color .18s, color .18s;
+}
+.item-later svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
+.item-later:active { transform: scale(.94); background: var(--amber-light); border-color: var(--amber); }
+
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
 
