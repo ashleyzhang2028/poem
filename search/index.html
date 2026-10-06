@@ -39,24 +39,26 @@
           </span>
           <input id="site-search" class="search-input" type="search"
                  placeholder="搜索篇名 / 作者 / 诗句（全站）" autocomplete="off" role="combobox"
-                 aria-expanded="false"  aria-autocomplete="list"
+                 aria-expanded="false" aria-controls="site-search-suggest" aria-autocomplete="list"
                  enterkeyhint="search" />
 
           <kbd class="search-slash">/</kbd>
-        </div>
-      </div>
 
-      <button type="button" class="search-entry" id="author-entry">
-        <span class="search-entry-main">
-          <span class="search-entry-title">作者索引</span>
-          <span class="search-entry-note">按朝代排历代作者，点谁读谁的全部作品</span>
-        </span>
-        <span class="search-entry-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9.4 5.6 15.8 12l-6.4 6.4" />
-          </svg>
-        </span>
-      </button>
+          <div class="suggest" id="site-search-suggest" role="listbox" aria-label="搜索候选" hidden></div>
+        </div>
+
+        <button type="button" class="search-entry" id="author-entry">
+          <span class="search-entry-main">
+            <span class="search-entry-title">作者索引</span>
+            <span class="search-entry-note">按朝代排历代作者，点谁读谁的全部作品</span>
+          </span>
+          <span class="search-entry-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9.4 5.6 15.8 12l-6.4 6.4" />
+            </svg>
+          </span>
+        </button>
+      </div>
     </div>
 
     <section class="authors-index" id="authors-index" hidden></section>
@@ -71,9 +73,7 @@
           </svg>
         </span>
         <input id="gw-search" data-gw="search" class="search-input" type="search" placeholder="搜索篇名 / 出处 / 集子" autocomplete="off"
-               role="combobox" aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list" enterkeyhint="search" />
-
-        <div class="suggest" id="search-suggest" role="listbox" aria-label="搜索候选" hidden></div>
+               role="combobox" aria-expanded="false" aria-autocomplete="list" enterkeyhint="search" />
       </div>
       <div class="seg mini filter-seg" id="gw-filter-seg" role="group" aria-label="筛选">
         <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>

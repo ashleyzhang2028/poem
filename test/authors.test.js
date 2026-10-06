@@ -100,6 +100,48 @@ const authorsJs = read('js/authors.js');
 chk(/bindEntry\(/.test(authorsJs), 'js/authors.js 里有入口绑定（bindEntry）');
 chk(/setSearchLayer/.test(authorsJs), '名册展开时把搜索层收起来（setSearchLayer）');
 
+// ── 搜索页 hero 里的搜索框与它的候选框（Issue #480 第二轮的两个回退）─────
+//
+// 用户 2026-10-06 报的两条：
+//   「作者索引链接距离搜索框的距离过大了」
+//   「自从有了作者索引链接，好像搜索框下拉列表不见了」
+//
+// 两条同源：那一轮往 hero 里添了「作者索引」入口条，顺手把 `#search-suggest`
+// 从 hero 的搜索框搬去（新加的）作者层那颗 `#gw-search` 名下 —— 于是
+//   ① 入口条的位置是另算的 `50% + boxH/2 + gap`，没算 `.toolbar` 那条全局
+//      `margin-bottom: 12px`，缝从 10px 变成 22px；
+//   ② js/search.js 的 `suggestBox()` 按 id 拿到的是作者层那一个，而它在
+//      `[data-lib-view="author"][hidden]` 里 → 候选下拉永远看不见。
+//
+// 这里把两件事都钉住，免得下次再「顺手搬一下」。
+const heroWrap = (searchHtml.match(/<div class="search-wrap" id="site-search-wrap">[\s\S]*?<\/div>/) || [''])[0];
+chk(/id="site-search-suggest"/.test(heroWrap),
+  'hero 那颗搜索框（#site-search-wrap）自带候选框 #site-search-suggest');
+
+// 全页只有一个候选框，且它就是 js/search.js 认的那一个 —— 多一个同名 id
+// 就会让 getElementById 拿到「另一颗搜索框的」那一个（正是这次的病根）。
+const suggestIds = searchHtml.match(/id="[^"]*suggest[^"]*"/g) || [];
+chk(suggestIds.length === 1 && suggestIds[0] === 'id="site-search-suggest"',
+  '全页只有一个候选框，且 id 是 site-search-suggest（实际：' + suggestIds.join(', ') + '）');
+
+const searchJsSrc = read('js/search.js');
+chk(/getElementById\("site-search-suggest"\)/.test(searchJsSrc),
+  'js/search.js 的 suggestBox() 认的是 hero 那颗搜索框的候选框');
+chk(!/getElementById\("search-suggest"\)/.test(searchJsSrc),
+  'suggestBox() 不再认旧 id search-suggest（那是作者层那颗搜索框的名下）');
+chk(/aria-controls="site-search-suggest"/.test(searchHtml),
+  '#site-search 的 aria-controls 指着它自己的候选框');
+
+// 入口条的缝只由 --hero-gap 一处说了算：它必须是工具栏里的正常流，
+// 不能再自己算一遍 `50% + boxH/2 + gap` 的定位（那正是 22px 的来源）。
+const entryRule = (read('css/classic.css').match(/\.search-entry \{[\s\S]*?\}/) || [''])[0];
+chk(/position:\s*static|margin-top:\s*var\(--hero-gap\)/.test(entryRule),
+  '入口条在正常流里、缝取 --hero-gap（不再自算 50% + boxH/2 + gap）');
+chk(!/calc\(50% \+ var\(--hero-box-h\)/.test(read('css/classic.css')),
+  'CSS 里没有「50% + boxH/2」那种入口条定位（漏算 toolbar 下边距的就是它）');
+chk(/\.search-hero \.search-toolbar \{[\s\S]*?margin-bottom:\s*0/.test(read('css/classic.css')),
+  'hero 的工具栏归零了全局 .toolbar 那条 margin-bottom: 12px');
+
 // 搜索页自己铺命中行，行的长相从 reader-core 借（不另画一套）
 chk(/window\.ReaderList/.test(read('js/search.js')), '搜索页的行渲染借 window.ReaderList');
 chk(/window\.ReaderList = \{/.test(read('js/reader-core.js')), 'reader-core 暴露了 ReaderList');

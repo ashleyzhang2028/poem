@@ -1028,9 +1028,15 @@ body.reader-open .dock { display: none; }
 
   z-index: auto;
 
-  /* 块高：搜索框 + 10px 缝 + 入口条那一行（38px）。下面 `.search-hero
+  /* 块高：搜索框 + 缝 + 入口条那一行（38px）。下面 `.search-hero
      .search-toolbar` 的垂直居中按的就是这一块 —— 入口条是这一页的常驻
-     一件，所以它也算进「居中」的高度里，否则搜索框会偏上。 */
+     一件，所以它也算进「居中」的高度里，否则搜索框会偏上。
+
+     ⚠️ 这两格只用来定**整块的高度与居中**，不再用来算入口条的位置 ——
+     入口条现在是工具栏里的正常流（见下面 `.search-entry`），离搜索框
+     多远由 `--hero-gap` 一处说了算。老写法把「搜索框到入口条的距离」
+     也按 `50% + boxH/2 + gap` 算了一遍，于是 `.toolbar` 那条全局
+     `margin-bottom: 12px` 就成了没人认领的 12px，缝变成 22px。 */
   --hero-entry-h: 38px;
   --hero-gap: 10px;
   min-height: calc(var(--hero-box-h) + var(--hero-gap) + var(--hero-entry-h) + 4px);
@@ -1055,17 +1061,27 @@ body.reader-open .dock { display: none; }
     margin-right: auto;
   }
 }
+/* hero 里这一条工具栏装的是**两行**：搜索框（`#site-search-wrap`）与其下的
+   「作者索引」入口条。所以它是竖排，居中按整块算。
+
+   ⚠️ 这里要把全局 `.toolbar` 那条 `margin-bottom: 12px` 归零：hero 里这块
+   是拿 `margin-top` 的负值往上提的，多出来的下边距没人认领，整块会往下掉
+   12px（搜索框与入口条一起掉，居中就偏了）。 */
 .search-hero .search-toolbar {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
 
-  /* 居中要连入口条一起算：往上挪「一半块高」，再往下让出入口条那一行 ——
-     只按搜索框自己居中，整块会看着偏上。 */
+  /* 居中要连入口条一起算：往上挪「一半块高」——只按搜索框自己居中，整块
+     会看着偏上。 */
   top: 50%;
   margin-top: calc((var(--hero-box-h) + var(--hero-gap) + var(--hero-entry-h)) / -2);
+  margin-bottom: 0;
   width: min(520px, 100%);
 
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
 }
 
 /* ── 「作者索引」那一行入口（搜索页 hero 里）─────────────────────────────
@@ -1073,16 +1089,14 @@ body.reader-open .dock { display: none; }
    所以摆在搜索框正下方，不抢搜索框的位置（不高亮、不描边、无底色，
    悬停才浮起来一点）。 */
 .search-entry {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(520px, 100%);
+  /* 正常流里跟在搜索框下面 —— 缝就是 `--hero-gap` 一处，不再另算一遍
+     定位（那正是老写法里 22px 的来源）。 */
+  width: 100%;
   box-sizing: border-box;
 
-  /* 上边贴着搜索框下沿 10px：搜索框居中后其底边 = 50% + hero-box-h/2，
-     所以这里也用同一个基准往下量。 */
-  top: calc(50% + var(--hero-box-h) / 2 + var(--hero-gap));
+  margin-top: var(--hero-gap);
   height: var(--hero-entry-h);
+  flex: none;
 
   display: flex;
   align-items: center;
@@ -1128,6 +1142,10 @@ body.reader-open .dock { display: none; }
   .search-entry-note { display: none; }
 }
 
+/* ⚠️ 这里不再有老写法那条 `transform: translateY(-2px)`：它当年是给**单行**
+   hero 做视觉居中用的；现在工具栏里搜索框下面还跟着入口条，那一格 nudge 只
+   作用在搜索框上，缝就从 `--hero-gap` 变成 gap+2、整块也跟着偏。居中已经由
+   `.search-toolbar` 那一段的 `margin-top` 负值算准，两态都不需要 nudge。 */
 .search-hero .search-wrap { flex: 1 1 auto; }
 
 .search-hero .search-toolbar { z-index: 1; }
@@ -1135,7 +1153,6 @@ body.reader-open .dock { display: none; }
 .search-hero .search-toolbar { --toolbar-h: 52px; }
 .search-hero .search-input { --toolbar-h: 52px; }
 
-.search-hero .search-wrap { transform: translateY(-2px); }
 
 body[data-nav="search"] { --search-list-gap: 14px; }
 
@@ -1295,9 +1312,6 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
 
   margin-bottom: 0;
 }
-
-body[data-nav="search"] .search-hero.search-active .search-wrap,
-body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
 
 /* 搜索**进行中**（搜索框里真有字了）入口条收起来：这时候用户是来搜的，
    hero 也要缩成顶上粘着的一条，多留一行只会把命中行往下挤。
