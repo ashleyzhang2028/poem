@@ -1439,7 +1439,18 @@ textarea:focus {
   color: #fdfaf2;
   font-size: 13.5px;
   padding: 9px 18px;
-  border-radius: 999px;
+  /* 提示框的宽度与圆角（Issue #484）
+     ----------------------------------------------------------------
+     原先是一条「胶囊」：`border-radius: 999px` 加上没有宽度上限，宽度完全
+     由文案撑 —— 短文案（「字号 15px」）时是个小圆球，长文案（「《静夜思》月后
+     再背 —— 11 月 5 日自己回来」）时又被两端的大圆角吃掉一大截，看着又窄又挤。
+     现在改成：给个宽度上限让它能落成一块**牌子**而不是胶囊，圆角收到
+     `--radius-sm`（12px），文案长了在这块牌子里换行。 */
+  max-width: min(78vw, 320px);
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: break-word;
   z-index: 99;
   animation: fade .2s;
 }
