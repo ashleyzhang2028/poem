@@ -336,10 +336,13 @@ chk(!/m-later-btn/.test(read('index.html')), '原来那颗「先搁一搁」换�
 chk(/\.modal-later/.test(read('css/style.css')), 'CSS 里给它定了样式');
 
 console.log('');
-console.log('=== 五之三、「我的」页那两个名单：列得出、删得掉、删完回正常次序 ===');
+console.log('=== 五之三、「背诵进度」页那两张卡：列得出、删得掉、删完回正常次序 ===');
 
 // 用户原话：「在 我的页面 列出 明日再背和月后再背的古诗词，如果用户删除他们，
 //            可以恢复正常背诵次序。」
+// 第三轮（2026-10-06）用户把这处挪了窝：「把 我的页面里的 以后再背 中的
+//            明日再背和月后再背分两张卡片 放到 ./progress/ 页面的 到期日历
+//            卡片的上方」—— 名单本身没变，变的是落在哪一页、长什么样。
 //
 // 台账只存作品号（换台设备也对得上），稿子由页面现查 —— 这里给一份假的 refOf。
 ReciteDefer.clear();
@@ -387,16 +390,47 @@ chk(idsOf(p4).indexOf(listPoem.id) >= 0 || idsOf(p4).indexOf(listPoem2.id) >= 0,
   '删完它们又回到正常次序里（不是被拉黑）');
 
 // 名单上的「删除」走的是 ReciteDefer 的具名出口，页面不自己动台账
-const mineSrc = read('js/mine.js');
-chk(/listByTier/.test(mineSrc), '「我的」页走 listByTier 列表');
-chk(/\$\('later-card'\)|\$\("later-card"\)|later-card/.test(read('mine/index.html')),
-  'index.html 上有那张卡');
-chk(/useRef/.test(mineSrc), '稿子由页面注入（台账只存作品号）');
-chk(/unrest\(row\.dataset\.wid, row\.dataset\.tier\)/.test(mineSrc),
+const progSrc = read('js/progress.js');
+const progHtml = read('progress/index.html');
+const classicCss = read('css/classic.css');
+chk(/listByTier/.test(progSrc), '「背诵进度」页走 listByTier 列表');
+chk(/useRef/.test(progSrc), '稿子由页面注入（台账只存作品号）');
+chk(/unrest\(row\.dataset\.wid, row\.dataset\.tier\)/.test(progSrc),
   '「删除」按作品 + 档位摘，不自己动台账');
-chk(/recite-defer-change/.test(mineSrc), '别处点了「再背」，这一页也跟上');
-chk(/site-index\.js/.test(read('mine/index.html')) && /works-index\.js/.test(read('mine/index.html')),
+chk(/recite-defer-change/.test(progSrc), '别处点了「再背」，这一页也跟上');
+chk(/site-index\.js/.test(progHtml) && /works-index\.js/.test(progHtml),
   '这一页为查稿子引了全站目录（作品号 → 标题）');
+
+// 两张卡、各一份名单，都落在到期日历**上方**
+chk(/id="later-day-card"/.test(progHtml) && /id="later-month-card"/.test(progHtml),
+  '明日 / 月后各一张卡（不是一张卡里两段）');
+chk(/<h2>明日再背<\/h2>/.test(progHtml) && /<h2>月后再背<\/h2>/.test(progHtml),
+  '两张卡各写各的名字');
+chk(progHtml.indexOf('id="later-month-card"') < progHtml.indexOf('<h2>到期日历</h2>'),
+  '两张卡都在「到期日历」那一张卡的上方');
+chk(progHtml.indexOf('id="later-day-card"') < progHtml.indexOf('id="later-month-card"'),
+  '明日在前、月后在后（与今日列表那两颗键一个次序）');
+
+// 长相走这一页现成的「卡头 + 灰色小字」，不另起一套
+chk(/class="card progress-card later-card"/.test(progHtml), '两张卡用的是这一页的卡壳');
+chk(/class="progress-head"/.test(progHtml.slice(progHtml.indexOf('id="later-day-card"'), progHtml.indexOf('<h2>到期日历</h2>'))),
+  '卡头用 progress-head（与到期日历同一副长相：字体、字号、小字）');
+chk(/class="progress-sub" id="later-day-sub"/.test(progHtml) &&
+  /class="progress-sub" id="later-month-sub"/.test(progHtml),
+  '两颗小字也是这一页那一档（progress-sub）');
+
+// 用户点名要删的三句别换个地方又冒出来
+chk(!/明天照旧上榜/.test(progSrc), '「明天照旧上榜」不再当提示语（删掉那一条 = 回了正常次序）');
+chk(!/到日子自己回来/.test(progSrc), '「到日子自己回来」不再挂在小字上（那是台账内部的说法）');
+// 「我的」页那一处真搬走了 —— 别留一张空卡、也别留没人调的画法
+const mineSrc = read('js/mine.js');
+const mineHtml = read('mine/index.html');
+chk(!/later-card|later-box/.test(mineHtml), '「我的」页上那张卡删了');
+chk(!/renderLater|bindLater|laterRef/.test(mineSrc), '「我的」页里那套画法 / 绑定也删了');
+chk(!/#later-card/.test(read('css/account.css')), 'account.css 里那一段也跟着走（不留死样式）');
+chk(!/以后再背/.test(mineHtml), '「以后再背」这个含糊的标题不再出现');
+chk(!/明天照旧上榜|到日子自己回来/.test(mineHtml.slice(0, mineHtml.indexOf('</main>'))),
+  '它底下那两句解释（明天照旧上榜 / 到日子自己回来）一并删了');
 
 console.log('');
 console.log('=== 六、补位要过集子自己的口径（不补「整部书」那种行） ===');

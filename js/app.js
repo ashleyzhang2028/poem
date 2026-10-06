@@ -444,7 +444,7 @@
   // 末尾补一首上来，总数照旧每日数量。
   //
   // 长按不是入口了，但**月后那一档要能撤**：撤在弹卡片上（下面那句
-  // 「月后再背」/「撤掉」），以及「我的」页那两个名单上的「删除」。
+  // 「月后再背」/「撤掉」），以及「背诵进度」页那两张名单上的「删除」。
   var LATER_TIER_DAY = "day";
   var LATER_TIER_MONTH = "month";
 
@@ -1608,7 +1608,7 @@
         const D = window.ReciteDefer;
         if (D && D.restingTier && D.restingTier(p, LATER_TIER_MONTH)) {
           D.unrest(p, LATER_TIER_MONTH);
-          showToast(phraseOf(p) + "放回来了 —— 明天照旧上榜");
+          showToast(phraseOf(p) + "放回来了 —— 回到正常次序");
           invalidatePlan();
           rebuildToday();
           renderAll();
