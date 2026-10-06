@@ -120,7 +120,7 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 ├── sw.js                   # Service Worker：离线缓存
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ reader-tables.css（详情页表格）/ legal.css（法务页）
 ├── js/                     # 应用脚本（progress-store.js 分域引擎；sync-store.js 跨设备同步；
-│                           #   today-plan.js 今日排期；recite-defer.js「以后再背」）
+│                           #   today-plan.js 今日排期；recite-defer.js「以后再背」+「先搁一搁」）
 ├── api/                    # Vercel Serverless：1 个函数（handler.js 收口）
 │   ├── _routes/            # 各条路由的实现（一个业务一个文件）
 │   └── _lib/               # 业务内核 + 配置 / 存储 / 会话 / 身份 / 发信适配层 + schema.sql

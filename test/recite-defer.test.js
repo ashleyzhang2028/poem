@@ -191,7 +191,7 @@ chk(JSON.parse(store['poem_recite_defer_v1']).items.length === 1, '那一份就�
 const row = ReciteDefer.cloudRow({});
 chk(!!row && row.id === 'defer:v1' && row.updatedAt > 0, '推得出一行 defer:v1 给同步层');
 eq(Object.keys(row.payload.items[0]).sort().join(','), 'at,day,wid',
-  '只带作品号与日期（不带正文、不带进度）');
+  '「顺延一天」那条只带作品号与日期（不带正文、不带进度）');
 
 // 从云端来一份（另一台设备上点了另一首）
 const today = new Date();
@@ -211,6 +211,106 @@ chk(ReciteDefer.days(one2) === 1, '本机原来那条没被冲掉（并集）');
 
 chk(ReciteDefer.clear() >= 1, '「清空进度」连带清掉延后台账');
 eq(ReciteDefer.count(), 0, '清完是空的');
+
+console.log('');
+console.log('=== 五之二、先搁一搁：没学过的那一档（Issue #481 后续） ===');
+
+// 用户原话：「还有一种情况，是这首诗压根没学过，可能短期内也不会背……
+//            这首诗在背诵范围内，但可能最近几个月半年都没学也不主动学」
+//
+// 只靠「顺延一天」的话，这种诗**每天**都要被点一次（点掉它 → 补一首），
+// 孩子天天要跟它打一次照面。搁一档是「这一阵子别上榜」：搁 30 天，到期自己
+// 回来，没到期再点一次就续一期。
+ReciteDefer.clear();
+Storage.clear();
+
+const restPoem = sandbox.POEMS_ALL.filter(x => x.id === 'xx3-01')[0];
+const REST_DAY = 24 * 60 * 60 * 1000;
+const t0 = Date.now();
+
+chk(!ReciteDefer.resting(restPoem, t0), '起手它不是搁着的');
+
+const rr = ReciteDefer.rest(restPoem, t0);
+chk(rr.ok && rr.added, '点了「先搁一搁」，记下来了');
+eq(rr.days, ReciteDefer.REST_DAYS, '默认搁 30 天');
+chk(ReciteDefer.resting(restPoem, t0), '它是搁着的');
+chk(ReciteDefer.holdToday(restPoem, null, t0), '今天不排它');
+chk(ReciteDefer.holdToday(restPoem, null, t0 + 7 * REST_DAY), '一周后不排它');
+chk(ReciteDefer.holdToday(restPoem, null, t0 + 29 * REST_DAY), '第 29 天还不排它');
+chk(!ReciteDefer.holdToday(restPoem, null, t0 + 31 * REST_DAY), '第 31 天它自己回来了（到日子就上）');
+chk(!ReciteDefer.resting(restPoem, t0 + 31 * REST_DAY), '到日子就不是「搁着」了');
+
+// 一天点一次不叠算（与顺延同一个规矩）
+ReciteDefer.rest(restPoem, t0);
+eq(ReciteDefer.list().filter(it => it.until).length, 1, '同一天再点一次还是一条');
+
+// 换一天再点 = 续一期
+// 续期那一趟：第 10 天点一次 = 原到期日（第 30 天）再往后 30 天 = 第 60 天到期。
+// 拿「续到哪天」这个日子本身来判，不去数天数 —— 数天数容易和「按 0 点整算」
+// 差一天（`rest` 的到期日一律落在 0 点）。
+const extendAt = t0 + 10 * REST_DAY;
+const r2 = ReciteDefer.rest(restPoem, extendAt);
+chk(r2.ok && r2.extended, '第 10 天再点一次 = 续一期（不是再记一条）');
+eq(ReciteDefer.list().filter(it => it.until).length, 1, '续期后仍只有一条（改的是那条的到期日）');
+const until2 = Number(r2.until ? new Date(r2.until + ' 00:00:00').getTime() : 0) ||
+  new Date(r2.until).getTime();
+chk(ReciteDefer.holdToday(restPoem, null, until2 - REST_DAY), '到期前一天还压着');
+chk(!ReciteDefer.holdToday(restPoem, null, until2), '到期当天自己回来');
+chk(ReciteDefer.holdToday(restPoem, null, t0 + 35 * REST_DAY), '第 35 天仍未回来（续过）');
+
+// 撤掉：当天就回来
+chk(ReciteDefer.unrest(restPoem), '「撤掉」把它从搁着里放出来');
+chk(!ReciteDefer.resting(restPoem, t0), '撤完就不是搁着了');
+chk(!ReciteDefer.holdToday(restPoem, null, t0), '撤完当天就能上榜');
+
+// 搁着的这一首不能从「补位池」里再捞回来（捞回来 = 搁了没搁）
+ReciteDefer.clear();
+ReciteDefer.rest(restPoem, t0);
+const basePool = TodayPlan.baseOf();
+const restPool = TodayPlan.restFilter(basePool);
+chk(basePool.some(p => p.id === restPoem.id), '补位池原来有它');
+chk(!restPool.some(p => p.id === restPoem.id), '搁着的把它从补位池里滤掉了');
+chk(!restPool.some(p => ReciteDefer.widOf(p.id) === ReciteDefer.widOf(restPoem.id)),
+  '换个别名（集子本）也不许补回来 —— 按作品滤');
+
+// 点名的那一首不再出现在计划里，总数照旧
+const p3 = plan();
+chk(idsOf(p3).indexOf(restPoem.id) < 0, '搁着的它不在今天的计划里');
+eq(p3.length, 5, '总数照旧 5 首（补位顶上来了）');
+
+// 搁着的那条也是「作品号 + 日期」，另带一个到期日；仍不含正文、不含进度
+ReciteDefer.clear();
+ReciteDefer.rest(restPoem, t0);
+const rrow = ReciteDefer.cloudRow({});
+chk(!!rrow && rrow.id === 'defer:v1', '搁着的条目也推得上去');
+eq(Object.keys(rrow.payload.items[0]).sort().join(','), 'at,day,span,until,wid',
+  '搁着的那条多带 until（哪天到期）/ span（搁多少天），仍不带正文与进度');
+
+// 另一台设备把「搁着」同步过来
+const restUntil = new Date(t0 + 30 * REST_DAY);
+const rremote = {
+  id: 'defer:v1',
+  updatedAt: (rrow.updatedAt || Date.now()) + 1000,
+  deleted: false,
+  payload: { v: 1, updatedAt: rrow.updatedAt + 1000, items: [
+    { wid: ReciteDefer.widOf(restPoem.id), day: '2020-1-1', at: Date.now(),
+      until: restUntil.getFullYear() + '-' + (restUntil.getMonth() + 1) + '-' + restUntil.getDate(),
+      span: 30 }
+  ] }
+};
+ReciteDefer.clear();
+eq(ReciteDefer.applyCloud(rremote, {}), 'applied', '云端那条搁着的并进来了');
+chk(ReciteDefer.resting(restPoem, t0), '这一台也认「它是搁着的」');
+chk(ReciteDefer.holdToday(restPoem, null, t0 + 10 * REST_DAY), '并进来的搁着一样压得住');
+
+// 界面层：长按走 restPoem、弹卡片那一行说的是「先搁一搁」
+const appSrc0 = read('js/app.js');
+chk(/LATER_LONG_MS/.test(appSrc0) && /function restPoem\(/.test(appSrc0),
+  '长按那一档在（restPoem + 长按阈值）');
+chk(/contextmenu/.test(appSrc0), '右键也能到（长按对键盘 / 读屏不友好，得有个替代）');
+chk(/function syncLaterRow\(/.test(appSrc0), '弹卡片上那一行「先搁一搁」在');
+chk(/m-later-btn/.test(read('index.html')), 'index.html 上有那颗键');
+chk(/\.modal-later/.test(read('css/style.css')), 'CSS 里给它定了样式');
 
 console.log('');
 console.log('=== 六、补位要过集子自己的口径（不补「整部书」那种行） ===');
@@ -249,7 +349,11 @@ const css = read('css/style.css');
 chk(/item-read/.test(appSrc) && /item-later/.test(appSrc), '两颗粒按钮都在（朗读 + 以后再背）');
 chk(appSrc.indexOf('class="item-read"') < appSrc.indexOf('class="item-later"'),
   '「以后再背」排在播放键**右侧**');
-chk(/deferToday\(p, laterBtn\)/.test(appSrc), '点它走 deferToday');
+chk(/bindLaterButton\(laterBtn, p\)/.test(appSrc), '那一颗键走 bindLaterButton（短按 / 长按两条路）');
+chk(/function bindLaterButton[\s\S]{0,1200}?deferToday\(p, btn\)/.test(appSrc),
+  '短按仍是原来的 deferToday（上一版的行径一个字不改）');
+chk(/function bindLaterButton[\s\S]{0,600}?restPoem\(p, btn\)/.test(appSrc),
+  '长按走 restPoem（这一阵子先搁着）');
 chk(/item-later/.test(css), 'CSS 里给它定了样式（不是让浏览器摆烂）');
 chk(/\.item-later\s*\{[\s\S]{0,400}?width:\s*var\(--item-btn\)/.test(css),
   '与朗读键同一个尺寸（一排圆键）');

@@ -2632,6 +2632,89 @@ html, body {
 .item-later svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
 .item-later:active { transform: scale(.94); background: var(--amber-light); border-color: var(--amber); }
 
+/* 长按 / 右键那一档：这一颗键上「再点一次」的意思有两种 —— 短按顺延一天、
+   长按搁一阵子。点着的时候给一点反馈，免得以为没点上。 */
+.item-later.arming { transform: scale(.9); background: var(--amber-light); border-color: var(--amber); }
+
+/* 「先搁一搁」那两口子（短按长按就够不着的时候总得有个说明）：
+   一颗说清楚「搁到哪天」，一颗当场撤掉。 */
+.later-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.later-sheet[hidden] { display: none; }
+
+.later-sheet .sheet-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 34, 31, .42);
+}
+
+.later-sheet .sheet-box {
+  position: relative;
+  width: min(520px, 100%);
+  margin: 0 12px 16px;
+  padding: 18px 18px 14px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 18px 40px rgba(20, 30, 26, .28);
+}
+
+.later-sheet h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.later-sheet p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.later-sheet .sheet-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.later-sheet .sheet-actions .btn { flex: 1; }
+
+/* 明说「这一首先搁着」的那一行（弹卡片底下）：一颗次一级的键，不做成主按钮 */
+.modal-later {
+  margin: 10px 0 0;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-later[hidden] { display: none; }
+
+.modal-later .btn.lite {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--ctl-font-sm);
+  height: var(--ctl-h-sm);
+  padding: 0 14px;
+  border-radius: var(--ctl-radius);
+  cursor: pointer;
+}
+
+.modal-later .btn.lite:hover { background: var(--bg-soft); color: var(--ink); }
+
+/* 搁着的那一首：今日列表里它已经不在了，弹卡片上要说清楚「为什么它没上榜」 */
+.modal-later .btn.lite[data-resting="1"] {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-light);
+}
+
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
 
