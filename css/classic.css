@@ -1417,9 +1417,13 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
   color: var(--ink-3);
 }
 
+/* Issue #484 第二版：一行两项（两列）。列间距不靠 grid 的 gap —— gap 会
+   让两列各留一半空档，最挤的那条行就放不下「名字 + 条数」。改成折进每行
+   的内边距：偶数条左端让出 30px（对齐第一列的名字），奇数条右端让出
+   24px 列间距加 12px 尾白。 */
 .library-subs {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0 -18px;
 }
 
@@ -1467,7 +1471,8 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
   box-shadow: inset 0 0 0 2px var(--group-tone);
 }
 
-.library-subs > .library-sub:last-child { border-bottom: none; }
+/* 两列后：末尾两个同属最后一行，一起收掉分隔线。 */
+.library-subs > .library-sub:nth-last-child(2) { border-bottom: none; }
 
 .library-sub-name {
   flex: 1 1 auto;
@@ -1504,24 +1509,44 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
   transform: translate(0, -50%);
 }
 
+/* 列间距折进内边距之后，箭头也要从「卡右内沿」改挂到「本行右内沿」：
+   原来 right: 13px 是量到卡片边缘，两列时奇数条的箭头会掉到下一列去。 */
+.library-sub:nth-child(odd) { padding-right: 36px; }
+.library-sub:nth-child(even) { padding-left: 30px; }
+.library-sub:nth-child(even)::before { left: 21px; }
+.library-sub-go { left: auto; right: 25px; }
+
 @media (max-width: 360px) {
   .library-group { padding: 0 14px 6px; }
   .library-group-head { margin: 0 -14px; padding: 13px 14px 11px calc(14px + 10px); }
-  .library-sub { padding: 10px 12px 10px calc(14px + 12px); }
+  .library-sub { padding: 10px 14px 10px calc(14px + 12px); }
+  .library-sub:nth-child(odd) { padding-right: 32px; }
+  .library-sub:nth-child(even) { padding-left: 26px; }
   .library-sub::before { left: calc(14px + 3px); }
+  .library-sub:nth-child(even)::before { left: 17px; }
+  .library-sub-go { right: 21px; }
   .library-sub-name { font-size: 14px; }
 }
 
-/* 两组及以上：一栏条目排在卡左，右半留白 —— 全站窄栏（720px）里
-   两栏会把「古诗「非唐代」」这类名字挤折行。 */
-@media (min-width: 560px) {
-  .library-subs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-flow: row dense;
-  }
+/* 两列要真放得下。最挤的一条行是「古诗「非唐代」47 首」：名字 103.5px
+   加条数 28.4px 一共 131.9px；奇数条那条行还要让出 36px 的列间距与尾白，
+   所以列宽得 ≥ 168px、卡宽得 ≥ 338px，折算到视口（左右各 14px 页边）是
+   366px。但 366 到 435 这几档两列虽然放得下，名字与条数之间只剩几个像
+   素的空隙、挤成一条，反倒不如单列读着顺，所以一刀切在 435px：再窄就
+   回到单列，跟 Issue #484 之前那版一样。 */
+@media (max-width: 435px) {
+  .library-subs { grid-template-columns: minmax(0, 1fr); }
 
-  .library-sub { padding-right: calc(18px + 24px); }
-  .library-subs > .library-sub:nth-child(odd):nth-last-child(2) { border-bottom: none; }
+  .library-sub,
+  .library-sub:nth-child(odd),
+  .library-sub:nth-child(even) { padding-left: calc(14px + 12px); padding-right: 14px; }
+  .library-sub::before,
+  .library-sub:nth-child(even)::before { left: calc(14px + 3px); }
+  .library-sub-go { left: auto; right: 13px; }
+
+  /* 单列时回到「只剩最后一条收线」。 */
+  .library-subs > .library-sub:nth-last-child(2) { border-bottom: 1px solid var(--line-2); }
+  .library-subs > .library-sub:last-child { border-bottom: none; }
 }
 
 .library-card {
