@@ -53,6 +53,8 @@ const LOAD = [
   'scripts/data/poems-corpus-505c.js',
   /* Issue #516 · 第一批：用户点名的古诗 50 篇（唐诗 35 + 古诗 16）。 */
   'scripts/data/poems-corpus-516a.js',
+  /* Issue #516 · 第二批（收尾批）：清单里最后真缺的 20 篇（唐诗 7 + 非唐古诗 13）。 */
+  'scripts/data/poems-corpus-516b.js',
   /* Issue #517 · 第一批（课本里的文言短篇）：古文 22 篇。 */
   'scripts/data/classic-corpus-517a.js',
   /* Issue #517 · 收尾那一批：清单里缺的 9 篇 + 与《古文观止》同篇的 2 条归宿。 */
@@ -156,6 +158,8 @@ var RAW_ENTRIES = {};
     /* Issue #516 · 第一批：用户点名的古诗 50 篇 —— 一份语料含《唐诗》ts-* 与
        《古诗「非唐代」》gs-* 两部，按 id 前缀拆开（正文只落这一份）。 */
     { f: 'scripts/data/poems-corpus-516a.js', v: 'POEMS_CORPUS_516A', split: true },
+    /* Issue #516 · 第二批（收尾批）：同上，一份语料含 ts-* 与 gs-* 两部。 */
+    { f: 'scripts/data/poems-corpus-516b.js', v: 'POEMS_CORPUS_516B', split: true },
     /* Issue #517 · 第一批：古文 22 篇（壳里挂 textRef）。 */
     { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' },
     /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
@@ -425,6 +429,35 @@ if (BOOTSTRAPPED.length) {
   console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
     '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
 }
+
+/* Issue #516 · 第二批：**先把语料表的正文刷新回已在索引里的那些条目**。
+   `data/site-index.js` 是用上一版主表装配的，主表里有些条目是按题名兜底认
+   正文的；新语料里出现**同题不同文**的作品时（《劝学》荀子 / 颜真卿），壳
+   挂的 textRef 会先被主表里那条同名条目认领，拿到别人的正文 —— 两条于是
+   被误判成「同篇」合流。语料表 RAW_ENTRIES 才是源，先覆盖一遍再重建判重表。 */
+(function () {
+  function textOf(raw) {
+    if (!raw) return null;
+    if (raw.text) return { text: raw.text, translation: raw.translation || '',
+      translationSource: raw.translationSource || '' };
+    /* 壳只挂 textRef 的那些：正文在它指的那一条上（语料表或同部的壳）。 */
+    if (raw.textRef && RAW_ENTRIES[raw.textRef]) {
+      var up = RAW_ENTRIES[raw.textRef];
+      if (up.text) return { text: up.text, translation: up.translation || '',
+        translationSource: up.translationSource || '' };
+    }
+    return null;
+  }
+  sandbox.SITE_INDEX.forEach(function (p) {
+    if (!p || !p.id || p.id.indexOf('poems-') === 0) return;
+    var t = textOf(RAW_ENTRIES[p.id])
+      || textOf(RAW_ENTRIES[p.book + '-' + p.originId]);
+    if (!t) return;
+    p.text = t.text;
+    p.translation = t.translation;
+    p.translationSource = t.translationSource;
+  });
+})();
 
 (function () {
   const named = {};

@@ -39,6 +39,9 @@
           grade: p.grade,
           term: p.term,
           gradeGroup: p.gradeGroup || "",
+          /* 题名异写（「又名 xxxx」）：只有少数篇目有，阅读器标题底下取用。
+             没有就是 undefined，判定处一律用真值判断，不设空数组。 */
+          aliases: p.aliases || null,
           text: p.text || "",
           translation: p.translation || "",
           translationSource: p.translationSource,

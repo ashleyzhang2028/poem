@@ -492,6 +492,17 @@ body.reader-open .dock { display: none; }
 
 .reader-body .meta { justify-content: center; }
 
+/* 「又名 xxxx」那一行（Issue #516）：题名底下的一行小字，只为说明
+   「这首还有个名字」，不抢标题的份量。 */
+.reader-body .rd-alias {
+  margin: -6px 0 10px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  letter-spacing: .5px;
+}
+
 .reader-actions {
   display: flex;
   gap: 8px;

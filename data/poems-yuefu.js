@@ -637,6 +637,8 @@ window.POEMS_YUEFU = [
     dynasty: "唐",
     author: "李白",
     gradeGroup: "卷五 乐府歌辞",
+    /* 用户点名（Issue #516）：同一首又作《秋浦歌十七首·其十五》（tangshi-ts-303）。 */
+    aliases: ["秋浦歌十七首·其十五"],
     excerpt: "白发三千丈，缘愁似个长。",
   },
   {

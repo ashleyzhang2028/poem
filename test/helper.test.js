@@ -97,9 +97,9 @@ chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + 
 /* Issue #461：古诗文大会 / 阅读大赛清单去重后，真缺的文言短篇补进小古文；
    已在他处的按判重表合流，不重录。 */
 chk(d.POEMS_CLASSIC.length === 286,
-  "古文共 257 篇（Issue #461 / #505 各批补录去重后，"
-  + "Issue #517 两批再落库 22 篇（gw-246…gw-258、gw-277…gw-287），"
-  + "另有 18 条同一篇的另一种版本与 7 条同题异文的壳，实际 " + d.POEMS_CLASSIC.length + "）");
+  "小古文共 286 篇（Issue #461 / #505 各批补录去重后，" +
+  "Issue #517 第一批再落库 13 篇（gw-246…gw-258）、收尾批 11 篇（gw-277…gw-287），实际 " +
+  d.POEMS_CLASSIC.length + "）");
 
 console.log("");
 console.log(fails ? "❌ " + fails + " 项失败" : "🎉 注音与朗读（内核）测试全部通过");
