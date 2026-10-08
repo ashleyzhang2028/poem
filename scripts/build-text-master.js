@@ -51,6 +51,8 @@ const LOAD = [
   /* Issue #505 · 第四批（末批 · 第 151~200 组）：古文 15 篇 + 古诗 8 首。 */
   'scripts/data/classic-corpus-505d.js',
   'scripts/data/poems-corpus-505c.js',
+  /* Issue #517 · 第一批（课本里的文言短篇）：古文 22 篇。 */
+  'scripts/data/classic-corpus-517a.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -147,6 +149,8 @@ var RAW_ENTRIES = {};
     /* Issue #505 · 第四批（末批）：古文 15 篇 + 古诗 8 首（一份语料按 id 前缀拆开）。 */
     { f: 'scripts/data/classic-corpus-505d.js', v: 'CLASSIC_CORPUS_505D', book: 'classic' },
     { f: 'scripts/data/poems-corpus-505c.js', v: 'POEMS_CORPUS_505C', split: true },
+    /* Issue #517 · 第一批：古文 22 篇（壳里挂 textRef）。 */
+    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' },
     /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
        语料排在后面，供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
     { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },

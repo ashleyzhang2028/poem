@@ -1676,6 +1676,30 @@ window.POEMS_CLASSIC = [
   { textRef: "chengyu-cy-478", id: "gw-244", title: "一字师", source: "《五代史补》", dynasty: "宋", author: "陶岳", gradeGroup: "治学勤读" },
   { textRef: "classic-gw-245", id: "gw-245", title: "笼中鹦鹉", source: "《乐善录》", dynasty: "宋", author: "李昌龄", gradeGroup: "寓言故事" },
 
+  /* Issue #517 · 第一批（用户 2026-10-08 投喂的文言短篇）。
+     落库 13 条（gw-246…gw-258），其中 5 条（郑人买履 / 鹬蚌相争 / 滥竽充数 /
+     刻舟求剑 / 邯郸学步）与集内旧条同题不同文（所选版本不同），另 1 条
+     《揠苗助长》与集内 gw-184《拔苗助长》同名异组 —— 按判重口径让壳挂 textRef
+     指向集内旧条那一篇（一条作品一条正文），题名各异，列表里并列展出。
+     正文在 scripts/data/classic-corpus-517a.js 的 gw-246…gw-251、gw-258。
+     用户同批点名的《司马光》《守株待兔》《精卫填海》《王戎不取道旁李》
+     《囊萤夜读》《杨氏之子》《伯牙鼓琴》《书戴嵩画牛》《学弈》《两小儿辩日》
+     《孔融让梨》《长竿入城》与《人之初》《冠必正》两条蒙学（集内是全篇、
+     用户给的是首四句）—— 全站已有，不另挂壳。 */
+  { textRef: "classic-gw-246", id: "gw-246", title: "人之初", source: "《三字经》", dynasty: "宋", author: "王应麟", gradeGroup: "蒙学经典" },
+  { textRef: "classic-gw-247", id: "gw-247", title: "冠必正", source: "《弟子规》", dynasty: "清", author: "李毓秀", gradeGroup: "蒙学经典" },
+  { textRef: "classic-gw-248", id: "gw-248", title: "北人食菱", source: "《雪涛小说·知无涯》", dynasty: "明", author: "江盈科", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-249", id: "gw-249", title: "孔子论学", source: "《论语》", dynasty: "先秦", author: "孔子及弟子", gradeGroup: "诸子论道" },
+  { textRef: "classic-gw-250", id: "gw-250", title: "铁杵成针", source: "《方舆胜览·眉州·磨针溪》", dynasty: "宋", author: "祝穆", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-251", id: "gw-251", title: "螳螂捕蝉", source: "《说苑·正谏》", dynasty: "西汉", author: "刘向", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-27", id: "gw-252", title: "郑人买履", source: "《韩非子·外储说左上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-37", id: "gw-253", title: "鹬蚌相争", source: "《战国策·燕策二》", dynasty: "西汉", author: "刘向编", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-33", id: "gw-254", title: "滥竽充数", source: "《韩非子·内储说上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-26", id: "gw-255", title: "刻舟求剑", source: "《吕氏春秋·察今》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-76", id: "gw-256", title: "邯郸学步", source: "《庄子·秋水》", dynasty: "战国", author: "庄周", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-257", id: "gw-257", title: "长竿入城", source: "《笑林》", dynasty: "三国·魏", author: "邯郸淳", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-184", id: "gw-258", title: "揠苗助长", source: "《孟子·公孙丑上》", dynasty: "战国", author: "孟轲", gradeGroup: "寓言故事" },
+
 ];
 
 (function () {

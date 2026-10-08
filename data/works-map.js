@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 209 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 213 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -44,9 +44,9 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-39", title: "狐假虎威", titles: ["狐假虎威"], entries: ["chengyu-cy-114","classic-gw-39"] },
   { wid: "w-classic-gw-25", title: "画蛇添足", titles: ["画蛇添足"], entries: ["chengyu-cy-115","classic-gw-25"] },
   { wid: "w-classic-gw-11", title: "自相矛盾", titles: ["自相矛盾"], entries: ["chengyu-cy-119","classic-gw-11"] },
-  { wid: "w-classic-gw-33", title: "滥竽充数", titles: ["滥竽充数"], entries: ["chengyu-cy-120","classic-gw-33"] },
-  { wid: "w-classic-gw-76", title: "邯郸学步", titles: ["邯郸学步"], entries: ["chengyu-cy-122","classic-gw-76"] },
-  { wid: "w-classic-gw-26", title: "刻舟求剑", titles: ["刻舟求剑"], entries: ["chengyu-cy-123","classic-gw-26"] },
+  { wid: "w-classic-gw-33", title: "滥竽充数", titles: ["滥竽充数"], entries: ["chengyu-cy-120","classic-gw-33","classic-gw-254"] },
+  { wid: "w-classic-gw-76", title: "邯郸学步", titles: ["邯郸学步"], entries: ["chengyu-cy-122","classic-gw-76","classic-gw-256"] },
+  { wid: "w-classic-gw-26", title: "刻舟求剑", titles: ["刻舟求剑"], entries: ["chengyu-cy-123","classic-gw-26","classic-gw-255"] },
   { wid: "w-chengyu-cy-130", title: "蚌鹬相持", titles: ["蚌鹬相持","坐收渔利"], entries: ["chengyu-cy-130","chengyu-cy-622"] },
   { wid: "w-classic-gw-21", title: "鲧禹治水", titles: ["鲧禹治水"], entries: ["chengyu-cy-14","classic-gw-21"] },
   { wid: "w-chengyu-cy-155", title: "贻笑大方", titles: ["贻笑大方","大方之家"], entries: ["chengyu-cy-155","chengyu-cy-200"] },
@@ -79,15 +79,19 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-128", title: "上枢密韩太尉书", titles: ["上枢密韩太尉书"], entries: ["classic-gw-128","guwen-gwj-235"] },
   { wid: "w-classic-gw-132", title: "枭逢鸠", titles: ["枭逢鸠"], entries: ["classic-gw-132","classic-gw-208"] },
   { wid: "w-classic-gw-139", title: "大铁椎传", titles: ["大铁椎传"], entries: ["classic-gw-139","guwen-gwj-231"] },
+  { wid: "w-classic-gw-184", title: "拔苗助长", titles: ["拔苗助长","揠苗助长"], entries: ["classic-gw-184","classic-gw-258"] },
   { wid: "w-classic-gw-24", title: "掩耳盗铃", titles: ["掩耳盗铃","掩耳盗钟"], entries: ["classic-gw-24","classic-gw-202"] },
+  { wid: "w-classic-gw-27", title: "郑人买履", titles: ["郑人买履"], entries: ["classic-gw-27","classic-gw-252"] },
   { wid: "w-classic-gw-35", title: "画龙点睛", titles: ["画龙点睛"], entries: ["classic-gw-35","classic-gw-180"] },
+  { wid: "w-classic-gw-37", title: "鹬蚌相争", titles: ["鹬蚌相争"], entries: ["classic-gw-37","classic-gw-253"] },
+  { wid: "w-classic-gw-40", title: "螳螂捕蝉", titles: ["螳螂捕蝉"], entries: ["classic-gw-40","classic-gw-251"] },
   { wid: "w-classic-gw-45", title: "薛谭学讴", titles: ["薛谭学讴","响遏行云"], entries: ["classic-gw-45","classic-gw-225"] },
   { wid: "w-classic-gw-54", title: "管宁割席", titles: ["管宁割席","割席分坐"], entries: ["classic-gw-54","classic-gw-178"] },
   { wid: "w-classic-gw-57", title: "凿壁借光", titles: ["凿壁借光","匡衡凿壁借光"], entries: ["classic-gw-57","classic-gw-177"] },
   { wid: "w-classic-gw-6", title: "王戎不取道旁李", titles: ["王戎不取道旁李","王戎早慧"], entries: ["classic-gw-6","classic-gw-179"] },
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
   { wid: "w-classic-gw-78", title: "日攘一鸡", titles: ["日攘一鸡","偷鸡者辩解"], entries: ["classic-gw-78","classic-gw-228"] },
-  { wid: "w-classic-gw-80", title: "执竿入城", titles: ["执竿入城","锯竿入城"], entries: ["classic-gw-80","classic-gw-207"] },
+  { wid: "w-classic-gw-80", title: "执竿入城", titles: ["执竿入城","锯竿入城","长竿入城"], entries: ["classic-gw-80","classic-gw-207","classic-gw-257"] },
   { wid: "w-classic-gw-81", title: "约不可失", titles: ["约不可失","魏文侯期猎"], entries: ["classic-gw-81","classic-gw-224"] },
   { wid: "w-classic-gw-89", title: "陶母责子", titles: ["陶母责子"], entries: ["classic-gw-89","classic-gw-181"] },
   { wid: "w-classic-gw-94", title: "子罕辞玉", titles: ["子罕辞玉","子罕弗受玉"], entries: ["classic-gw-94","classic-gw-152"] },
