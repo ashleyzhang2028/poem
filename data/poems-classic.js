@@ -1561,6 +1561,35 @@ window.POEMS_CLASSIC = [
     gradeGroup: "寓言故事",
     difficulty: 2,
   },
+  /* Issue #505 · 第一批古文 25 篇（正文在 scripts/data/classic-corpus-505a.js）。
+     前 20 条落库；后 5 条（匡衡凿壁借光 / 割席分坐 / 王戎早慧 / 画龙点睛 /
+     陶母责子）按判重口径与集内旧条合流，壳里的 textRef 指回那一篇。 */
+  { textRef: "classic-gw-157", id: "gw-157", title: "黄香事亲", source: "《后汉书·黄香传》", dynasty: "南朝·宋", author: "范晔", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-158", id: "gw-158", title: "王泰让枣", source: "《南史·王泰传》", dynasty: "唐", author: "李延寿", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-159", id: "gw-159", title: "孔融推梨", source: "《后汉书·孔融传》", dynasty: "南朝·宋", author: "范晔", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-160", id: "gw-160", title: "陆绩怀橘", source: "《三国志·吴书·陆绩传》", dynasty: "西晋", author: "陈寿", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-161", id: "gw-161", title: "承宫拾薪求学", source: "《后汉书·承宫传》", dynasty: "南朝·宋", author: "范晔", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-162", id: "gw-162", title: "王冕僧寺夜读", source: "《明史·王冕传》", dynasty: "清", author: "张廷玉等", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-163", id: "gw-163", title: "邴原泣学", source: "《初潭集》", dynasty: "明", author: "李贽", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-164", id: "gw-164", title: "羔羊救母", source: "《太平广记》", dynasty: "宋", author: "李昉等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-165", id: "gw-165", title: "欧阳询观古碑", source: "《书断》", dynasty: "唐", author: "张怀瓘", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-166", id: "gw-166", title: "高凤笃学", source: "《后汉书·逸民传》", dynasty: "南朝·宋", author: "范晔", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-167", id: "gw-167", title: "欧阳修少孤", source: "《宋史·欧阳修传》", dynasty: "元", author: "脱脱等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-168", id: "gw-168", title: "张溥抄书", source: "《明史·张溥传》", dynasty: "清", author: "张廷玉等", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-169", id: "gw-169", title: "铁杵磨成针", source: "《方舆胜览》", dynasty: "宋", author: "祝穆", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-170", id: "gw-170", title: "叶廷珪与《海录》", source: "《诗人玉屑》", dynasty: "宋", author: "魏庆之", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-171", id: "gw-171", title: "隋侯救蛇得珠", source: "《淮南子·览冥训》高诱注", dynasty: "西汉", author: "刘安等", gradeGroup: "神话传说" },
+  { textRef: "classic-gw-172", id: "gw-172", title: "天雨谷", source: "《搜神记》", dynasty: "东晋", author: "干宝", gradeGroup: "神话传说" },
+  { textRef: "classic-gw-173", id: "gw-173", title: "宋令文有神力", source: "《朝野佥载》", dynasty: "唐", author: "张鷟", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-174", id: "gw-174", title: "杨修啖酪", source: "《世说新语·捷悟》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-175", id: "gw-175", title: "蜜蜂救飞虫", source: "《太平广记》", dynasty: "宋", author: "李昉等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-176", id: "gw-176", title: "管宁大度", source: "《世说新语·德行》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-57", id: "gw-177", title: "匡衡凿壁借光", source: "《西京杂记》", dynasty: "西汉", author: "刘歆", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-54", id: "gw-178", title: "割席分坐", source: "《世说新语·德行》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-6", id: "gw-179", title: "王戎早慧", source: "《世说新语·雅量》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-35", id: "gw-180", title: "画龙点睛", source: "《历代名画记》", dynasty: "唐", author: "张彦远", gradeGroup: "神话传说" },
+  { textRef: "classic-gw-89", id: "gw-181", title: "陶母责子", source: "《世说新语·贤媛》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "人物故事" },
+
 ];
 
 (function () {

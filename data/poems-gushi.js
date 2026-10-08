@@ -350,4 +350,22 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-55", id: "gs-55", title: "闲居初夏午睡起二首·其一", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-56", id: "gs-56", title: "闲居初夏午睡起二首·其二", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-57", id: "gs-57", title: "海棠", source: "《东坡七集》", dynasty: "宋", author: "苏轼", gradeGroup: "宋诗" },
+  /* Issue #505 · 第一批古诗 25 首里的非唐诗（第一批 50 组，序号 2…50）。
+     正文在 scripts/data/poems-corpus-505a.js；唐代的诗一律归《唐诗》，本集不收。
+     前 4 条落库；其余 10 条课内 / 集内已有，按判重口径合流、壳挂 textRef 指过去。 */
+  { textRef: "gushi-gs-58", id: "gs-58", title: "乡思", source: "《盱江集》", dynasty: "宋", author: "李觏", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-59", id: "gs-59", title: "病牛", source: "《梁溪集》", dynasty: "宋", author: "李纲", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-60", id: "gs-60", title: "野望", source: "《苇碧轩集》", dynasty: "宋", author: "翁卷", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-61", id: "gs-61", title: "苔", source: "《小仓山房集》", dynasty: "清", author: "袁枚", gradeGroup: "元明清诗" },
+  { textRef: "poems-xx2-07", id: "gs-62", title: "敕勒歌", source: "《乐府诗集》", dynasty: "北朝", author: "佚名", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-44", id: "gs-63", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  { textRef: "poems-xx6-11", id: "gs-64", title: "游园不值", source: "《江湖集》", dynasty: "宋", author: "叶绍翁", gradeGroup: "宋诗" },
+  { textRef: "poems-xx4-06", id: "gs-65", title: "绝句", source: "《李清照集》", dynasty: "宋", author: "李清照", gradeGroup: "宋诗" },
+  { textRef: "poems-xx6-19", id: "gs-66", title: "春日", source: "《晦庵集》", dynasty: "宋", author: "朱熹", gradeGroup: "宋诗" },
+  { textRef: "poems-xx3-14", id: "gs-67", title: "元日", source: "《临川先生文集》", dynasty: "宋", author: "王安石", gradeGroup: "宋诗" },
+  { textRef: "poems-xx6-29", id: "gs-68", title: "泊船瓜洲", source: "《临川先生文集》", dynasty: "宋", author: "王安石", gradeGroup: "宋诗" },
+  { textRef: "poems-xx6-15", id: "gs-69", title: "竹石", source: "《郑板桥集》", dynasty: "清", author: "郑燮", gradeGroup: "元明清诗" },
+  { textRef: "poems-xx4-15", id: "gs-70", title: "墨梅", source: "《竹斋集》", dynasty: "元", author: "王冕", gradeGroup: "元明清诗" },
+  { textRef: "poems-xx6-28", id: "gs-71", title: "江上渔者", source: "《范文正公集》", dynasty: "宋", author: "范仲淹", gradeGroup: "宋诗" },
+
 ];
