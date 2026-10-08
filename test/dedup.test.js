@@ -117,8 +117,8 @@ chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 238,
-  '同篇对照表 229 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
+chk(sb.WORKS_GROUPS.length === 242,
+  '同篇对照表 242 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
   'Issue #516 第一批古诗的合流一并计入；实际 ' +
   sb.WORKS_GROUPS.length + '）');
 const jys = byId['xx1-09'];
