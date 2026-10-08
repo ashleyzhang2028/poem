@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 208 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 209 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -64,6 +64,7 @@ window.WORKS_GROUPS = [
   { wid: "w-tangshi-ts-276", title: "淡扫蛾眉", titles: ["集灵台·其二","淡扫蛾眉"], entries: ["chengyu-cy-465","tangshi-ts-276"] },
   { wid: "w-chengyu-cy-471", title: "春风得意", titles: ["春风得意","走马看花"], entries: ["chengyu-cy-471","chengyu-cy-472"] },
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","tangshi-ts-396","yuefu-yf-48"] },
+  { wid: "w-classic-gw-244", title: "一字之师", titles: ["一字师","一字之师"], entries: ["chengyu-cy-478","classic-gw-244"] },
   { wid: "w-chengyu-cy-504", title: "近水楼台", titles: ["近水楼台","近水楼台先得月"], entries: ["chengyu-cy-504","chengyu-cy-524"] },
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-classic-gw-190", title: "只许州官放火不许百姓点灯", titles: ["只许州官放火","只许州官放火不许百姓点灯"], entries: ["chengyu-cy-523","classic-gw-190"] },
@@ -105,13 +106,13 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-15", title: "竹石", titles: ["竹石"], entries: ["gushi-gs-69","poems-xx6-15"] },
   { wid: "w-poems-xx4-15", title: "墨梅", titles: ["墨梅"], entries: ["gushi-gs-70","poems-xx4-15"] },
   { wid: "w-poems-xx6-28", title: "江上渔者", titles: ["江上渔者"], entries: ["gushi-gs-71","poems-xx6-28"] },
-  { wid: "w-poems-cz7-11", title: "十一月四日风雨大作·其二", titles: ["十一月四日风雨大作（其二）","十一月四日风雨大作·其二"], entries: ["gushi-gs-75","poems-cz7-11"] },
-  { wid: "w-poems-cz7-12", title: "潼关", titles: ["潼关"], entries: ["gushi-gs-76","poems-cz7-12"] },
-  { wid: "w-poems-cz7-20", title: "登飞来峰", titles: ["登飞来峰"], entries: ["gushi-gs-77","poems-cz7-20"] },
-  { wid: "w-poems-cz7-21", title: "游山西村", titles: ["游山西村"], entries: ["gushi-gs-78","poems-cz7-21"] },
-  { wid: "w-poems-cz7-22", title: "己亥杂诗·其五", titles: ["己亥杂诗（其五）","己亥杂诗·其五"], entries: ["gushi-gs-79","poems-cz7-22"] },
-  { wid: "w-poems-xx6-21", title: "过零丁洋", titles: ["过零丁洋"], entries: ["gushi-gs-80","poems-xx6-21"] },
-  { wid: "w-poems-cz9-26", title: "南安军", titles: ["南安军"], entries: ["gushi-gs-81","poems-cz9-26"] },
+  { wid: "w-poems-cz7-11", title: "山中杂诗", titles: ["十一月四日风雨大作（其二）","山中杂诗","十一月四日风雨大作·其二"], entries: ["gushi-gs-75","gushi-gs-82","poems-cz7-11"] },
+  { wid: "w-poems-cz7-12", title: "画眉鸟", titles: ["潼关","画眉鸟"], entries: ["gushi-gs-76","gushi-gs-83","poems-cz7-12"] },
+  { wid: "w-poems-cz7-20", title: "蚕妇吟", titles: ["登飞来峰","蚕妇吟"], entries: ["gushi-gs-77","gushi-gs-84","poems-cz7-20"] },
+  { wid: "w-poems-cz7-21", title: "蚕妇", titles: ["游山西村","蚕妇"], entries: ["gushi-gs-78","gushi-gs-85","poems-cz7-21"] },
+  { wid: "w-poems-cz7-22", title: "论诗", titles: ["己亥杂诗（其五）","论诗","己亥杂诗·其五"], entries: ["gushi-gs-79","gushi-gs-86","poems-cz7-22"] },
+  { wid: "w-poems-xx6-21", title: "读《岳阳楼记》", titles: ["过零丁洋","读《岳阳楼记》"], entries: ["gushi-gs-80","gushi-gs-87","poems-xx6-21"] },
+  { wid: "w-poems-cz9-26", title: "天平山中", titles: ["南安军","天平山中"], entries: ["gushi-gs-81","gushi-gs-88","poems-cz9-26"] },
 
   { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["guwen-gwj-127","poems-cz9-05"] },
   { wid: "w-poems-gz10-12", title: "前赤壁赋", titles: ["赤壁赋","前赤壁赋"], entries: ["guwen-gwj-139","poems-gz10-12"] },
