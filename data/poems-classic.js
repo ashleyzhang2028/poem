@@ -1650,6 +1650,32 @@ window.POEMS_CLASSIC = [
   { textRef: "classic-gw-112", id: "gw-227", title: "神龟", source: "《庄子·秋水》", dynasty: "战国", author: "庄周", gradeGroup: "寓言故事" },
   { textRef: "classic-gw-78", id: "gw-228", title: "偷鸡者辩解", source: "《孟子·滕文公下》", dynasty: "战国", author: "孟子", gradeGroup: "寓言故事" },
 
+  /* Issue #505 · 第四批（末批）古文（第 151~200 组，序号 157、159 … 195）。
+     正文在 scripts/data/classic-corpus-505d.js；壳只挂 textRef。
+     这 15 条落库（gw-229…gw-243），另补第二批漏收的《笼中鹦鹉》（gw-245）；同批另 10 篇与集内旧条 / 成语同篇，
+     按判重口径合流（见语料头注），本集不另挂壳。 */
+  { textRef: "classic-gw-229", id: "gw-229", title: "拷打羊皮破案", source: "《北史·李惠传》", dynasty: "唐", author: "李延寿", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-230", id: "gw-230", title: "稚犬衔虎尾", source: "《聊斋志异·义犬》", dynasty: "清", author: "蒲松龄", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-231", id: "gw-231", title: "陶侃不伤农", source: "《晋书·陶侃传》", dynasty: "唐", author: "房玄龄等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-232", id: "gw-232", title: "黄仙裳助友", source: "《今世说·德行》", dynasty: "清", author: "王晫", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-233", id: "gw-233", title: "樊重种树", source: "《后汉书·樊宏传》", dynasty: "南朝·宋", author: "范晔", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-234", id: "gw-234", title: "鹿亦有知", source: "《虞初新志·鹿亦有知》", dynasty: "清", author: "张潮", gradeGroup: "山水游记" },
+  { textRef: "classic-gw-235", id: "gw-235", title: "鸡鸣感恩", source: "《虞初新志·义鸡记》", dynasty: "清", author: "张潮", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-236", id: "gw-236", title: "伊犁凿井", source: "《阅微草堂笔记·滦阳续录》", dynasty: "清", author: "纪昀", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-237", id: "gw-237", title: "郑武公欲伐胡", source: "《韩非子·说难》", dynasty: "战国", author: "韩非", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-238", id: "gw-238", title: "姜从树生", source: "《雪涛小说》", dynasty: "明", author: "江盈科", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-239", id: "gw-239", title: "农夫和名画", source: "《雪涛谐史》", dynasty: "明", author: "江盈科", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-240", id: "gw-240", title: "虎画", source: "《雪涛小说》", dynasty: "明", author: "江盈科", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-241", id: "gw-241", title: "医人治驼", source: "《雪涛小说·催科》", dynasty: "明", author: "江盈科", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-242", id: "gw-242", title: "外科医生", source: "《雪涛小说》", dynasty: "明", author: "江盈科", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-243", id: "gw-243", title: "仆人诉苦", source: "《笑府》", dynasty: "明", author: "冯梦龙", gradeGroup: "志人逸事" },
+
+  /* Issue #505 · 第四批古文里与《成语》旧条同篇、题名有别的那 1 篇。
+     壳只挂 textRef 指向成语那一篇，自己不写正文；判重表把两条合成一篇
+     （题名不同，故在《古文》列表里并列展出两行）。 */
+  { textRef: "chengyu-cy-478", id: "gw-244", title: "一字师", source: "《五代史补》", dynasty: "宋", author: "陶岳", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-245", id: "gw-245", title: "笼中鹦鹉", source: "《乐善录》", dynasty: "宋", author: "李昌龄", gradeGroup: "寓言故事" },
+
 ];
 
 (function () {
