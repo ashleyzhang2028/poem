@@ -117,9 +117,9 @@ chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 237,
-  '同篇对照表 237 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
-  'Issue #516 第一 / 第二批古诗的合流一并计入；Issue #512 又并掉 11 组重复登记；实际 ' +
+chk(sb.WORKS_GROUPS.length === 239,
+  '同篇对照表 239 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文、' +
+  'Issue #517 收尾批与 Issue #516 第一 / 第二批古诗的合流一并计入；实际 ' +
   sb.WORKS_GROUPS.length + '）');
 const jys = byId['xx1-09'];
 chk(!!jys, '课内《静夜思》在库（课内条目 xx1-09）');
@@ -427,7 +427,6 @@ ALIAS_SOLO.forEach(function (c) {
 chk(WI.same('tangshi-ts-303', 'yuefu-yf-64'), '《秋浦歌》两个题名仍是同一篇');
 chk(WI.same('poems-gz11-10', 'tangshi-ts-72'), '《燕歌行并序》两个题名仍是同一篇');
 chk(WI.same('tangshi-ts-224', 'tangshi-ts-447'), '《送别》《山中送别》仍是同一篇');
-
 
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }

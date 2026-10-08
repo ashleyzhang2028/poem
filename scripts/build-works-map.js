@@ -67,7 +67,10 @@ LOAD.forEach(function (f) {
     /* Issue #516 · 第二批：20 篇 —— 同上，split 分派。 */
     { f: 'scripts/data/poems-corpus-516b.js', v: 'POEMS_CORPUS_516B', split: true },
     /* Issue #517 · 第一批：古文 22 篇。 */
-    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' }
+    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' },
+    /* Issue #517 · 收尾那一批：gw-277…gw-287（其中 gw-285 / gw-287 与《古文观止》
+       同篇，正文在 guwen 那一份语料里，这里登记一次让判重表认得出）。 */
+    { f: 'scripts/data/classic-corpus-517b.js', v: 'CLASSIC_CORPUS_517B', book: 'classic' }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
@@ -104,8 +107,20 @@ LOAD.forEach(function (f) {
     }
     return null;
   }
+  /* 主表已经裁定过的条目**不刷**：`data/text-master.js` 才是合流后的定稿
+     （课内 `<id>` 与集子 `<书>-<id>` 已并成同一篇）。若用单条语料覆盖，
+     那一篇的判重键会与合流后的壳对不上 —— 组数会莫名少一组
+     （《赠刘景文》poems-xx3-03 + gushi-gs-125 就是这么丢的）。
+     这里只补主表里**还没有**的那些条目。 */
+  var settled = {};
+  (sandbox.TEXT_MASTER || []).forEach(function (m) {
+    if (!m) return;
+    if (m.id) settled[m.id] = true;
+    (m.entries || []).forEach(function (e) { if (e) settled[e] = true; });
+  });
   Object.keys(RAW).forEach(function (id) {
     if (id.indexOf('poems-') === 0) return;
+    if (settled[id]) return;
     var t = rawTextOf(RAW[id]);
     if (!t) return;
     for (var i = 0; i < sandbox.SITE_INDEX.length; i++) {
@@ -168,6 +183,17 @@ LOAD.forEach(function (f) {
     if (!p || p.isBook || !p.textRef || p.text) return;
     if (p.book !== 'poems') return;
     var hit = TM[p.textRef] || TM[p.id];
+    if (!hit || !hit.text) return;
+    p.text = hit.text;
+    p.translation = hit.translation || "";
+    p.translationSource = hit.translationSource;
+  });
+  /* 上一步把课内那一条的正文补上了，但集子壳（`gushi-gs-125`）此刻也可能是
+     空的 —— 它的正文取不到就没法和课内那条对上判重键。用主表里那一份
+     把它补平（主表 `entries` 里点名了它，正是为这件事）。 */
+  sandbox.SITE_INDEX.forEach(function (p) {
+    if (!p || p.isBook || p.text) return;
+    var hit = TM[p.id];
     if (!hit || !hit.text) return;
     p.text = hit.text;
     p.translation = hit.translation || "";
