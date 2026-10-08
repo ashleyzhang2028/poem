@@ -52,6 +52,8 @@ LOAD.forEach(function (f) {
     { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true },
     /* Issue #505 · 第三批：古文 15 篇。 */
     { f: 'scripts/data/classic-corpus-505c.js', v: 'CLASSIC_CORPUS_505C', book: 'classic' },
+    /* Issue #510 · 第一批：唐诗新补 1 首（雁门太守行）。 */
+    { f: 'scripts/data/poems-corpus-510a.js', v: 'POEMS_CORPUS_510A', book: 'tangshi' },
     /* Issue #505 · 第四批（末批 · 第 151~200 组）：古文 15 篇 + 古诗 8 首
        （古诗那份按 id 前缀拆分，见 split 分支）。 */
     { f: 'scripts/data/classic-corpus-505d.js', v: 'CLASSIC_CORPUS_505D', book: 'classic' },

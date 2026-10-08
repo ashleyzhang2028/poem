@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 190 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 209 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -106,6 +106,13 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-15", title: "竹石", titles: ["竹石"], entries: ["gushi-gs-69","poems-xx6-15"] },
   { wid: "w-poems-xx4-15", title: "墨梅", titles: ["墨梅"], entries: ["gushi-gs-70","poems-xx4-15"] },
   { wid: "w-poems-xx6-28", title: "江上渔者", titles: ["江上渔者"], entries: ["gushi-gs-71","poems-xx6-28"] },
+  { wid: "w-poems-cz7-11", title: "山中杂诗", titles: ["十一月四日风雨大作（其二）","山中杂诗","十一月四日风雨大作·其二"], entries: ["gushi-gs-75","gushi-gs-82","poems-cz7-11"] },
+  { wid: "w-poems-cz7-12", title: "画眉鸟", titles: ["潼关","画眉鸟"], entries: ["gushi-gs-76","gushi-gs-83","poems-cz7-12"] },
+  { wid: "w-poems-cz7-20", title: "蚕妇吟", titles: ["登飞来峰","蚕妇吟"], entries: ["gushi-gs-77","gushi-gs-84","poems-cz7-20"] },
+  { wid: "w-poems-cz7-21", title: "蚕妇", titles: ["游山西村","蚕妇"], entries: ["gushi-gs-78","gushi-gs-85","poems-cz7-21"] },
+  { wid: "w-poems-cz7-22", title: "论诗", titles: ["己亥杂诗（其五）","论诗","己亥杂诗·其五"], entries: ["gushi-gs-79","gushi-gs-86","poems-cz7-22"] },
+  { wid: "w-poems-xx6-21", title: "读《岳阳楼记》", titles: ["过零丁洋","读《岳阳楼记》"], entries: ["gushi-gs-80","gushi-gs-87","poems-xx6-21"] },
+  { wid: "w-poems-cz9-26", title: "天平山中", titles: ["南安军","天平山中"], entries: ["gushi-gs-81","gushi-gs-88","poems-cz9-26"] },
 
   { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["guwen-gwj-127","poems-cz9-05"] },
   { wid: "w-poems-gz10-12", title: "前赤壁赋", titles: ["赤壁赋","前赤壁赋"], entries: ["guwen-gwj-139","poems-gz10-12"] },
@@ -129,30 +136,42 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx4-11", title: "卜算子·咏梅", titles: ["卜算子·咏梅"], entries: ["jinxiandai-jxd-11","poems-xx4-11"] },
 
   { wid: "w-poems-cz7-01", title: "观沧海", titles: ["观沧海"], entries: ["poems-cz7-01","yuefu-yf-12"] },
+  { wid: "w-poems-cz7-02", title: "闻王昌龄左迁龙标遥有此寄", titles: ["闻王昌龄左迁龙标遥有此寄"], entries: ["poems-cz7-02","tangshi-ts-413"] },
   { wid: "w-poems-cz7-03", title: "次北固山下", titles: ["次北固山下"], entries: ["poems-cz7-03","tangshi-ts-102"] },
   { wid: "w-poems-cz7-05", title: "峨眉山月歌", titles: ["峨眉山月歌"], entries: ["poems-cz7-05","yuefu-yf-65"] },
   { wid: "w-poems-cz7-06", title: "江南逢李龟年", titles: ["江南逢李龟年"], entries: ["poems-cz7-06","tangshi-ts-262","yuefu-yf-83"] },
+  { wid: "w-poems-cz7-07", title: "行军九日思长安故园", titles: ["行军九日思长安故园"], entries: ["poems-cz7-07","tangshi-ts-414"] },
   { wid: "w-poems-cz7-08", title: "夜上受降城闻笛", titles: ["夜上受降城闻笛"], entries: ["poems-cz7-08","tangshi-ts-270"] },
   { wid: "w-poems-cz7-09", title: "秋词（其一）", titles: ["秋词（其一）","秋词"], entries: ["poems-cz7-09","yuefu-yf-54"] },
   { wid: "w-poems-cz7-10", title: "夜雨寄北", titles: ["夜雨寄北"], entries: ["poems-cz7-10","tangshi-ts-295"] },
   { wid: "w-poems-cz7-13", title: "木兰诗", titles: ["木兰诗"], entries: ["poems-cz7-13","yuefu-yf-17"] },
   { wid: "w-poems-cz7-14", title: "竹里馆", titles: ["竹里馆"], entries: ["poems-cz7-14","tangshi-ts-223"] },
+  { wid: "w-poems-cz7-15", title: "春夜洛城闻笛", titles: ["春夜洛城闻笛"], entries: ["poems-cz7-15","tangshi-ts-415"] },
   { wid: "w-poems-cz7-16", title: "逢入京使", titles: ["逢入京使"], entries: ["poems-cz7-16","tangshi-ts-261"] },
+  { wid: "w-poems-cz7-17", title: "晚春", titles: ["晚春"], entries: ["poems-cz7-17","tangshi-ts-416"] },
   { wid: "w-poems-cz7-18", title: "登幽州台歌", titles: ["登幽州台歌"], entries: ["poems-cz7-18","tangshi-ts-34","tangshi-ts-401"] },
   { wid: "w-poems-cz7-19", title: "望岳", titles: ["望岳"], entries: ["poems-cz7-19","tangshi-ts-6"] },
   { wid: "w-poems-cz8-06", title: "黄鹤楼", titles: ["黄鹤楼"], entries: ["poems-cz8-06","tangshi-ts-173"] },
+  { wid: "w-poems-cz8-07", title: "使至塞上", titles: ["使至塞上"], entries: ["poems-cz8-07","tangshi-ts-417"] },
   { wid: "w-poems-cz8-08", title: "渡荆门送别", titles: ["渡荆门送别"], entries: ["poems-cz8-08","tangshi-ts-106"] },
+  { wid: "w-poems-cz8-09", title: "钱塘湖春行", titles: ["钱塘湖春行"], entries: ["poems-cz8-09","tangshi-ts-418"] },
   { wid: "w-poems-cz8-11", title: "龟虽寿", titles: ["龟虽寿"], entries: ["poems-cz8-11","yuefu-yf-13"] },
   { wid: "w-poems-cz8-21", title: "送杜少府之任蜀州", titles: ["送杜少府之任蜀州"], entries: ["poems-cz8-21","tangshi-ts-97"] },
-  { wid: "w-poems-cz8-22", title: "望洞庭湖赠张丞相", titles: ["望洞庭湖赠张丞相","临洞庭上张丞相"], entries: ["poems-cz8-22","tangshi-ts-128"] },
+  { wid: "w-poems-cz8-22", title: "望洞庭湖赠张丞相", titles: ["望洞庭湖赠张丞相","临洞庭上张丞相"], entries: ["poems-cz8-22","tangshi-ts-128","tangshi-ts-419"] },
   { wid: "w-poems-cz8-23", title: "石壕吏", titles: ["石壕吏"], entries: ["poems-cz8-23","yuefu-yf-78"] },
   { wid: "w-poems-cz8-24", title: "茅屋为秋风所破歌", titles: ["茅屋为秋风所破歌"], entries: ["poems-cz8-24","yuefu-yf-79"] },
+  { wid: "w-poems-cz8-25", title: "卖炭翁", titles: ["卖炭翁"], entries: ["poems-cz8-25","tangshi-ts-420"] },
+  { wid: "w-poems-cz8-26", title: "题破山寺后禅院", titles: ["题破山寺后禅院"], entries: ["poems-cz8-26","tangshi-ts-421"] },
   { wid: "w-poems-cz8-27", title: "送友人", titles: ["送友人"], entries: ["poems-cz8-27","tangshi-ts-107"] },
   { wid: "w-poems-cz8-28", title: "卜算子·黄州定慧院寓居作", titles: ["卜算子·黄州定慧院寓居作","卜算子·黄州定惠院寓居作"], entries: ["poems-cz8-28","songci-sc-70"] },
   { wid: "w-poems-cz8-29", title: "卜算子·咏梅", titles: ["卜算子·咏梅"], entries: ["poems-cz8-29","songci-sc-173"] },
   { wid: "w-poems-cz9-07", title: "行路难（其一）", titles: ["行路难（其一）","行路难","行路难·其一"], entries: ["poems-cz9-07","tangshi-ts-77","yuefu-yf-37"] },
+  { wid: "w-poems-cz9-08", title: "酬乐天扬州初逢席上见赠", titles: ["酬乐天扬州初逢席上见赠"], entries: ["poems-cz9-08","tangshi-ts-422"] },
   { wid: "w-poems-cz9-10", title: "月夜忆舍弟", titles: ["月夜忆舍弟"], entries: ["poems-cz9-10","tangshi-ts-114"] },
   { wid: "w-poems-cz9-11", title: "长沙过贾谊宅", titles: ["长沙过贾谊宅"], entries: ["poems-cz9-11","tangshi-ts-200"] },
+  { wid: "w-poems-cz9-12", title: "左迁至蓝关示侄孙湘", titles: ["左迁至蓝关示侄孙湘"], entries: ["poems-cz9-12","tangshi-ts-423"] },
+  { wid: "w-poems-cz9-13", title: "商山早行", titles: ["商山早行"], entries: ["poems-cz9-13","tangshi-ts-424"] },
+  { wid: "w-poems-cz9-14", title: "咸阳城东楼", titles: ["咸阳城东楼"], entries: ["poems-cz9-14","tangshi-ts-425"] },
   { wid: "w-poems-cz9-18", title: "渔家傲·秋思", titles: ["渔家傲·秋思","渔家傲"], entries: ["poems-cz9-18","songci-sc-5"] },
   { wid: "w-poems-cz9-23", title: "临江仙·夜登小阁忆洛中旧游", titles: ["临江仙·夜登小阁忆洛中旧游","临江仙"], entries: ["poems-cz9-23","songci-sc-147"] },
   { wid: "w-poems-cz9-28", title: "山坡羊·骊山怀古", titles: ["山坡羊·骊山怀古"], entries: ["poems-cz9-28","yuanqu-yq-3"] },
