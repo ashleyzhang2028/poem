@@ -47,31 +47,10 @@ const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', '
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 213,
-  '主表里有 213 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
-  'Issue #244 / #308；二批带来源的古文 / 诗篇条目并入原篇，再加《求之不得》↔《人言可畏》一类同源对；' +
-  'Issue #339 拆掉 5 组错并（愚公移山 / 卧薪尝胆 / 礼贤下士 / 不自量力 / 东道主），' +
-  '又合入 1 组真同篇（卧薪尝胆 ↔ 小古文《卧薪尝胆》），再拆开 众志成城 / 众口铄金 一组；' +
-  '本轮把正文里的编者括注搬走、正文露出本来面目后，蚌鹬相持/坐收渔利、' +
-  '近水楼台/近水楼台先得月 两组判为同篇；' +
-  'Issue #461 补篇后又添 3 组（子路曾皙冉有公西华侍坐 / 长相思 / 偶成 与课内或他集合流）；' +
-  '第四轮决赛冷门再添 2 组（子罕弗受玉 ↔ 小古文《子罕辞玉》、近试上张籍水部 ↔ 唐诗《近试上张水部》）；' +
-  'Issue #461 古文观止对齐 222 篇：新增 12 组（过秦论上/过秦论、治安策一/治安策、' +
-  '上书谏猎/司马相如上书谏猎、春夜宴从弟桃花园序/春夜宴桃李园序、大铁椎传、湖心亭看雪、' +
-  '师说、六国论、游褒禅山记、上枢密韩太尉书 与课内或他集合流）；' +
-  'Issue #471 第二轮又添 3 组（书愤 / 临安春雨初霁 与课内合流、' +
-  '《鹊桥仙·华灯纵博》与集内旧条 sc-281 合流）；第三轮再添 1 组' +
-  '（《闲居初夏午睡起·其一》的《唐诗》壳 ts-390 ↔《古诗「非唐代」》gs-55）；' +
-  'Issue #505 第一批：古文 5 篇合流 + 古诗 17 首合流（其中 10 首课内单篇本条原来不在主表，' +
-  '本轮由合流带进主表），共添 16 组；第二批：古文 13 篇合流 + 古诗 3 首合流，共添 12 组；' +
-  '第三批：古文 5 篇（魏文侯期猎 / 响遏行云 / 黠狼 / 神龟 / 偷鸡者辩解）与《古文》集内旧条合流，' +
-  '另 15 篇新落库的古文各成一条，共添 5 组，升为 189；' +
-  '第四批（末批）：古诗 1 首（「一字师」与《成语》cy-478 同篇）合流，共添 1 组，升为 190；' +
-  'Issue #510 第一批：初中课内古诗 20 首（唐诗 13 / 古诗「非唐代」7）与课内合流、' +
-  '唐诗新补《雁门太守行》1 首，共添 19 组，升为 209；' +
-  'Issue #517 第一批：古文 6 篇（郑人买履 / 鹬蚌相争 / 滥竽充数 / 刻舟求剑 / 邯郸学步 / 揠苗助长）' +
-  '的壳与《古文》集内旧条同题不同文、按判重口径合成一束（一条作品一条正文），共添 4 组，升为 213；' +
-  '实际 ' + multiEntries.length + '）');
+chk(multiEntries.length === 229,
+  '主表里有 229 条「跨集重复」的作品（Issue #244 / #308，后续各批补录与判重调整见 git 历史；' +
+  'Issue #517 第一批古文 6 条合流壳、Issue #516 第一批古诗 50 篇合流一并带入；实际 ' +
+  multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
   sb.SITE_INDEX.forEach(p => {
@@ -210,27 +189,9 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 464,
-  '重复条目恰为 464 条（192 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
-  'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；' +
-  '又拆开 众志成城 / 众口铄金 一组降为 295；' +
-  '本轮正文括注搬走后新增 蚌鹬相持/坐收渔利、近水楼台/近水楼台先得月 两组，升为 299；' +
-  'Issue #461 补篇后再添 3 组重篇，升为 305；第四轮决赛冷门再添 2 组，升为 309；' +
-  'Issue #461 古文观止对齐 222 篇再添 12 条重篇，升为 329；' +
-  'Issue #471 第二轮再添 3 条重篇（书愤 / 临安春雨初霁 / 鹊桥仙·华灯纵博），升为 335；' +
-  '第三轮再添 3 条 —— 新落库的 2 条唐诗（ts-388 杜牧《题乌江亭》、ts-389 刘禹锡《庭竹》）' +
-  '各 +1，另《闲居初夏午睡起·其一》在 gs-55 / ts-390 两个条目上成一束、多出 1 条，升为 338；' +
-  'Issue #505 第一批再添 40 —— 古文 5 篇、古诗 17 首合流各 +1（其中 10 首课内单篇本条已经算在' +
-  '判重键里，不重复计），另 18 条新落库的古文 / 古诗各 +1（单条不进这一束，只有合流的才算），升为 378；' +
-  'Issue #505 第二批再添 16 —— 古文 4 篇合流、古诗 3 首合流各 +1，另 20 篇新落库的' +
-  '古文各 +1（它们自己成束），升为 394；Issue #505 第三批再添 10 —— 古文 5 篇合流各 +1，' +
-  '另 5 篇题名各异的壳（魏文侯期猎 / 响遏行云 / 黠狼 / 神龟 / 偷鸡者辩解）与集内那一篇合成一束、' +
-  '各再 +1，升为 404；Issue #505 第四批再添 12 —— 古文 10 篇合流各 +1，另「一字师」的壳与' +
-  '《成语》cy-478 合成一束、再 +1，升为 406；Issue #510 第一批 —— 唐诗壳 12 条（ts-414…ts-425）' +
-  '与古诗「非唐代」壳 7 条（gs-82…gs-88）各成一束，加《雁门太守行》1 条，共 +19，升为 452；' +
-  'Issue #517 第一批 —— 古文 6 条合流壳（借壳重现的 5 条 + 揠苗助长 1 条）与集内那一篇合成一束、' +
-  '各 +1，另 7 条新落库的古文各 +1，共 +12，升为 464；' +
-  '实际 ' +
+chk(dupEntries.length === 502,
+  '重复条目恰为 502 条（同篇判重键下的条目；Issue #517 第一批古文 13 条与 Issue #516 ' +
+  '第一批古诗 50 篇合流后一并计入，实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
@@ -316,9 +277,12 @@ Object.keys(BOOK_VARS).forEach(book => {
       stripped.push(key);
       /* 主表那一条的 id：一般是 textRef（拆两部后的两卷即此）；
          成语故事里还有「跨集判重」的条目，正文挂在**另一条**上 ——
-         那种情况主表 id 是 `<book>-<shell id>`，一并认。 */
-      SHELL_IDS[refM[1]] = key;
-      SHELL_IDS[book + '-' + idM[1]] = key;
+         那种情况主表 id 是 `<book>-<shell id>`，一并认。
+         ⚠️ 同一个 textRef 会被多条壳共用（Issue #505 的合流壳、Issue #516
+         的补壳都是这个排法），这里**只记第一次** —— 覆盖会让最后那条壳
+         把前一条盖掉，前一条就被判成「没退化成只存归属」。 */
+      if (SHELL_IDS[refM[1]] === undefined) SHELL_IDS[refM[1]] = key;
+      if (SHELL_IDS[book + '-' + idM[1]] === undefined) SHELL_IDS[book + '-' + idM[1]] = key;
       if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
         leftover.push(key);
       }
@@ -326,16 +290,17 @@ Object.keys(BOOK_VARS).forEach(book => {
   });
 });
 
-const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
+/* ⚠️ 两边各有一次重复：`stripped` 按**壳**数（同一个 textRef 被多条壳共用时
+   计多次，Issue #505 / #516 的合流壳正是如此），`masterFlat` 按**条目**数
+   （同一篇的条目只登一次）。所以只能逐条查「有没有对应的壳」，不能比总数。 */
 const notStripped = masterFlat.filter(id => {
   const key = SHELL_IDS[id];
   return !key || !strippedSet[key];
 });
-chk(stripped.length === expectStripped && notStripped.length === 0,
-  '主表登记的 ' + expectStripped + ' 条非主条目都已退化成只存归属（textRef；实际 ' +
-  stripped.length + '）' +
+chk(notStripped.length === 0,
+  '主表登记的 ' + masterFlat.length + ' 条条目都已退化成只存归属（textRef）' +
   (notStripped.length ? '，未摘：' + notStripped.slice(0, 8).join('、') : ''));
 chk(leftover.length === 0,
   '带 textRef 的条目里不再内联 text / translation（残留：' +

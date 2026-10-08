@@ -5,10 +5,9 @@ window.POEMS_10 = [
   { id: "gz10-02", title: "短歌行", author: "曹操", dynasty: "汉", grade: 10, term: 1,
     textRef: "poems-gz10-02",
   },
-  { id: "gz10-03", title: "归园田居（其一）", author: "陶渊明", dynasty: "东晋", grade: 10, term: 1,
-    text: "少无适俗韵，性本爱丘山。\n误落尘网中，一去三十年。\n羁鸟恋旧林，池鱼思故渊。\n开荒南野际，守拙归园田。\n方宅十余亩，草屋八九间。\n榆柳荫后檐，桃李罗堂前。\n暧暧远人村，依依墟里烟。\n狗吠深巷中，鸡鸣桑树颠。\n户庭无尘杂，虚室有余闲。\n久在樊笼里，复得返自然。" ,
-    translation: "年少时没有迎合世俗的情趣，本性原本喜爱山林。错误地落入尘世的罗网，一去就是三十年。笼中的鸟眷恋旧日的树林，池中的鱼思念从前的深潭。在南边的荒野开垦荒地，固守愚拙回归田园。住宅方圆十余亩，草屋八九间。榆树柳树遮蔽后檐，桃树李树排列堂前。远处的村庄隐隐约约，村里的炊烟轻柔飘荡。狗在深巷中吠叫，鸡在桑树顶啼鸣。庭院中没有尘俗杂事，空屋里有许多闲暇。长久困在樊笼里，如今又能返回自然。",
-    translationSource: "academic",
+  /* Issue #516：本科目正文已收归主表（正文见 scripts/data/poems-corpus-516a.js），
+     此处只挂 textRef 指主条目。 */
+  { textRef: "poems-gz10-03", id: "gz10-03", title: "归园田居（其一）", author: "陶渊明", dynasty: "东晋", grade: 10, term: 1,
   },
   { id: "gz10-04", title: "梦游天姥吟留别", author: "李白", dynasty: "唐", grade: 10, term: 1,
     textRef: "poems-gz10-04",

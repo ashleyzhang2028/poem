@@ -3481,6 +3481,43 @@ window.POEMS_TANGSHI = [
   { textRef: "poems-cz9-14", id: "ts-425", title: "咸阳城东楼", source: "《全唐诗》", dynasty: "唐", author: "许浑", gradeGroup: "卷六 七言律诗" },
   { textRef: "tangshi-ts-426", id: "ts-426", title: "雁门太守行", source: "《李长吉歌诗》", dynasty: "唐", author: "李贺", gradeGroup: "卷四 七言乐府" },
 
+  /* Issue #516 · 第一批：用户点名的唐诗 34 条。
+     其中 15 条集内已有、壳挂 textRef 指过去（合流不重录）；
+     另 19 条全站真缺，正文在 scripts/data/poems-corpus-516a.js，此处只挂 textRef 归属。 */
+  { textRef: "tangshi-ts-96", id: "ts-427", title: "望月怀远", source: "《曲江集》", dynasty: "唐", author: "张九龄", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-98", id: "ts-428", title: "在狱咏蝉", source: "《骆临海集》", dynasty: "唐", author: "骆宾王", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-110", id: "ts-429", title: "月夜", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-118", id: "ts-430", title: "旅夜书怀", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-119", id: "ts-431", title: "登岳阳楼", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-170", id: "ts-432", title: "孤雁", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-186", id: "ts-433", title: "蜀相", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷六 七言律诗" },
+  { textRef: "tangshi-ts-187", id: "ts-434", title: "客至", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷六 七言律诗" },
+  { textRef: "tangshi-ts-225", id: "ts-435", title: "相思", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府" },
+  { textRef: "tangshi-ts-412", id: "ts-436", title: "乐游原", source: "《玉溪生诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-341", id: "ts-438", title: "少年行四首·其一", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府" },
+  { textRef: "tangshi-ts-343", id: "ts-439", title: "房兵曹胡马", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-313", id: "ts-440", title: "题都城南庄", source: "《本事诗》", dynasty: "唐", author: "崔护", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-409", id: "ts-441", title: "剑客", source: "《长江集》", dynasty: "唐", author: "贾岛", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-314", id: "ts-442", title: "赠花卿", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-443", id: "ts-443", title: "咏风", source: "《王子安集》", dynasty: "唐", author: "王勃", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-444", id: "ts-444", title: "野望", source: "《东皋子集》", dynasty: "唐", author: "王绩", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-445", id: "ts-445", title: "渡汉江", source: "《宋之问集》", dynasty: "唐", author: "宋之问", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-446", id: "ts-446", title: "赐萧瑀", source: "《全唐诗》", dynasty: "唐", author: "李世民", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-447", id: "ts-447", title: "山中送别", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-448", id: "ts-448", title: "秋登万山寄张五", source: "《孟浩然集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷一 五言古诗" },
+  { textRef: "tangshi-ts-449", id: "ts-449", title: "夜雪", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-450", id: "ts-450", title: "村夜", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-451", id: "ts-451", title: "戏问花门酒家翁", source: "《岑嘉州集》", dynasty: "唐", author: "岑参", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-452", id: "ts-452", title: "山亭夏日", source: "《全唐诗》", dynasty: "唐", author: "高骈", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-453", id: "ts-453", title: "江楼感旧", source: "《渭南诗集》", dynasty: "唐", author: "赵嘏", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-454", id: "ts-454", title: "农家", source: "《全唐诗》", dynasty: "唐", author: "颜仁郁", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-455", id: "ts-455", title: "韩冬郎即席为诗相送", source: "《玉溪生诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-456", id: "ts-456", title: "赋新月", source: "《全唐诗》", dynasty: "唐", author: "缪氏子", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-457", id: "ts-457", title: "题李凝幽居", source: "《长江集》", dynasty: "唐", author: "贾岛", gradeGroup: "卷五 五言律诗" },
+  { textRef: "tangshi-ts-458", id: "ts-458", title: "社日", source: "《全唐诗》", dynasty: "唐", author: "王驾", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-459", id: "ts-459", title: "雨过山村", source: "《王建诗集》", dynasty: "唐", author: "王建", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-460", id: "ts-460", title: "采莲曲", source: "《全唐诗》", dynasty: "唐", author: "刘方平", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-437", id: "ts-437", title: "绝句漫兴九首·其五", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷八 七言绝句" },
 ];
 
 (function () {
