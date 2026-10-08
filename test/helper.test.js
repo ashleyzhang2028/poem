@@ -96,8 +96,9 @@ const missing = [...new Set([...allText].filter(c => /\p{Script=Han}/u.test(c) &
 chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + missing.slice(0, 12).join("") + "）");
 /* Issue #461：古诗文大会 / 阅读大赛清单去重后，真缺的文言短篇补进小古文；
    已在他处的按判重表合流，不重录。 */
-chk(d.POEMS_CLASSIC.length === 244,
-  "小古文共 244 篇（Issue #461 / #505 各批补录去重后，实际 " + d.POEMS_CLASSIC.length + "）");
+chk(d.POEMS_CLASSIC.length === 275,
+  "小古文共 257 篇（Issue #461 / #505 各批补录去重后，" +
+  "Issue #517 第一批再落库 13 篇（gw-246…gw-258），实际 " + d.POEMS_CLASSIC.length + "）");
 
 console.log("");
 console.log(fails ? "❌ " + fails + " 项失败" : "🎉 注音与朗读（内核）测试全部通过");

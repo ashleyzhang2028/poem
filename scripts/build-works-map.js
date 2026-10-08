@@ -61,7 +61,9 @@ LOAD.forEach(function (f) {
     { f: 'scripts/data/classic-corpus-505d.js', v: 'CLASSIC_CORPUS_505D', book: 'classic' },
     { f: 'scripts/data/poems-corpus-505c.js', v: 'POEMS_CORPUS_505C', split: true },
     /* Issue #516 · 第一批：古诗 50 篇 —— 唐诗 / 古诗「非唐代」两部，split 分派。 */
-    { f: 'scripts/data/poems-corpus-516a.js', v: 'POEMS_CORPUS_516A', split: true }
+    { f: 'scripts/data/poems-corpus-516a.js', v: 'POEMS_CORPUS_516A', split: true },
+    /* Issue #517 · 第一批：古文 22 篇。 */
+    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
