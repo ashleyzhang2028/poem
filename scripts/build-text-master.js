@@ -29,6 +29,9 @@ const LOAD = [
   'scripts/data/gushi-corpus-471b.js', 'scripts/data/ci-corpus-471b.js',
   /* Issue #480：曹植《七步诗》从《唐诗》归位到《古诗「非唐代」· 汉魏诗》。 */
   'scripts/data/gushi-corpus-480.js',
+  /* Issue #471 · 第三轮：用户点名的五家名篇（杨万里 2 / 苏轼 1 / 刘禹锡 1；
+     《唐诗》那一条与「古诗」那首同文）。 */
+  'scripts/data/gushi-corpus-471c.js', 'scripts/data/tangshi-corpus-471c.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
   /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
@@ -120,6 +123,14 @@ var RAW_ENTRIES = {};
     /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首。 */
     { f: 'scripts/data/gushi-corpus-471b.js', v: 'GUSHI_CORPUS_471B', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-480.js', v: 'GUSHI_CORPUS_480', book: 'gushi' },
+    /* Issue #471 · 第三轮：用户点名的五家名篇。
+       ⚠️ 语料表按「一份文件 → 一部集子」一一对应：`book` 只用来建
+       `book + '-' + id` 这个取正文的键。同一份语料登记两次，file 推出来的
+       `book` 会把 list 里**每一条**都挂到第二个前缀下 —— 生成出
+       `gushi-ts-388` 这种谁也不认的影子条目（正文明明只有一份）。
+       跨部的那一条（《唐诗》ts-389）该由《唐诗》自己那份语料写。 */
+    { f: 'scripts/data/gushi-corpus-471c.js', v: 'GUSHI_CORPUS_471C', book: 'gushi' },
+    { f: 'scripts/data/tangshi-corpus-471c.js', v: 'TANGSHI_CORPUS_471C', book: 'tangshi' },
     { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */
@@ -149,9 +160,19 @@ var RAW_ENTRIES = {};
   FILES.forEach(function (o) {
     if (o.v === 'CHENGYU_SUPPORT') return;
     /* `book` 是从**文件名**推的台账前缀，一文件一部。历代名家那两份壳同属
-       一部（mingren），名字里却带 `-cn` / `-foreign` —— 所以允许显式给。 */
-    var book = o.book || o.f.replace('data/poems-', '').replace('.js', '');
-    if (/^\d+$/.test(book)) book = 'poems';
+       一部（mingren），名字里却带 `-cn` / `-foreign` —— 所以允许显式给。
+       ⚠️ 语料表（`scripts/data/*.js`）不是壳，文件名推不出部名，**必须显式
+       给 `book`**；不给就会拿整条路径当前缀（`scripts/data/corpus-471c-gs-55`
+       这种谁都不认的影子键），而壳里的 `textRef` 是 `gushi-gs-55` ——
+       于是正文取不到、条目掉出主表。 */
+    var book = o.book;
+    if (!book) {
+      if (o.f.indexOf('scripts/data/') === 0) {
+        throw new Error('语料表必须显式给 book：' + o.f + '（v=' + o.v + '）');
+      }
+      book = o.f.replace('data/poems-', '').replace('.js', '');
+      if (/^\d+$/.test(book)) book = 'poems';
+    }
     (sandbox[o.v] || []).forEach(function (p) {
       if (!p || !p.id) return;
       RAW_ENTRIES[book + '-' + p.id] = p;
