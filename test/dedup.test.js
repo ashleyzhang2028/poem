@@ -502,3 +502,109 @@ chk(WI.same('tangshi-ts-224', 'tangshi-ts-447'), '《送别》《山中送别》
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }
 console.log('🎉 课内去重 / 《静夜思》测试全部通过');
+
+/* =========================================================================
+   Issue #512 · 成语 / 小古文 出处与朝代（P1 + P2）
+   -------------------------------------------------------------------------
+   「挂在二手书上」的那几条已经改到所出之书；同一部书里自相矛盾的朝代
+   也归位了。下面这几条盯住口径，别让下一批补录再打回去。
+   ========================================================================= */
+const cySb = { window: {}, console };
+cySb.window = cySb;
+vm.createContext(cySb);
+require('./master-env').loadData(cySb, ['data/poems-chengyu.js']);
+const CY = cySb.POEMS_CHENGYU || [];
+const cyBy = {};
+CY.forEach(function (p) { cyBy[p.id] = p; });
+
+/* P1 · 三条硬错：挂的是后人二手书（《元诗选》/《瓯北诗话》/《鲁迅全集》）。 */
+const CY_P1 = [
+  ['cy-167', '盛气凌人', '《战国策·赵策四》', '战国', '刘向'],
+  ['cy-547', '举重若轻', '《读孟郊诗二首》', '宋', '苏轼'],
+  ['cy-644', '粗制滥造', '《热风》', '清', '鲁迅']
+];
+CY_P1.forEach(function (c) {
+  const p = cyBy[c[0]];
+  chk(!!p && p.source === c[2] && p.dynasty === c[3] && p.author === c[4],
+    '成语《' + c[1] + '》出处 = ' + c[2] + '（' + c[3] + ' · ' + c[4] + '）—— 实际 ' +
+    (p ? p.source + ' / ' + p.dynasty + ' / ' + p.author : '缺'));
+});
+
+/* P2 · 三条挂在小说 / 话本上的，已归到所出之书。 */
+const CY_P2 = [
+  ['cy-236', '十面埋伏', '《史记·项羽本纪》'],
+  ['cy-354', '苦肉计', '《吴越春秋》'],
+  ['cy-584', '情同手足', '《诗经·小雅·常棣》']
+];
+CY_P2.forEach(function (c) {
+  const p = cyBy[c[0]];
+  chk(!!p && p.source === c[2],
+    '成语《' + c[1] + '》出处 = ' + c[2] + '（实际 ' + (p ? p.source : '缺') + '）');
+});
+
+/* P2 · 朝代归位：同一部书 · 同一位署名人，不许再出现两种朝代。
+   判据是「同书同署名人取多数票」，下面点名几处最容易被打回的。 */
+const CY_DYN = [
+  ['cy-5', '大禹治水', '西汉'],      /* 《史记·夏本纪》—— 书是西汉的 */
+  ['cy-109', '纸上谈兵', '西汉'],    /* 《史记·廉颇蔺相如列传》 */
+  ['cy-254', '囊萤映雪', '两晋南北朝'], /* 《晋书·车胤传》 */
+  ['cy-702', '微言大义', '西汉'],    /* 《汉书·艺文志》 */
+  ['cy-340', '煮豆燃萁', '两晋南北朝'], /* 《世说新语·文学》 */
+  ['cy-1', '女娲补天', '西汉'],      /* 《淮南子·览冥训》 */
+  ['cy-893', '打折扣', '宋'],        /* 《宋史·食货志》 */
+  ['cy-944', '唱对台戏', '唐']       /* 《旧唐书·音乐志》 */
+];
+CY_DYN.forEach(function (c) {
+  const p = cyBy[c[0]];
+  chk(!!p && p.dynasty === c[2],
+    '成语《' + c[1] + '》朝代 = ' + c[2] + '（实际 ' + (p ? p.dynasty : '缺') + '）');
+});
+
+/* 全表扫一遍：同一部书 · 同一位署名人，朝代必须只有一个。 */
+const BOOK_DYNASTY = require('../scripts/data/chengyu-dynasty-512.js').BOOK_DYNASTY;
+const ITEMS = require('../scripts/data/chengyu-dynasty-512.js').ITEMS;
+const strayDyn = CY.filter(function (p) {
+  if (Object.prototype.hasOwnProperty.call(ITEMS, p.id)) return false;
+  const m = String(p.source || '').match(/《([^》·]+)(?:·[^》]*)?》/);
+  if (!m) return false;
+  const want = BOOK_DYNASTY[m[1] + '|' + p.author];
+  return want && p.dynasty !== want;
+});
+chk(strayDyn.length === 0,
+  '成语里同一部书 · 同一位署名人的朝代已归位（残留：' +
+  strayDyn.slice(0, 6).map(function (p) { return p.id + '(' + p.title + ' ' + p.dynasty + ')'; }).join('、') + '）');
+
+/* 导航分组与朝代同源（一个朝代一段）—— 改了朝代不同步分组就分错段。 */
+const groupMismatch = CY.filter(function (p) { return p.gradeGroup !== p.dynasty; });
+chk(groupMismatch.length === 0,
+  '成语的 gradeGroup 与 dynasty 同源（对不上：' +
+  groupMismatch.slice(0, 6).map(function (p) { return p.id + '(' + p.dynasty + '≠' + p.gradeGroup + ')'; }).join('、') + '）');
+
+/* P1 · 小古文那几条二手书 / 类书。 */
+const clSb = { window: {}, console };
+clSb.window = clSb;
+vm.createContext(clSb);
+require('./master-env').loadData(clSb, ['data/poems-classic.js']);
+const CL = clSb.POEMS_CLASSIC || [];
+const clBy = {};
+CL.forEach(function (p) { clBy[p.id] = p; });
+const CL_FIX = [
+  ['gw-53', '孔融让梨', '《后汉书·孔融传》', '范晔'],
+  ['gw-54', '管宁割席', '《世说新语·德行》', '刘义庆'],
+  ['gw-17', '盘古开天地', '《三五历纪》', '徐整'],
+  ['gw-63', '钻木取火', '《拾遗记》', '王嘉']
+];
+CL_FIX.forEach(function (c) {
+  const p = clBy[c[0]];
+  chk(!!p && p.source === c[2] && p.author === c[3],
+    '小古文《' + c[1] + '》出处 = ' + c[2] + '（' + c[3] + '）—— 实际 ' +
+    (p ? p.source + ' / ' + p.author : '缺'));
+});
+chk(CL.filter(function (p) { return /世说新语笺疏/.test(p.source || ''); }).length === 0,
+  '小古文里不再挂「笺疏本」这类非所出之书（《新撰国文教科书》是原书，不算）；');
+/* 《菊》《莲》挂着《新撰国文教科书》—— 那**就是**它们的所出之书（清末课文），
+   不是二手转引。这一条盯着别让后来人顺手改成「原书」把它改坏。 */
+const ju = clBy['gw-61'], lian = clBy['gw-62'];
+chk(!!ju && ju.source === '《新撰国文教科书》' && !!lian && lian.source === '《新撰国文教科书》',
+  '《菊》《莲》仍记《新撰国文教科书》（课文原书，非二手）；实际 ' +
+  (ju ? ju.source : '缺') + ' / ' + (lian ? lian.source : '缺'));
