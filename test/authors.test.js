@@ -129,7 +129,7 @@ chk(!!kg && !kg.works.some(w => w.originId === 'gw-10'),
 // ⚠️ 归并不改任何一条数据的 `author`（各集子列表页照旧显示「吕不韦等」）。
 
 const EDITORS = [
-  ['房玄龄等', 1], ['脱脱等', 3], ['宋濂等', 1], ['李昉等', 3], ['张廷玉等', 2]
+  ['房玄龄等', 2], ['脱脱等', 3], ['宋濂等', 1], ['李昉等', 3], ['张廷玉等', 2], ['薛居正等', 1]
 ];
 EDITORS.forEach(function (pair) {
   const a = idx.byAuthor[pair[0]];
@@ -183,8 +183,8 @@ chk(/author: "房玄龄等"/.test(classicSrc), '数据里仍是「房玄龄等�
 // 名册里不许再出现「某某等」以外的复合写法（那一批已各归各位）
 const composite = idx.authors.filter(a => /等$/.test(a.name))
   .map(a => a.name).sort().join('、');
-chk(composite === '宋濂等、张廷玉等、房玄龄等、李昉等、脱脱等',
-  '名册上带「等」的只剩官修书那五位（实际：' + composite + '）');
+chk(composite === '宋濂等、张廷玉等、房玄龄等、李昉等、脱脱等、薛居正等',
+  '名册上带「等」的只剩官修书那六位（实际：' + composite + '）');
 
 const jys = idx.authors.filter(a => a.works.some(w => w.title === '静夜思' || w.title === '夜思'));
 const jysCount = jys.reduce((n, a) => n + a.works.filter(w => w.title === '静夜思' || w.title === '夜思').length, 0);

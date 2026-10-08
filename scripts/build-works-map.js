@@ -49,7 +49,9 @@ LOAD.forEach(function (f) {
        不登记的话，下面「新建站点索引条目」那一段取不到正文、条目进不了判重表
        （同篇对照会少若干组）。 */
     { f: 'scripts/data/classic-corpus-505b.js', v: 'CLASSIC_CORPUS_505B', book: 'classic' },
-    { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true }
+    { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true },
+    /* Issue #505 · 第三批：古文 15 篇。 */
+    { f: 'scripts/data/classic-corpus-505c.js', v: 'CLASSIC_CORPUS_505C', book: 'classic' }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';

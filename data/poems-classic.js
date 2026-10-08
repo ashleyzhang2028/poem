@@ -194,7 +194,7 @@ window.POEMS_CLASSIC = [
     id: "gw-20",
     title: "后羿射日",
     source: "《淮南子·本经训》",
-    dynasty: "汉",
+    dynasty: "西汉",
     author: "刘安等",
     gradeGroup: "神话传说",
     difficulty: 2,
@@ -1620,6 +1620,35 @@ window.POEMS_CLASSIC = [
   { textRef: "classic-gw-205", id: "gw-205", title: "引婴儿投江", source: "《吕氏春秋·察今》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
   { textRef: "classic-gw-80", id: "gw-207", title: "锯竿入城", source: "《笑林》", dynasty: "三国·魏", author: "邯郸淳", gradeGroup: "寓言故事" },
   { textRef: "classic-gw-132", id: "gw-208", title: "枭逢鸠", source: "《说苑·谈丛》", dynasty: "西汉", author: "刘向", gradeGroup: "寓言故事" },
+
+  /* Issue #505 · 第三批古文（第 101~150 组，序号 101、103 … 149）。
+     正文在 scripts/data/classic-corpus-505c.js；壳只挂 textRef。
+     这 15 条落库（gw-209…gw-223）；同批另 4 篇与集内旧条同篇、
+     5 篇上一批已落库，本集不另挂壳。 */
+  { textRef: "classic-gw-209", id: "gw-209", title: "王羲之书六角扇", source: "《晋书·王羲之传》", dynasty: "唐", author: "房玄龄等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-210", id: "gw-210", title: "焦饭活命", source: "《世说新语·德行》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-211", id: "gw-211", title: "墨子责耕柱子", source: "《墨子·耕柱》", dynasty: "战国", author: "墨翟及弟子", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-212", id: "gw-212", title: "黠猱", source: "《聊斋志异》", dynasty: "清", author: "蒲松龄", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-213", id: "gw-213", title: "黠狐", source: "《聊斋志异》", dynasty: "清", author: "蒲松龄", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-214", id: "gw-214", title: "任目而恶镜", source: "《笑府》", dynasty: "明", author: "冯梦龙", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-215", id: "gw-215", title: "农夫耕田", source: "《雪涛小说》", dynasty: "明", author: "江盈科", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-216", id: "gw-216", title: "半饼自饱", source: "《百喻经》", dynasty: "南朝·齐", author: "求那毗地译", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-217", id: "gw-217", title: "卢仁爱鹤", source: "《列子·说符》", dynasty: "战国", author: "列御寇", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-218", id: "gw-218", title: "韩信钻裤档", source: "《史记·淮阴侯列传》", dynasty: "西汉", author: "司马迁", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-219", id: "gw-219", title: "阿柴折箭喻理", source: "《魏书·吐谷浑传》", dynasty: "北齐", author: "魏收", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-220", id: "gw-220", title: "玄石嗜酒", source: "《搜神记》", dynasty: "东晋", author: "干宝", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-221", id: "gw-221", title: "迂公修屋", source: "《迂仙别记》", dynasty: "明", author: "张夷令", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-222", id: "gw-222", title: "李存审诚子", source: "《旧五代史·李存审传》", dynasty: "北宋", author: "薛居正等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-223", id: "gw-223", title: "恨鼠焚屋", source: "《雪涛谐史》", dynasty: "明", author: "江盈科", gradeGroup: "寓言故事" },
+
+  /* Issue #505 · 第三批古文里与集内旧条同篇的 5 篇（第 101~150 组）。
+     壳只挂 textRef 指向集内那一篇，自己不写正文；判重表把两条合成一篇
+     （题名不同，故在《古文》列表里并列展出两行）。 */
+  { textRef: "classic-gw-81", id: "gw-224", title: "魏文侯期猎", source: "《战国策·魏策一》", dynasty: "西汉", author: "刘向编", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-45", id: "gw-225", title: "响遏行云", source: "《列子·汤问》", dynasty: "战国", author: "列御寇", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-107", id: "gw-226", title: "黠狼", source: "《聊斋志异》", dynasty: "清", author: "蒲松龄", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-112", id: "gw-227", title: "神龟", source: "《庄子·秋水》", dynasty: "战国", author: "庄周", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-78", id: "gw-228", title: "偷鸡者辩解", source: "《孟子·滕文公下》", dynasty: "战国", author: "孟子", gradeGroup: "寓言故事" },
 
 ];
 
