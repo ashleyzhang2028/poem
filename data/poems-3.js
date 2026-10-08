@@ -11,15 +11,13 @@ window.POEMS_3 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx3-02",
     id: "xx3-02",
     title: "山行",
     author: "杜牧",
     dynasty: "唐",
     grade: 3,
     term: 1,
-    text: "远上寒山石径斜，白云生处有人家。\n停车坐爱枫林晚，霜叶红于二月花。",
-    translation: "沿着石头小路远远地登上寒山，白云升起的地方有人家。停下车来只因喜爱枫林的晚景——经霜的枫叶比二月的花还红。",
-    translationSource: "school",
   },
   {
     id: "xx3-03",
@@ -124,15 +122,13 @@ window.POEMS_3 = [
     term: 2,
   },
   {
+    textRef: "poems-xx3-14",
     id: "xx3-14",
     title: "元日",
     author: "王安石",
     dynasty: "宋",
     grade: 3,
     term: 2,
-    text: "爆竹声中一岁除，春风送暖入屠苏。\n千门万户曈曈日，总把新桃换旧符。",
-    translation: "爆竹声中旧的一年过去了，春风送暖，人们喝着屠苏酒。千家万户沐浴在初升的阳光下，都换下了旧的桃符。",
-    translationSource: "school",
   },
   {
     id: "xx3-15",

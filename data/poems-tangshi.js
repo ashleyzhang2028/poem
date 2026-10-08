@@ -3433,6 +3433,21 @@ window.POEMS_TANGSHI = [
     author: "杨万里",
     gradeGroup: "卷七 五言绝句",
   },
+  /* Issue #505 · 第一批古诗 25 首里的唐诗（第一批 50 组，序号 2…50）。
+     正文在 scripts/data/poems-corpus-505a.js。README 口径：唐代的诗一律归本集。
+     前 2 条落库；其余 7 条课内已有，按判重口径合流、壳挂 textRef 指过去。 */
+  { textRef: "tangshi-ts-391", id: "ts-391", title: "陇西行四首·其二", source: "《全唐诗》", dynasty: "唐", author: "陈陶", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-392", id: "ts-392", title: "南园十三首·其五", source: "《李长吉歌诗》", dynasty: "唐", author: "李贺", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx4-12", id: "ts-393", title: "蜂", source: "《全唐诗》", dynasty: "唐", author: "罗隐", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx3-02", id: "ts-394", title: "山行", source: "《樊川文集》", dynasty: "唐", author: "杜牧", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx1-07", id: "ts-395", title: "春晓", source: "《孟襄阳集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷七 五言绝句" },
+  { textRef: "poems-xx5-12", id: "ts-396", title: "游子吟", source: "《孟东野诗集》", dynasty: "唐", author: "孟郊", gradeGroup: "卷一 五言古诗" },
+  { textRef: "poems-xx3-17", id: "ts-397", title: "滁州西涧", source: "《韦苏州集》", dynasty: "唐", author: "韦应物", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx6-07", id: "ts-398", title: "回乡偶书", source: "《全唐诗》", dynasty: "唐", author: "贺知章", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx4-23", id: "ts-399", title: "黄鹤楼送孟浩然之广陵", source: "《李太白集》", dynasty: "唐", author: "李白", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-xx4-19", id: "ts-400", title: "竹枝词", source: "《刘宾客文集》", dynasty: "唐", author: "刘禹锡", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-cz7-18", id: "ts-401", title: "登幽州台歌", source: "《陈伯玉集》", dynasty: "唐", author: "陈子昂", gradeGroup: "卷二 七言古诗" },
+
 ];
 
 (function () {

@@ -38,6 +38,9 @@ const LOAD = [
   'scripts/data/ci-corpus-461e.js',
   /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
   'scripts/data/ci-corpus-461f.js',
+  /* Issue #505 · 第一批（50 组）：古文 20 篇 + 古诗 16 首。 */
+  'scripts/data/classic-corpus-505a.js',
+  'scripts/data/poems-corpus-505a.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -101,6 +104,10 @@ var RAW_ENTRIES = {};
     /* Issue #461：语料表先于各自的壳文件登记 —— RAW_ENTRIES 后写覆盖前写，
        而壳文件只存归属（无正文），若排在语料之后就会把正文盖掉。 */
     { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
+    /* 《古诗「非唐代」》的壳文件。它的正文平时来自语料表，所以原先没在这里登记；
+       但 Issue #505 的壳里有几条是**指向课内那一篇**的（判重合流，自己不写正文），
+       这一类要靠 `RAW_ENTRIES[textRef]` 去取正文 —— 壳文件不登记，就取不到。 */
+    { f: 'data/poems-gushi.js', v: 'POEMS_GUSHI' },
     /* Issue #461：《古诗「非唐代」》—— 壳文件只存归属（textRef），正文来自语料表。 */
     { f: 'scripts/data/gushi-corpus.js', v: 'GUSHI_CORPUS', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-461b.js', v: 'GUSHI_CORPUS_461B', book: 'gushi' },
@@ -109,6 +116,8 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/classic-corpus-461.js', v: 'CLASSIC_CORPUS_461', book: 'classic' },
     { f: 'scripts/data/classic-corpus-461b.js', v: 'CLASSIC_CORPUS_461B', book: 'classic' },
     { f: 'scripts/data/classic-corpus-461c.js', v: 'CLASSIC_CORPUS_461C', book: 'classic' },
+    /* Issue #505 · 第一批：古文 20 篇（壳里挂 textRef）。 */
+    { f: 'scripts/data/classic-corpus-505a.js', v: 'CLASSIC_CORPUS_505A', book: 'classic' },
     /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
        语料排在后面，供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
     { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },
@@ -136,6 +145,11 @@ var RAW_ENTRIES = {};
        跨部的那一条壳（《唐诗》ts-390）自己不写正文，壳里挂 `textRef`
        指向 gushi-gs-55；一份正文只落 gs-55 这一处。 */
     { f: 'scripts/data/gushi-corpus-471c.js', v: 'GUSHI_CORPUS_471C', book: 'gushi' },
+    /* Issue #505 · 第一批：古诗 16 首（唐诗 4 + 非唐诗 12 混在一份语料里）。
+       ⚠️ 一份语料跨两部集子 —— `book` 只用来建「部 + '-' + id」这个取正文的键，
+       所以这一份**按 id 前缀自己拆开**（见下面 byFile 的分派），不整个登记两次：
+       整份登记两次会按每个前缀把每一条都挂一遍，生成 `gushi-ts-391` 这种影子键。 */
+    { f: 'scripts/data/poems-corpus-505a.js', v: 'POEMS_CORPUS_505A', split: true },
     { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */
@@ -162,6 +176,9 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-emperor-waiguo.js', v: 'POEMS_EMPEROR_FOREIGN', book: 'dwang' },
     { f: 'data/chengyu-support.js', v: 'CHENGYU_SUPPORT' }
   ];
+  /* 「集子内 id 前缀 → 台账部名前缀」的对照表（只给跨部语料用，见上面的 split 分支）。 */
+  var SPLIT_PREFIX = { ts: 'tangshi', gs: 'gushi', sc: 'songci', gw: 'classic', gwj: 'guwen' };
+
   FILES.forEach(function (o) {
     if (o.v === 'CHENGYU_SUPPORT') return;
     /* `book` 是从**文件名**推的台账前缀，一文件一部。历代名家那两份壳同属
@@ -171,7 +188,7 @@ var RAW_ENTRIES = {};
        这种谁都不认的影子键），而壳里的 `textRef` 是 `gushi-gs-55` ——
        于是正文取不到、条目掉出主表。 */
     var book = o.book;
-    if (!book) {
+    if (!book && !o.split) {
       if (o.f.indexOf('scripts/data/') === 0) {
         throw new Error('语料表必须显式给 book：' + o.f + '（v=' + o.v + '）');
       }
@@ -180,6 +197,20 @@ var RAW_ENTRIES = {};
     }
     (sandbox[o.v] || []).forEach(function (p) {
       if (!p || !p.id) return;
+      if (o.split) {
+        /* 跨部的一份语料：按 id 前缀分派到**各自的台账前缀**（Issue #505 第一批）。
+           语料里的 id 是「集子内 id」（ts-391 / gs-58），台账键是「部 + '-' + 集子内 id」
+           （tangshi-ts-391 / gushi-gs-58）—— 两个前缀不是同一个词（ts ≠ tangshi，
+           gs ≠ gushi），所以要过一张对照表，不能拿 id 前缀直接当台账前缀。 */
+        var localPrefix = p.id.split('-')[0];
+        var ledger = SPLIT_PREFIX[localPrefix];
+        if (!ledger) {
+          throw new Error('跨部语料里出现没人认的 id 前缀：' + p.id +
+            '（' + o.f + '）—— 到 SPLIT_PREFIX 里补一条对照');
+        }
+        RAW_ENTRIES[ledger + '-' + p.id] = p;
+        return;
+      }
       RAW_ENTRIES[book + '-' + p.id] = p;
     });
   });
@@ -188,7 +219,37 @@ var inIndex = {};
 sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
 var BOOTSTRAPPED = [];
 Object.keys(RAW_ENTRIES).forEach(function (id) {
-  if (inIndex[id]) return;
+  /* Issue #505：条目**已经在 SITE_INDEX 里、但正文是空的**（新加的壳只挂
+     textRef，而 textRef 指的那一篇是课内单篇 —— 课内单篇不进主表，
+     `masterTextOf` 在装配时取不到正文）。这一条也要从 RAW_ENTRIES 补一次，
+     否则它与课文那一条的判重键（空串）对不上、判重表里合不到一处。
+     原先只有 `if (inIndex[id]) return;` —— 新壳被静默跳过，正文取不到也无人报错。 */
+  var existing = inIndex[id]
+    ? sandbox.SITE_INDEX.filter(function (x) { return x && x.id === id; })[0]
+    : null;
+  if (existing && (existing.text || existing.translation)) return;
+  if (existing) {
+    var back = RAW_ENTRIES[id];
+    var bt = { text: back.text || '', translation: back.translation || '',
+      translationSource: back.translationSource || '' };
+    if (!bt.text && back.textRef) {
+      var bu = RAW_ENTRIES[back.textRef];
+      if (bu && bu.text) bt = { text: bu.text || '', translation: bu.translation || '',
+        translationSource: bu.translationSource || '' };
+    }
+    if (!bt.text && back.textRef) {
+      var bh = (prev[back.textRef] || prev[id]) || null;
+      if (bh && bh.text) bt = { text: bh.text || '', translation: bh.translation || '',
+        translationSource: bh.translationSource || '' };
+    }
+    if (bt.text) {
+      existing.text = bt.text;
+      existing.translation = bt.translation;
+      existing.translationSource = bt.translationSource;
+      BOOTSTRAPPED.push(id);
+    }
+    return;
+  }
   var raw = RAW_ENTRIES[id];
 
   var t = { text: raw.text || '', translation: raw.translation || '',
