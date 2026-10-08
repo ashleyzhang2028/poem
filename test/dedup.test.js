@@ -378,6 +378,45 @@ zmPicks.forEach(function (c) {
     '（实际 ' + (p ? p.source : '缺') + '）');
 });
 
+/* Issue #512：《词》288 条选本条目原先 `source` 一律写选本名「《宋词三百首》」——
+   详情页只读 `source`，于是《浣溪沙·一曲新词酒一杯》看不出出自《珠玉词》。
+   这一轮按同一套口径改成 `source` = 所出之书（词人别集）、`selection` = 选本。 */
+const ci = (sb.POEMS_SONGCI || []);
+chk(ci.length === 330, '《词》共 330 条（实际 ' + ci.length + '）');
+const ciXuanben = ci.filter(p => p.selection === '《宋词三百首》');
+chk(ciXuanben.length === 288, '《词》里 288 条选本条目带 `selection: 《宋词三百首》`（实际 ' + ciXuanben.length + '）');
+chk(ciXuanben.every(p => p.source && p.source !== '《宋词三百首》'),
+  '288 条的 `source` 一律是所出之书、不再是选本名（残留：' +
+  (ciXuanben.filter(p => !p.source || p.source === '《宋词三百首》').map(p => p.id).join('、') || '无') + '）');
+const ciHit = {};
+ciXuanben.forEach(p => { (ciHit[p.source] = ciHit[p.source] || []).push(p.id); });
+chk(Object.keys(ciHit).length >= 50,
+  '所出之书按词人别集铺开，不是又压成一枚（实际 ' + Object.keys(ciHit).length + ' 种）');
+[['sc-1', '《宋徽宗词》'], ['sc-3', '《范文正公集》'], ['sc-13', '《珠玉词》'], ['sc-178', '《稼轩长短句》']]
+  .forEach(function (c) {
+    const p = ci.filter(x => x.id === c[0])[0];
+    chk(!!p && p.source === c[1], (p ? p.title : c[0]) + ' 出处 = ' + c[1] +
+      '（实际 ' + (p ? p.source : '缺') + '）');
+  });
+chk(ci.filter(p => !p.selection && p.source === '《宋词三百首》').length === 0,
+  '《词》里不再有「source 仍写选本名」的条目');
+
+/* Issue #512：《曲》31 条原先 `source` 一律写总集名「《全元散曲》」——
+   这一轮改成 `source` = 曲家散曲别集 / 辑本、`selection` = 总集《全元散曲》。 */
+const qu = (sb.POEMS_YUANQU || []);
+chk(qu.length === 31, '《曲》共 31 条（实际 ' + qu.length + '）');
+chk(qu.every(p => p.selection === '《全元散曲》'),
+  '31 条的 `selection` 一律记总集《全元散曲》（越界：' +
+  (qu.filter(p => p.selection !== '《全元散曲》').map(p => p.id).join('、') || '无') + '）');
+chk(qu.filter(p => p.source !== '《全元散曲》').length >= 15,
+  '有散曲别集的曲家已记到别集名（实际 ' + qu.filter(p => p.source !== '《全元散曲》').length + ' 条）');
+[['yq-1', '《东篱乐府》'], ['yq-2', '《云庄乐府》'], ['yq-19', '《小山乐府》'], ['yq-11', '《王西楼乐府》']]
+  .forEach(function (c) {
+    const p = qu.filter(x => x.id === c[0])[0];
+    chk(!!p && p.source === c[1], (p ? p.title : c[0]) + ' 出处 = ' + c[1] +
+      '（实际 ' + (p ? p.source : '缺') + '）');
+  });
+
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
    非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
 const TANG_OK = /唐/;
