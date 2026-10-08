@@ -41,6 +41,9 @@ const LOAD = [
   /* Issue #505 · 第一批（50 组）：古文 20 篇 + 古诗 16 首。 */
   'scripts/data/classic-corpus-505a.js',
   'scripts/data/poems-corpus-505a.js',
+  /* Issue #505 · 第二批（第 51~100 组）：古文 23 篇 + 古诗 14 首。 */
+  'scripts/data/classic-corpus-505b.js',
+  'scripts/data/poems-corpus-505b.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -88,6 +91,15 @@ function textOfEntry(entry, masterId) {
     return { text: old.text || "", translation: old.translation || "",
       translationSource: old.translationSource || "" };
   }
+  /* Issue #505 · 第二批：壳挂的 textRef 指的**就是它自己那个主表键**
+     （壳 gw-200 挂 classic-gw-200），而这一轮它正是要进主表的条目 ——
+     主表里还没有它，`prev` 自然查不到。这时正文其实就在语料表里
+     （RAW_ENTRIES 的同一个键），补取一次，别把新条目判成「无正文」。 */
+  var raw = (typeof RAW_ENTRIES !== 'undefined') && RAW_ENTRIES[masterId];
+  if (raw && (raw.text || raw.translation)) {
+    return { text: raw.text || "", translation: raw.translation || "",
+      translationSource: raw.translationSource || "" };
+  }
   return { text: "", translation: "", translationSource: "" };
 }
 
@@ -118,6 +130,8 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/classic-corpus-461c.js', v: 'CLASSIC_CORPUS_461C', book: 'classic' },
     /* Issue #505 · 第一批：古文 20 篇（壳里挂 textRef）。 */
     { f: 'scripts/data/classic-corpus-505a.js', v: 'CLASSIC_CORPUS_505A', book: 'classic' },
+    /* Issue #505 · 第二批：古文 23 篇（壳里挂 textRef）。 */
+    { f: 'scripts/data/classic-corpus-505b.js', v: 'CLASSIC_CORPUS_505B', book: 'classic' },
     /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
        语料排在后面，供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
     { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },
@@ -150,6 +164,7 @@ var RAW_ENTRIES = {};
        所以这一份**按 id 前缀自己拆开**（见下面 byFile 的分派），不整个登记两次：
        整份登记两次会按每个前缀把每一条都挂一遍，生成 `gushi-ts-391` 这种影子键。 */
     { f: 'scripts/data/poems-corpus-505a.js', v: 'POEMS_CORPUS_505A', split: true },
+    { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true },
     { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */
@@ -217,6 +232,22 @@ var RAW_ENTRIES = {};
 })();
 var inIndex = {};
 sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
+
+/* Issue #505 · 第二批：哪些主表键是**壳认领过的**。
+   壳与语料共用同一个键时（壳 gw-182 挂 classic-gw-182），语料登记在后会把
+   壳那条覆盖掉 —— 之后单看 RAW_ENTRIES 就认不出「这个键原本是壳」了。
+   所以这里从原始壳文件（POEMS_* / 各语料表）把 textRef 全收一遍。 */
+var CLAIMED = {};
+(function () {
+  var SHELL_VARS = ['POEMS_CLASSIC', 'POEMS_TANGSHI', 'POEMS_GUSHI', 'POEMS_SONGCI',
+    'POEMS_GUWEN', 'POEMS_ZHAOMING', 'POEMS_YUANQU', 'POEMS_YUEFU', 'POEMS_JINXIANDAI',
+    'POEMS_CHENGYU', 'POEMS_CHANGSHI', 'POEMS_MINGSHU', 'POEMS_MINGREN_CN',
+    'POEMS_MINGREN_FOREIGN', 'POEMS_EMPEROR_CN', 'POEMS_EMPEROR_FOREIGN'];
+  SHELL_VARS.forEach(function (v) {
+    (sandbox[v] || []).forEach(function (p) { if (p && p.textRef) CLAIMED[p.textRef] = true; });
+  });
+})();
+
 var BOOTSTRAPPED = [];
 Object.keys(RAW_ENTRIES).forEach(function (id) {
   /* Issue #505：条目**已经在 SITE_INDEX 里、但正文是空的**（新加的壳只挂
@@ -251,6 +282,15 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
     return;
   }
   var raw = RAW_ENTRIES[id];
+
+  /* Issue #505 · 第二批：语料条目（`classic-gw-182` 这种键）不是「壳」——
+     它只供壳挂 textRef 取正文，不给自己进站点索引。判据：**没带 textRef
+     却有正文**的，就是语料；但有两类例外要放行：
+       ① 壳的 id 与该壳 textRef 指的**是同一个键**（第二批就是这个排法：
+          壳 gw-182 挂 classic-gw-182）—— 这时它既是壳又是正文来源；
+       ② 壳 id 与语料键不同（gw-187 挂 classic-gw-185）—— 这时语料键只在
+          `RAW_ENTRIES` 里供取正文，由壳那一条进索引。 */
+  if (raw.text && !raw.textRef && !CLAIMED[id]) return;
 
   var t = { text: raw.text || '', translation: raw.translation || '',
     translationSource: raw.translationSource || '' };

@@ -368,4 +368,11 @@ window.POEMS_GUSHI = [
   { textRef: "poems-xx4-15", id: "gs-70", title: "墨梅", source: "《竹斋集》", dynasty: "元", author: "王冕", gradeGroup: "元明清诗" },
   { textRef: "poems-xx6-28", id: "gs-71", title: "江上渔者", source: "《范文正公集》", dynasty: "宋", author: "范仲淹", gradeGroup: "宋诗" },
 
+  /* Issue #505 · 第二批古诗 25 首里的非唐诗（第 51~100 组，序号 52…100）。
+     正文在 scripts/data/poems-corpus-505b.js；唐代的诗一律归《唐诗》，本集不收。
+     这 3 条落库；同批另有 14 条课内 / 集内已有、按判重口径合流，本集不另挂壳。 */
+  { textRef: "gushi-gs-72", id: "gs-72", title: "燕子矶口占", source: "《史忠正公集》", dynasty: "明", author: "史可法", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-73", id: "gs-73", title: "除夜太原寒甚", source: "《于忠肃集》", dynasty: "明", author: "于谦", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-74", id: "gs-74", title: "陶者", source: "《宛陵先生集》", dynasty: "宋", author: "梅尧臣", gradeGroup: "宋诗" },
+
 ];

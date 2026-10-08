@@ -1590,6 +1590,37 @@ window.POEMS_CLASSIC = [
   { textRef: "classic-gw-35", id: "gw-180", title: "画龙点睛", source: "《历代名画记》", dynasty: "唐", author: "张彦远", gradeGroup: "神话传说" },
   { textRef: "classic-gw-89", id: "gw-181", title: "陶母责子", source: "《世说新语·贤媛》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "人物故事" },
 
+  /* Issue #505 · 第二批古文 25 篇（第 51~100 组，序号 51、53 … 99）。
+     正文在 scripts/data/classic-corpus-505b.js；其中 2 条（锯竿入城 /
+     枭逢鸠）与集内旧条同篇，按判重口径合流、壳挂 textRef 指过去。
+     序号里另有 11 篇在集内或成语那一批已有，不另挂壳（见语料头注）。 */
+  { textRef: "classic-gw-182", id: "gw-182", title: "谷原谏父", source: "《郁离子·天道》", dynasty: "明", author: "刘基", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-183", id: "gw-183", title: "任末嗜学", source: "《拾遗记》", dynasty: "东晋", author: "王嘉", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-184", id: "gw-184", title: "拔苗助长", source: "《孟子·公孙丑上》", dynasty: "战国", author: "孟轲", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-185", id: "gw-185", title: "杀驼破瓮", source: "《百喻经》", dynasty: "南朝·齐", author: "求那毗地译", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-186", id: "gw-186", title: "鹦鹉灭火", source: "《宣验记》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-187", id: "gw-187", title: "青蛙鼓腹", source: "《韩非子·内储说上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-188", id: "gw-188", title: "「的卢」救刘备", source: "《三国志·蜀书·先主传》裴注引《世语》", dynasty: "西晋", author: "陈寿", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-189", id: "gw-189", title: "群啄鱼", source: "《聊斋志异·卷五》", dynasty: "清", author: "蒲松龄", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-190", id: "gw-190", title: "只许州官放火", source: "《老学庵笔记·卷五》", dynasty: "宋", author: "陆游", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-191", id: "gw-191", title: "孟母断织", source: "《列女传·母仪传》", dynasty: "西汉", author: "刘向", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-192", id: "gw-192", title: "犬护幼女", source: "《虞初新志·义犬记》", dynasty: "清", author: "张潮", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-193", id: "gw-193", title: "冯相新靴", source: "《古今谭概》", dynasty: "明", author: "冯梦龙", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-194", id: "gw-194", title: "越人溺鼠", source: "《宋文宪公全集·燕书》", dynasty: "明", author: "宋濂", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-195", id: "gw-195", title: "李子内脐中", source: "《韩非子·说林上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-196", id: "gw-196", title: "不识自家", source: "《古今谭概》", dynasty: "明", author: "冯梦龙", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-197", id: "gw-197", title: "钱若赓断鹅", source: "《玉堂丛语》", dynasty: "明", author: "焦竑", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-198", id: "gw-198", title: "林逋养鹤", source: "《梦溪笔谈·人事二》", dynasty: "北宋", author: "沈括", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-199", id: "gw-199", title: "王粲默记", source: "《三国志·魏书·王粲传》", dynasty: "西晋", author: "陈寿", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-200", id: "gw-200", title: "芒山盗临刑", source: "《虞初新志·书芒山盗事》", dynasty: "清", author: "张潮", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-201", id: "gw-201", title: "牧竖拾金分心", source: "《列子·说符》", dynasty: "战国", author: "列御寇", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-202", id: "gw-202", title: "掩耳盗钟", source: "《吕氏春秋·自知》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-203", id: "gw-203", title: "乘风破浪", source: "《宋书·宗悫传》", dynasty: "南朝·梁", author: "沈约", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-204", id: "gw-204", title: "盗牛者强辩", source: "《世说新语·言语》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-205", id: "gw-205", title: "引婴儿投江", source: "《吕氏春秋·察今》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-80", id: "gw-207", title: "锯竿入城", source: "《笑林》", dynasty: "三国·魏", author: "邯郸淳", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-132", id: "gw-208", title: "枭逢鸠", source: "《说苑·谈丛》", dynasty: "西汉", author: "刘向", gradeGroup: "寓言故事" },
+
 ];
 
 (function () {

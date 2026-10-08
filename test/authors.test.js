@@ -149,7 +149,7 @@ chk(!collected || !collected('李白'), '别的作者没有这一行注（不是
 // 先秦子书：归到书上那位主人，条数一条不丢
 const lvbu = idx.byAuthor['吕不韦'];
 chk(!!lvbu, '「吕不韦等」归到「吕不韦」（《吕氏春秋》）');
-chk(!!lvbu && lvbu.works.length === 6, '吕不韦 6 条（实际 ' + (lvbu ? lvbu.works.length : 0) + ' 条）');
+chk(!!lvbu && lvbu.works.length === 7, '吕不韦 7 条（Issue #505 第二批又添《掩耳盗钟》《引婴儿投江》等；实际 ' + (lvbu ? lvbu.works.length : 0) + ' 条）');
 chk(!idx.byAuthor['吕不韦等'], '名册里不再单独站一个「吕不韦等」');
 
 const liuan = idx.byAuthor['刘安'];
@@ -160,7 +160,7 @@ chk(!!liuan && liuan.works.some(w => w.title === '塞翁失马')
   '《淮南子》两条（塞翁失马 / 后羿射日）都在刘安名下，一条不丢');
 chk(!!lvbu && lvbu.works.some(w => w.title === '刻舟求剑')
   && lvbu.works.some(w => w.title === '伯牙鼓琴'),
-  '《吕氏春秋》六条都在吕不韦名下（刻舟求剑 / 伯牙鼓琴……）');
+  '《吕氏春秋》各条都在吕不韦名下（刻舟求剑 / 伯牙鼓琴……）');
 
 // 那一行小注要**在②③两层都在**：②是列表、③是详情页。
 // 阅读器一开详情页就把顶上那一行按 `CFG.pageSub` 重刷一遍

@@ -47,8 +47,8 @@ const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', '
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 176,
-  '主表里有 176 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
+chk(multiEntries.length === 184,
+  '主表里有 184 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
   'Issue #244 / #308；二批带来源的古文 / 诗篇条目并入原篇，再加《求之不得》↔《人言可畏》一类同源对；' +
   'Issue #339 拆掉 5 组错并（愚公移山 / 卧薪尝胆 / 礼贤下士 / 不自量力 / 东道主），' +
   '又合入 1 组真同篇（卧薪尝胆 ↔ 小古文《卧薪尝胆》），再拆开 众志成城 / 众口铄金 一组；' +
@@ -63,7 +63,8 @@ chk(multiEntries.length === 176,
   '《鹊桥仙·华灯纵博》与集内旧条 sc-281 合流）；第三轮再添 1 组' +
   '（《闲居初夏午睡起·其一》的《唐诗》壳 ts-390 ↔《古诗「非唐代」》gs-55）；' +
   'Issue #505 第一批：古文 5 篇合流 + 古诗 17 首合流（其中 10 首课内单篇本条原来不在主表，' +
-  '本轮由合流带进主表），共添 16 组；实际 ' + multiEntries.length + '）');
+  '本轮由合流带进主表），共添 16 组；第二批：古文 13 篇合流 + 古诗 3 首合流，共添 12 组；' +
+  '实际 ' + multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
   sb.SITE_INDEX.forEach(p => {
@@ -202,8 +203,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 378,
-  '重复条目恰为 378 条（162 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
+chk(dupEntries.length === 394,
+  '重复条目恰为 394 条（162 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
   'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；' +
   '又拆开 众志成城 / 众口铄金 一组降为 295；' +
   '本轮正文括注搬走后新增 蚌鹬相持/坐收渔利、近水楼台/近水楼台先得月 两组，升为 299；' +
@@ -213,7 +214,9 @@ chk(dupEntries.length === 378,
   '第三轮再添 3 条 —— 新落库的 2 条唐诗（ts-388 杜牧《题乌江亭》、ts-389 刘禹锡《庭竹》）'
   + '各 +1，另《闲居初夏午睡起·其一》在 gs-55 / ts-390 两个条目上成一束、多出 1 条，升为 338；' +
   'Issue #505 第一批再添 40 —— 古文 5 篇、古诗 17 首合流各 +1（其中 10 首课内单篇本条已经算在' +
-  '判重键里，不重复计），另 18 条新落库的古文 / 古诗各 +1（单条不进这一束，只有合流的才算）；实际 ' +
+  '判重键里，不重复计），另 18 条新落库的古文 / 古诗各 +1（单条不进这一束，只有合流的才算），升为 378；' +
+  'Issue #505 第二批再添 16 —— 古文 4 篇合流、古诗 3 首合流各 +1，另 20 篇新落库的' +
+  '古文各 +1（它们自己成束）；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
