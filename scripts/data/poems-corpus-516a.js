@@ -1,30 +1,16 @@
 /* Issue #516 · 古诗第一批 50 篇（用户 2026-10-08 投喂的第 1~100 组）
    --------------------------------------------------------------------------
-   《唐诗》34 条（ts-427…ts-460；19 条真缺落库、15 条集内已有合流）；
+   《唐诗》19 条（ts-437 / ts-443…ts-460，全站真缺、本文件写正文）。
+   原登记的 15 条「集内已有、补壳合流」（ts-427…ts-442）已改为**直接升级
+   集内那条的出处**（source=精确集名 + selection=《唐诗三百首》），
+   不再另挂壳 —— 详见 Issue #512；
    《古诗「非唐代」》20 条（gs-93…gs-112；15 条真缺落库、1 条集内已有合流、
    3 条跨部合流）。壳挂 textRef，正文只在本文件落一份。 */
 (function (root) {
   "use strict";
 
   var POEMS = [
-    /* ── 一 · 《唐诗》卷 · 集内已有、补壳 15 条（此处只登记归属） ───────── */
-    { id: "ts-427", title: "望月怀远", source: "《曲江集》", dynasty: "唐", author: "张九龄", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-96" },
-    { id: "ts-428", title: "在狱咏蝉", source: "《骆临海集》", dynasty: "唐", author: "骆宾王", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-98" },
-    { id: "ts-429", title: "月夜", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-110" },
-    { id: "ts-430", title: "旅夜书怀", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-118" },
-    { id: "ts-431", title: "登岳阳楼", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-119" },
-    { id: "ts-432", title: "孤雁", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-170" },
-    { id: "ts-433", title: "蜀相", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷六 七言律诗", textRef: "tangshi-ts-186" },
-    { id: "ts-434", title: "客至", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷六 七言律诗", textRef: "tangshi-ts-187" },
-    { id: "ts-435", title: "相思", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府", textRef: "tangshi-ts-225" },
-    { id: "ts-436", title: "乐游原", source: "《玉溪生诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷八 五言绝句", textRef: "tangshi-ts-412" },
-    { id: "ts-438", title: "少年行四首·其一", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府", textRef: "tangshi-ts-341" },
-    { id: "ts-439", title: "房兵曹胡马", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗", textRef: "tangshi-ts-343" },
-    { id: "ts-440", title: "题都城南庄", source: "《本事诗》", dynasty: "唐", author: "崔护", gradeGroup: "卷八 七言绝句", textRef: "tangshi-ts-313" },
-    { id: "ts-441", title: "剑客", source: "《长江集》", dynasty: "唐", author: "贾岛", gradeGroup: "卷八 五言绝句", textRef: "tangshi-ts-409" },
-    { id: "ts-442", title: "赠花卿", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷八 七言绝句", textRef: "tangshi-ts-314" },
-
-    /* ── 一之二 · 《唐诗》卷 · 真缺落库 19 条（本文件写正文） ─────────── */
+    /* ── 一 · 《唐诗》卷 · 真缺落库 19 条（本文件写正文） ─────────────── */
     {
       id: "ts-443", title: "咏风", source: "《王子安集》",
       dynasty: "唐", author: "王勃", gradeGroup: "卷八 五言绝句",

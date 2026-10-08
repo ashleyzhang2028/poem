@@ -117,9 +117,9 @@ chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 248,
-  '同篇对照表 248 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
-  'Issue #516 第一 / 第二批古诗的合流一并计入；实际 ' +
+chk(sb.WORKS_GROUPS.length === 237,
+  '同篇对照表 237 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
+  'Issue #516 第一 / 第二批古诗的合流一并计入；Issue #512 又并掉 11 组重复登记；实际 ' +
   sb.WORKS_GROUPS.length + '）');
 const jys = byId['xx1-09'];
 chk(!!jys, '课内《静夜思》在库（课内条目 xx1-09）');
@@ -320,8 +320,31 @@ chk((sb.POEMS_GUSHI || []).length === 113,
    （杜牧 / 刘禹锡 / 元稹 / 韦应物…）那条「非唐一律归《古诗「非唐代」》」的
    判据不变，只在 ts-390 这一条壳上开例外。 */
 const TANG_EXTRA = ['ts-390'];
-chk((sb.POEMS_TANGSHI || []).length === 457,
-  '《唐诗》共 457 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
+chk((sb.POEMS_TANGSHI || []).length === 433,
+  '《唐诗》共 433 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
+
+/* Issue #512：选本条目不再另挂「精确出处」壳条，而是直接升级那一条 ——
+   `source` 写精确集名（《曲江集》…）、`selection` 记选本名（《唐诗三百首》），
+   与《古文观止》那套口径一致（source=所出之书，selection=收它的选本）。
+   下面盯三件事：出处标签读得出精确集名、选本名没丢、重复壳条不再出现。 */
+const xuanben = (sb.POEMS_TANGSHI || []).filter(p => p.selection === '《唐诗三百首》');
+chk(xuanben.length === 19, '《唐诗》里 19 条选本条目带 `selection: 《唐诗三百首》`（实际 ' + xuanben.length + '）');
+chk(xuanben.every(p => p.source && p.source !== '《唐诗三百首》'),
+  '这 19 条的 `source` 一律是精确集名、不再是选本名（越界：' +
+  (xuanben.filter(p => p.source === '《唐诗三百首》').map(p => p.id).join('、') || '无') + '）');
+const wyhy = (sb.POEMS_TANGSHI || []).filter(p => p.id === 'ts-96')[0];
+chk(!!wyhy && wyhy.source === '《曲江集》' && wyhy.selection === '《唐诗三百首》',
+  '《望月怀远》（ts-96）出处 = 《曲江集》，并记选本《唐诗三百首》（实际 ' +
+  (wyhy ? wyhy.source + ' / ' + wyhy.selection : '缺') + '）');
+const wyhyDup = (sb.POEMS_TANGSHI || []).filter(p => p.title === '望月怀远');
+chk(wyhyDup.length === 1, '《望月怀远》在《唐诗》里只剩一条（实际 ' + wyhyDup.length + '）');
+const dupRef = {};
+(sb.POEMS_TANGSHI || []).forEach(p => {
+  if (p.textRef) (dupRef[p.textRef] = dupRef[p.textRef] || []).push(p.id);
+});
+const refDup = Object.keys(dupRef).filter(r => dupRef[r].length > 1);
+chk(refDup.length === 0, '《唐诗》里不再有「同 textRef 的两条」（残留：' +
+  refDup.map(r => r + '→' + dupRef[r].join(',')).join('；') + '）');
 
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
    非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
@@ -390,7 +413,7 @@ ALIAS_PAIRS.forEach(function (c) {
 
 /* 站内只有一条的异名（通行简称），以及《燕歌行》这个共用简称。 */
 const ALIAS_SOLO = [
-  ['tangshi-ts-341', '少年行·其一'], ['tangshi-ts-438', '少年行·其一'],
+  ['tangshi-ts-341', '少年行·其一'],
   ['gushi-gs-44', '赠范晔'], ['gushi-gs-63', '赠范晔'], ['gushi-gs-109', '赠范晔'],
   ['poems-gz11-10', '燕歌行'], ['tangshi-ts-72', '燕歌行']
 ];
