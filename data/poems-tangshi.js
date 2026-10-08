@@ -658,6 +658,8 @@ window.POEMS_TANGSHI = [
     dynasty: "唐",
     author: "李白",
     gradeGroup: "卷三 五言乐府",
+    /* 用户点名（Issue #516）：同一首又作《秋浦歌》（yuefu-yf-64 用的那个题名）。 */
+    aliases: ["秋浦歌"],
   },
   {
     textRef: "tangshi-ts-72",
@@ -667,6 +669,8 @@ window.POEMS_TANGSHI = [
     dynasty: "唐",
     author: "高适",
     gradeGroup: "卷四 七言乐府",
+    /* 用户点名（Issue #516）：同一首又作《燕歌行并序》（poems-gz11-10），通行简称《燕歌行》。 */
+    aliases: ["燕歌行并序", "燕歌行"],
   },
   {
     textRef: "tangshi-ts-73",
@@ -2053,6 +2057,8 @@ window.POEMS_TANGSHI = [
     dynasty: "唐",
     author: "王维",
     gradeGroup: "卷七 五言绝句",
+    /* 用户点名（Issue #516）：同一首又作《山中送别》（ts-447 用的那个题名）。 */
+    aliases: ["山中送别"],
   },
   {
     textRef: "tangshi-ts-225",
@@ -3055,6 +3061,8 @@ window.POEMS_TANGSHI = [
     dynasty: "唐",
     author: "王维",
     gradeGroup: "卷七 五言绝句",
+    /* 用户点名（Issue #516）：通行简称《少年行·其一》。 */
+    aliases: ["少年行·其一"],
   },
   {
     textRef: "tangshi-ts-342",
@@ -3497,7 +3505,7 @@ window.POEMS_TANGSHI = [
   { textRef: "tangshi-ts-187", id: "ts-434", title: "客至", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷六 七言律诗" },
   { textRef: "tangshi-ts-225", id: "ts-435", title: "相思", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府" },
   { textRef: "tangshi-ts-412", id: "ts-436", title: "乐游原", source: "《玉溪生诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷八 五言绝句" },
-  { textRef: "tangshi-ts-341", id: "ts-438", title: "少年行四首·其一", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府" },
+  { textRef: "tangshi-ts-341", id: "ts-438", title: "少年行四首·其一", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷七 五言乐府", aliases: ["少年行·其一"] },
   { textRef: "tangshi-ts-343", id: "ts-439", title: "房兵曹胡马", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷五 五言律诗" },
   { textRef: "tangshi-ts-313", id: "ts-440", title: "题都城南庄", source: "《本事诗》", dynasty: "唐", author: "崔护", gradeGroup: "卷八 七言绝句" },
   { textRef: "tangshi-ts-409", id: "ts-441", title: "剑客", source: "《长江集》", dynasty: "唐", author: "贾岛", gradeGroup: "卷八 五言绝句" },
@@ -3506,7 +3514,7 @@ window.POEMS_TANGSHI = [
   { textRef: "tangshi-ts-444", id: "ts-444", title: "野望", source: "《东皋子集》", dynasty: "唐", author: "王绩", gradeGroup: "卷五 五言律诗" },
   { textRef: "tangshi-ts-445", id: "ts-445", title: "渡汉江", source: "《宋之问集》", dynasty: "唐", author: "宋之问", gradeGroup: "卷八 五言绝句" },
   { textRef: "tangshi-ts-446", id: "ts-446", title: "赐萧瑀", source: "《全唐诗》", dynasty: "唐", author: "李世民", gradeGroup: "卷八 五言绝句" },
-  { textRef: "tangshi-ts-447", id: "ts-447", title: "山中送别", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷八 五言绝句" },
+  { textRef: "tangshi-ts-447", id: "ts-447", title: "山中送别", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷八 五言绝句", aliases: ["送别"] },
   { textRef: "tangshi-ts-448", id: "ts-448", title: "秋登万山寄张五", source: "《孟浩然集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷一 五言古诗",
     /* 用户点名：同一首又作《秋登兰山寄张五》（ts-16 用的那个题名）。 */
     aliases: ["秋登兰山寄张五"] },

@@ -371,6 +371,41 @@ chk(WI.same('tangshi-ts-16', 'tangshi-ts-448'),
 chk(!(sb.SITE_INDEX || []).some(p => p.aliases && p.aliases.indexOf(p.title) >= 0),
   '别名里不出现自己那个题名（免得「又名」显示成原题）');
 
+/* Issue #516 · 「题名异写」那批的「又名」数据（用户 2026-10-08 点头后补）。
+   都是同一篇的两个通行题名，两条壳各挂一句「又名」，方向相反。
+   判重键仍是正文，别名只影响展示。 */
+const ALIAS_PAIRS = [
+  ['tangshi-ts-303', '秋浦歌', '《秋浦歌十七首·其十五》'],
+  ['yuefu-yf-64', '秋浦歌十七首·其十五', '《秋浦歌》'],
+  ['poems-gz11-10', '燕歌行·并序', '《燕歌行并序》'],
+  ['tangshi-ts-72', '燕歌行并序', '《燕歌行·并序》'],
+  ['tangshi-ts-224', '山中送别', '《送别》'],
+  ['tangshi-ts-447', '送别', '《山中送别》']
+];
+ALIAS_PAIRS.forEach(function (c) {
+  const p = (sb.SITE_INDEX || []).filter(x => x.id === c[0])[0];
+  chk(!!p && (p.aliases || []).indexOf(c[1]) >= 0,
+    c[2] + '带上「又名：' + c[1] + '」（实际 ' + JSON.stringify(p && p.aliases) + '）');
+});
+
+/* 站内只有一条的异名（通行简称），以及《燕歌行》这个共用简称。 */
+const ALIAS_SOLO = [
+  ['tangshi-ts-341', '少年行·其一'], ['tangshi-ts-438', '少年行·其一'],
+  ['gushi-gs-44', '赠范晔'], ['gushi-gs-63', '赠范晔'], ['gushi-gs-109', '赠范晔'],
+  ['poems-gz11-10', '燕歌行'], ['tangshi-ts-72', '燕歌行']
+];
+ALIAS_SOLO.forEach(function (c) {
+  const p = (sb.SITE_INDEX || []).filter(x => x.id === c[0])[0];
+  chk(!!p && (p.aliases || []).indexOf(c[1]) >= 0,
+    (p ? p.title : c[0]) + '带上「又名：' + c[1] + '」（实际 ' + JSON.stringify(p && p.aliases) + '）');
+});
+
+/* 别名只是展示，不改判重 —— 仍然各是同一篇。 */
+chk(WI.same('tangshi-ts-303', 'yuefu-yf-64'), '《秋浦歌》两个题名仍是同一篇');
+chk(WI.same('poems-gz11-10', 'tangshi-ts-72'), '《燕歌行并序》两个题名仍是同一篇');
+chk(WI.same('tangshi-ts-224', 'tangshi-ts-447'), '《送别》《山中送别》仍是同一篇');
+
+
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }
 console.log('🎉 课内去重 / 《静夜思》测试全部通过');
