@@ -20,15 +20,15 @@ window.POEMS_3 = [
     term: 1,
   },
   {
+    /* 与《古诗「非唐代」》gs-125 同篇（Issue #516 第二批）：正文收归主表，
+       与别条合流的课内篇目同例（挂自指的 textRef）。 */
+    textRef: "poems-xx3-03",
     id: "xx3-03",
     title: "赠刘景文",
     author: "苏轼",
     dynasty: "宋",
     grade: 3,
     term: 1,
-    text: "荷尽已无擎雨盖，菊残犹有傲霜枝。\n一年好景君须记，最是橙黄橘绿时。",
-    translation: "荷花落尽，再无遮雨的荷叶；菊花残了，还有傲霜的枝条。你该记住一年中最好的景致，正是橙子发黄、橘子转绿的时候。",
-    translationSource: "school",
   },
   {
     id: "xx3-04",

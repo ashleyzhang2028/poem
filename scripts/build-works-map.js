@@ -14,6 +14,8 @@ const LOAD = [
   'data/chengyu-support.js',
   /* Issue #516 · 第一批：用户点名的古诗 50 篇（唐诗 35 + 古诗 16）。 */
   'scripts/data/poems-corpus-516a.js',
+  /* Issue #516 · 第二批（收尾批）：清单里最后真缺的 20 篇。 */
+  'scripts/data/poems-corpus-516b.js',
   'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
   'data/poems-emperor-cn.js', 'data/poems-emperor-waiguo.js',
   'data/site-books.js', 'data/site-index.js', 'data/works-index.js'
@@ -62,6 +64,8 @@ LOAD.forEach(function (f) {
     { f: 'scripts/data/poems-corpus-505c.js', v: 'POEMS_CORPUS_505C', split: true },
     /* Issue #516 · 第一批：古诗 50 篇 —— 唐诗 / 古诗「非唐代」两部，split 分派。 */
     { f: 'scripts/data/poems-corpus-516a.js', v: 'POEMS_CORPUS_516A', split: true },
+    /* Issue #516 · 第二批：20 篇 —— 同上，split 分派。 */
+    { f: 'scripts/data/poems-corpus-516b.js', v: 'POEMS_CORPUS_516B', split: true },
     /* Issue #517 · 第一批：古文 22 篇。 */
     { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' }
   ].forEach(function (o) {
@@ -81,6 +85,39 @@ LOAD.forEach(function (f) {
   });
   var inIndex = {};
   sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
+
+  /* Issue #516 · 第二批：**先把语料表的正文刷新回已在索引里的那些条目**。
+     `data/site-index.js` 是用上一版主表装配的，主表里有些条目是按题名兜底认
+     正文的 —— 新语料里出现**同题不同文**的作品时（《劝学》荀子 / 颜真卿），
+     壳挂的 textRef 会先被主表里那条同名条目认领，拿到别人的正文；两条
+     同题不同文的作品于是被误判成「同篇」合流。这一轮 RAW 里那一条才是真的
+     （语料表就是源），先覆盖一遍，后面判重拿到的就是各自正文，不会串。 */
+  function rawTextOf(raw) {
+    if (!raw) return null;
+    if (raw.text) return { text: raw.text, translation: raw.translation || '',
+      translationSource: raw.translationSource || '' };
+    /* 壳只挂 textRef 的那些：正文在它指的那一条上（语料表或同部的壳）。 */
+    if (raw.textRef && RAW[raw.textRef]) {
+      var up = RAW[raw.textRef];
+      if (up.text) return { text: up.text, translation: up.translation || '',
+        translationSource: up.translationSource || '' };
+    }
+    return null;
+  }
+  Object.keys(RAW).forEach(function (id) {
+    if (id.indexOf('poems-') === 0) return;
+    var t = rawTextOf(RAW[id]);
+    if (!t) return;
+    for (var i = 0; i < sandbox.SITE_INDEX.length; i++) {
+      if (sandbox.SITE_INDEX[i] && sandbox.SITE_INDEX[i].id === id) {
+        sandbox.SITE_INDEX[i].text = t.text;
+        sandbox.SITE_INDEX[i].translation = t.translation;
+        sandbox.SITE_INDEX[i].translationSource = t.translationSource;
+        return;
+      }
+    }
+  });
+
   Object.keys(RAW).forEach(function (id) {
     if (inIndex[id] || id.indexOf('poems-') === 0) return;
     var raw = RAW[id];

@@ -142,6 +142,9 @@ window.POEMS_TANGSHI = [
     dynasty: "唐",
     author: "孟浩然",
     gradeGroup: "卷一 五言古诗",
+    /* 用户点名：同一首又作《秋登万山寄张五》（ts-448 用的那个题名）。
+       异写的展示走 `aliases`，阅读器标题底下补一句「又名」（Issue #516）。 */
+    aliases: ["秋登万山寄张五"],
   },
   {
     textRef: "tangshi-ts-17",
@@ -3504,7 +3507,9 @@ window.POEMS_TANGSHI = [
   { textRef: "tangshi-ts-445", id: "ts-445", title: "渡汉江", source: "《宋之问集》", dynasty: "唐", author: "宋之问", gradeGroup: "卷八 五言绝句" },
   { textRef: "tangshi-ts-446", id: "ts-446", title: "赐萧瑀", source: "《全唐诗》", dynasty: "唐", author: "李世民", gradeGroup: "卷八 五言绝句" },
   { textRef: "tangshi-ts-447", id: "ts-447", title: "山中送别", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷八 五言绝句" },
-  { textRef: "tangshi-ts-448", id: "ts-448", title: "秋登万山寄张五", source: "《孟浩然集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷一 五言古诗" },
+  { textRef: "tangshi-ts-448", id: "ts-448", title: "秋登万山寄张五", source: "《孟浩然集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷一 五言古诗",
+    /* 用户点名：同一首又作《秋登兰山寄张五》（ts-16 用的那个题名）。 */
+    aliases: ["秋登兰山寄张五"] },
   { textRef: "tangshi-ts-449", id: "ts-449", title: "夜雪", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷八 五言绝句" },
   { textRef: "tangshi-ts-450", id: "ts-450", title: "村夜", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷八 七言绝句" },
   { textRef: "tangshi-ts-451", id: "ts-451", title: "戏问花门酒家翁", source: "《岑嘉州集》", dynasty: "唐", author: "岑参", gradeGroup: "卷八 七言绝句" },
@@ -3518,6 +3523,18 @@ window.POEMS_TANGSHI = [
   { textRef: "tangshi-ts-459", id: "ts-459", title: "雨过山村", source: "《王建诗集》", dynasty: "唐", author: "王建", gradeGroup: "卷八 七言绝句" },
   { textRef: "tangshi-ts-460", id: "ts-460", title: "采莲曲", source: "《全唐诗》", dynasty: "唐", author: "刘方平", gradeGroup: "卷八 七言绝句" },
   { textRef: "tangshi-ts-437", id: "ts-437", title: "绝句漫兴九首·其五", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷八 七言绝句" },
+
+  /* Issue #516 · 第二批：用户点名的唐诗 5 条（正文在 scripts/data/poems-corpus-516b.js）。
+     另两条「清单挂在《唐诗》里、实为宋人」的（苏轼《赠刘景文》、张俞《蚕妇》）
+     按全站判据归《古诗「非唐代」》（Issue #480 的朝代口径）。 */
+  { textRef: "tangshi-ts-461", id: "ts-461", title: "过华清宫绝句三首·其一", source: "《樊川文集》", dynasty: "唐", author: "杜牧", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-462", id: "ts-462", title: "寄扬州韩绰判官", source: "《樊川文集》", dynasty: "唐", author: "杜牧", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-463", id: "ts-463", title: "题乌江亭", source: "《樊川文集》", dynasty: "唐", author: "杜牧", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-464", id: "ts-464", title: "竹枝词·山桃红花满上头", source: "《刘宾客文集》", dynasty: "唐", author: "刘禹锡", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-465", id: "ts-465", title: "南园十三首·其五", source: "《李长吉歌诗》", dynasty: "唐", author: "李贺", gradeGroup: "卷七 七言乐府" },
+  /* 清单把这两条归在《古诗「非唐代」》那堆里，实为唐人 —— 按朝代口径归本集。 */
+  { textRef: "tangshi-ts-468", id: "ts-468", title: "劝学", source: "《全唐诗》", dynasty: "唐", author: "颜真卿", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-469", id: "ts-469", title: "江村即事", source: "《全唐诗》", dynasty: "唐", author: "司空曙", gradeGroup: "卷八 七言绝句" },
 ];
 
 (function () {

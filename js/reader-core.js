@@ -1020,6 +1020,44 @@
     return up && up.querySelectorAll ? up.querySelectorAll(sel)[0] : null;
   }
 
+  /* 「又名 xxxx」那一行（Issue #516）。
+     题名有两个通行写法的篇目（《秋登万山寄张五》又名《秋登兰山寄张五》），
+     在哪一个题名下读到，都在标题底下补出另一个题名 —— 用户不必猜「是不是
+     同一首」。数据显示在条目的 `aliases` 字段上（语料表里手写或用 `aka()` 派生），
+     判重合并出来的 `titles` 不在这里用：那是「哪些条目是同一篇」的账，跟
+     题名异写的展示是两件事。 */
+  function aliasesOf(p) {
+    var raw = p && p.aliases;
+    if (!raw) return [];
+    if (typeof raw === "string") raw = [raw];
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+      var name = String(raw[i] == null ? "" : raw[i]).trim();
+      if (name && name !== p.title && out.indexOf(name) === -1) out.push(name);
+    }
+    return out;
+  }
+  /* 别的模块（导出 / 连读 / 打印）也要这一句话，只此一处生成。 */
+  function aliasTextOf(p) {
+    var list = aliasesOf(p);
+    return list.length ? "又名：" + list.join("、") : "";
+  }
+
+  function renderAliases(el, p) {
+    var host = el.querySelector('.rd-alias, #rd-alias');
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "rd-alias";
+      host.id = "rd-alias";
+      var t = el.querySelector('.rd-title, #rd-title');
+      if (!t || !t.parentNode) return;
+      t.parentNode.insertBefore(host, t.nextSibling);
+    }
+    var txt = aliasTextOf(p);
+    host.textContent = txt;
+    host.hidden = !txt;
+  }
+
   function openReader(p) {
 
     if (p && p.id && itemsById[p.id]) p = itemsById[p.id];
@@ -1029,6 +1067,7 @@
     var el = rd("reader");
     if (!el) return;
     el.querySelector('.rd-title, #rd-title').textContent = p.title;
+    renderAliases(el, p);
     var meta = el.querySelector('.rd-meta, #rd-meta');
 
     var authorTag = p.author || "";
@@ -2657,6 +2696,12 @@
      localStorage），不是快照 —— 所以搜索页上点过「标记已读」再搜一次，
      行上的已读点就是新的。
      ========================================================================== */
+  /* 「又名」那一句（Issue #516）：外边要用的只有取文本这一种用法。 */
+  window.PoemAliases = {
+    of: aliasesOf,
+    textOf: aliasTextOf
+  };
+
   window.ReaderList = {
     esc: esc,
     playGlyph: playGlyph,
