@@ -117,9 +117,9 @@ chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 242,
-  '同篇对照表 242 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
-  'Issue #516 第一批古诗的合流一并计入；实际 ' +
+chk(sb.WORKS_GROUPS.length === 248,
+  '同篇对照表 248 组（历轮合流 / 拆并的增减见 git 历史；Issue #517 第一批古文与 ' +
+  'Issue #516 第一 / 第二批古诗的合流一并计入；实际 ' +
   sb.WORKS_GROUPS.length + '）');
 const jys = byId['xx1-09'];
 chk(!!jys, '课内《静夜思》在库（课内条目 xx1-09）');
@@ -310,8 +310,8 @@ MERGES.forEach(function (m) {
    按判重口径合流进《词》《唐诗》《古诗「非唐代」》《小古文》；同篇只落一份正文。 */
 chk((sb.POEMS_SONGCI || []).length === 330,
   '《词》共 330 首（实际 ' + (sb.POEMS_SONGCI || []).length + '）');
-chk((sb.POEMS_GUSHI || []).length === 101,
-  '《古诗「非唐代」》共 101 首（实际 ' + (sb.POEMS_GUSHI || []).length + '）');
+chk((sb.POEMS_GUSHI || []).length === 113,
+  '《古诗「非唐代」》共 113 首（实际 ' + (sb.POEMS_GUSHI || []).length + '）');
 /* ⚠️ Issue #471 第三轮起，《唐诗》的「每一条朝代都含『唐』」这一条基线**放宽**：
    用户点名要收杨万里《闲居初夏午睡起·其一》，而这一条已在本集卷七的
    「通用名篇段」（ts-316 及之后那一段本就是课内 / 课外通用名篇，不全是唐人），
@@ -320,8 +320,8 @@ chk((sb.POEMS_GUSHI || []).length === 101,
    （杜牧 / 刘禹锡 / 元稹 / 韦应物…）那条「非唐一律归《古诗「非唐代」》」的
    判据不变，只在 ts-390 这一条壳上开例外。 */
 const TANG_EXTRA = ['ts-390'];
-chk((sb.POEMS_TANGSHI || []).length === 450,
-  '《唐诗》共 450 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
+chk((sb.POEMS_TANGSHI || []).length === 457,
+  '《唐诗》共 457 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
 
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
    非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
@@ -356,6 +356,20 @@ const gushiTang = (sb.POEMS_GUSHI || []).filter(p => (p.dynasty || '').indexOf('
 chk(gushiTang.length === 0, '《古诗「非唐代」》里没有唐代的诗（越界：' +
   (gushiTang.map(p => p.id + '（' + p.dynasty + '）').join('、') || '无') + '）');
 chk(ALL.length === 251, '课内仍 251 首（实际 ' + ALL.length + '）');
+
+/* Issue #516 · 第二批：「又名 xxxx」那一行的数据。
+   《秋登万山寄张五》与《秋登兰山寄张五》是孟浩然同一首的两个题名，
+   两条壳各挂一句「又名」，方向相反；宿主条目由 reader-core 的别名逻辑渲染。 */
+const ts16 = (sb.SITE_INDEX || []).filter(p => p.id === 'tangshi-ts-16')[0];
+const ts448 = (sb.SITE_INDEX || []).filter(p => p.id === 'tangshi-ts-448')[0];
+chk(!!ts16 && (ts16.aliases || []).indexOf('秋登万山寄张五') >= 0,
+  '《秋登兰山寄张五》带上「又名：秋登万山寄张五」（实际 ' + JSON.stringify(ts16 && ts16.aliases) + '）');
+chk(!!ts448 && (ts448.aliases || []).indexOf('秋登兰山寄张五') >= 0,
+  '《秋登万山寄张五》带上「又名：秋登兰山寄张五」（实际 ' + JSON.stringify(ts448 && ts448.aliases) + '）');
+chk(WI.same('tangshi-ts-16', 'tangshi-ts-448'),
+  '两个题名仍是同一篇作品（别名只是展示，不改判重）');
+chk(!(sb.SITE_INDEX || []).some(p => p.aliases && p.aliases.indexOf(p.title) >= 0),
+  '别名里不出现自己那个题名（免得「又名」显示成原题）');
 
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }

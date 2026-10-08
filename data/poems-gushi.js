@@ -381,8 +381,15 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-75", id: "gs-75", title: "山中杂诗", source: "《吴朝请集》", dynasty: "南朝·梁", author: "吴均", gradeGroup: "六朝诗" },
   { textRef: "gushi-gs-76", id: "gs-76", title: "画眉鸟", source: "《欧阳文忠公集》", dynasty: "宋", author: "欧阳修", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-77", id: "gs-77", title: "蚕妇吟", source: "《叠山集》", dynasty: "宋", author: "谢枋得", gradeGroup: "宋诗" },
-  { textRef: "gushi-gs-78", id: "gs-78", title: "蚕妇", source: "《张俞集》", dynasty: "宋", author: "张俞", gradeGroup: "宋诗" },
-  { textRef: "gushi-gs-79", id: "gs-79", title: "论诗", source: "《瓯北集》", dynasty: "清", author: "赵翼", gradeGroup: "元明清诗" },
+  /* ⚠️ textRef 原先自指（`gushi-gs-78`），取正文时回落到主表同键那条 ——
+     而那一轮主表把张俞《蚕妇》与陆游《游山西村》误合成了一篇（Issue #516
+     第二批顺手订正）。正文与同作者的 gs-126 是同一首，改指那一条。 */
+  { textRef: "gushi-gs-126", id: "gs-78", title: "蚕妇", source: "《张俞集》", dynasty: "宋", author: "张俞", gradeGroup: "宋诗" },
+  /* ⚠️ 这一条的 textRef 原先写成 `gushi-gs-79`（指向自己），取正文时回落到
+     主表里同键的那一条 —— 而那一轮主表把「论诗」与龚自珍《己亥杂诗》误合成了
+     一篇，正文因此是龚自珍的（Issue #516 第二批顺手订正）。赵翼《论诗》的
+     正文与同作者的 gs-117《论诗五绝·其二》是同一首，改指那一条。 */
+  { textRef: "gushi-gs-117", id: "gs-79", title: "论诗", source: "《瓯北集》", dynasty: "清", author: "赵翼", gradeGroup: "元明清诗" },
   { textRef: "gushi-gs-80", id: "gs-80", title: "读《岳阳楼记》", source: "《梅溪集》", dynasty: "宋", author: "王十朋", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-81", id: "gs-81", title: "天平山中", source: "《眉庵集》", dynasty: "明", author: "杨基", gradeGroup: "元明清诗" },
 
@@ -419,4 +426,20 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-111", id: "gs-111", title: "垓下歌", source: "《史记·项羽本纪》", dynasty: "秦末", author: "项羽", gradeGroup: "汉魏诗" },
   { textRef: "gushi-gs-112", id: "gs-112", title: "短歌行", source: "《乐府诗集》", dynasty: "东汉", author: "曹操", gradeGroup: "汉魏诗" },
 
+  /* Issue #516 · 第二批：用户点名的非唐古诗 / 词 15 条（含许淑慧《菩萨蛮·大柏地》）。
+     正文在 scripts/data/poems-corpus-516b.js，此处只挂 textRef 归属。
+     其中 gs-125 苏轼《赠刘景文》、gs-126 张俞《蚕妇》是清单挂在《唐诗》里、
+     实为宋人的两条 —— 按《唐诗》/《古诗》那套**朝代口径**归本集。 */
+  { textRef: "gushi-gs-113", id: "gs-113", title: "归园田居·其三", source: "《陶渊明集》", dynasty: "东晋", author: "陶渊明", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-114", id: "gs-114", title: "菩萨蛮·大柏地", source: "《全清词钞》", dynasty: "清", author: "许淑慧", gradeGroup: "清词" },
+  { textRef: "gushi-gs-115", id: "gs-115", title: "绝句四首·其四", source: "《后山诗注》", dynasty: "宋", author: "陈师道", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-116", id: "gs-116", title: "题青泥市壁", source: "《岳忠武王文集》", dynasty: "宋", author: "岳飞", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-117", id: "gs-117", title: "论诗五绝·其二", source: "《瓯北集》", dynasty: "清", author: "赵翼", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-118", id: "gs-118", title: "塞外杂咏", source: "《云左山房诗钞》", dynasty: "清", author: "林则徐", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-119", id: "gs-119", title: "题花山寺壁", source: "《苏学士文集》", dynasty: "宋", author: "苏舜钦", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-120", id: "gs-120", title: "自菩提步月归广化寺", source: "《欧阳文忠公集》", dynasty: "宋", author: "欧阳修", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-121", id: "gs-121", title: "江上", source: "《临川先生文集》", dynasty: "宋", author: "王安石", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-123", id: "gs-123", title: "秋日湖上", source: "《全宋诗》", dynasty: "宋", author: "徐元杰", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-125", id: "gs-125", title: "赠刘景文", source: "《苏轼诗集》", dynasty: "宋", author: "苏轼", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-126", id: "gs-126", title: "蚕妇", source: "《全宋诗》", dynasty: "宋", author: "张俞", gradeGroup: "宋诗" },
 ];
