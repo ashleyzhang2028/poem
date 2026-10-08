@@ -328,10 +328,20 @@ chk((sb.POEMS_TANGSHI || []).length === 433,
    与《古文观止》那套口径一致（source=所出之书，selection=收它的选本）。
    下面盯三件事：出处标签读得出精确集名、选本名没丢、重复壳条不再出现。 */
 const xuanben = (sb.POEMS_TANGSHI || []).filter(p => p.selection === '《唐诗三百首》');
-chk(xuanben.length === 19, '《唐诗》里 19 条选本条目带 `selection: 《唐诗三百首》`（实际 ' + xuanben.length + '）');
+chk(xuanben.length === 337, '《唐诗》里 337 条选本条目带 `selection: 《唐诗三百首》`（实际 ' + xuanben.length + '）');
 chk(xuanben.every(p => p.source && p.source !== '《唐诗三百首》'),
-  '这 19 条的 `source` 一律是精确集名、不再是选本名（越界：' +
+  '这 337 条的 `source` 一律是精确集名、不再是选本名（越界：' +
   (xuanben.filter(p => p.source === '《唐诗三百首》').map(p => p.id).join('、') || '无') + '）');
+/* 选本那半整体自证归属（Issue #512）：318 条《唐诗三百首》选本条目一条不落。
+   `selection` 为空的那 96 条是**后世增补**的清代补遗唐诗（贺知章《回乡偶书》、
+   李贺《金铜仙人辞汉歌》……），它们本就不在《唐诗三百首》里，不该记选本名 ——
+   随批新增时这个数跟着长，故按「声明的数」盯住，防的是一批批加进来却没人记。 */
+chk((sb.POEMS_TANGSHI || []).filter(p => !p.selection).length === 96,
+  '《唐诗》里未标选本的条目 = 后世增补的清代补遗唐诗 96 条（实际 ' +
+  (sb.POEMS_TANGSHI || []).filter(p => !p.selection).length + '）');
+chk((sb.POEMS_TANGSHI || []).filter(p => !p.selection && p.source === '《唐诗三百首》').length === 0,
+  '凡是 source 仍写选本名的都已补上 selection（残留：' +
+  (sb.POEMS_TANGSHI || []).filter(p => !p.selection && p.source === '《唐诗三百首》').map(p => p.id).join('、') + '）');
 const wyhy = (sb.POEMS_TANGSHI || []).filter(p => p.id === 'ts-96')[0];
 chk(!!wyhy && wyhy.source === '《曲江集》' && wyhy.selection === '《唐诗三百首》',
   '《望月怀远》（ts-96）出处 = 《曲江集》，并记选本《唐诗三百首》（实际 ' +
@@ -345,6 +355,28 @@ const dupRef = {};
 const refDup = Object.keys(dupRef).filter(r => dupRef[r].length > 1);
 chk(refDup.length === 0, '《唐诗》里不再有「同 textRef 的两条」（残留：' +
   refDup.map(r => r + '→' + dupRef[r].join(',')).join('；') + '）');
+
+/* Issue #512：《昭明文选》480 条原先 `source` 与 `selection` 都是「《文选》」——
+   两枚标签一模一样，等于出处那一行没记。这一轮按同一套口径改成
+   `source` = 所出之书（作者别集 / 总集）、`selection` = 《文选》。 */
+const zm = (sb.POEMS_ZHAOMING || []);
+chk(zm.length === 480, '《昭明文选》共 480 条（实际 ' + zm.length + '）');
+chk(zm.every(p => p.selection === '《文选》'),
+  '480 条的 `selection` 一律记选本《文选》（越界：' +
+  (zm.filter(p => p.selection !== '《文选》').map(p => p.id).join('、') || '无') + '）');
+chk(zm.every(p => p.source && p.source !== '《文选》'),
+  '480 条的 `source` 一律是所出之书、不再是选本名（残留：' +
+  (zm.filter(p => !p.source || p.source === '《文选》').map(p => p.id).join('、') || '无') + '）');
+const zmHit = {};
+zm.forEach(p => { (zmHit[p.source] = zmHit[p.source] || []).push(p.id); });
+chk(Object.keys(zmHit).length >= 100,
+  '所出之书按作者/家数铺开，不是又压成一枚（实际 ' + Object.keys(zmHit).length + ' 种）');
+const zmPicks = [['zm-2', '《张平子集》'], ['zm-56', '《曹子建集》'], ['zm-1', '《班孟坚集》']];
+zmPicks.forEach(function (c) {
+  const p = zm.filter(x => x.id === c[0])[0];
+  chk(!!p && p.source === c[1], (p ? p.title : c[0]) + ' 出处 = ' + c[1] +
+    '（实际 ' + (p ? p.source : '缺') + '）');
+});
 
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
    非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
