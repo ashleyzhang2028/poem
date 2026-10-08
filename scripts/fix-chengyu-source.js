@@ -23,7 +23,11 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
-const TABLE = require('./data/chengyu-source-512.js');
+const TABLES = [
+  require('./data/chengyu-source-512.js'),
+  require('./data/chengyu-source-512b.js')
+];
+const TABLE = Object.assign({}, ...TABLES);
 
 const CY_FILE = path.join(ROOT, 'data/poems-chengyu.js');
 const MASTER_FILE = path.join(ROOT, 'data/text-master.js');
