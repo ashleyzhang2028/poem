@@ -195,16 +195,7 @@ window.POEMS_6 = [
     grade: 6,
     term: 2,
   },
-  {
-    id: "xx6-21",
-    title: "过零丁洋",
-    author: "文天祥",
-    dynasty: "宋",
-    grade: 6,
-    term: 2,
-    text: "辛苦遭逢起一经，干戈寥落四周星。\n山河破碎风飘絮，身世浮沉雨打萍。\n惶恐滩头说惶恐，零丁洋里叹零丁。\n人生自古谁无死？留取丹心照汗青。",
-    translation: "靠一部经书起兵抗元，历尽艰辛，战事稀疏已过了四年。山河破碎像风中飘絮，身世浮沉如雨中浮萍。在惶恐滩头说起惶恐，在零丁洋里叹息孤零。人生自古谁能不死？只求留下一片赤诚照亮史册。",
-    translationSource: "school",
+  { textRef: "poems-xx6-21", id: "xx6-21", title: "过零丁洋", author: "文天祥", dynasty: "宋", grade: 6, term: 2,
   },
   {
     id: "xx6-22",

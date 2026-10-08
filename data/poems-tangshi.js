@@ -3463,6 +3463,24 @@ window.POEMS_TANGSHI = [
   { textRef: "tangshi-ts-411", id: "ts-411", title: "军城早秋", source: "《全唐诗》", dynasty: "唐", author: "严武", gradeGroup: "卷八 七言绝句" },
   { textRef: "tangshi-ts-412", id: "ts-412", title: "乐游原", source: "《李义山诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷七 五言绝句" },
 
+  /* Issue #510 · 第一批：初中课内唐诗 13 首 —— 课内已有、集子缺，壳挂 textRef
+     指课内那一条（合流不重录）；正文不另落一份。另 1 首《雁门太守行》全站真缺，
+     正文在 scripts/data/poems-corpus-510a.js。 */
+  { textRef: "poems-cz7-02", id: "ts-413", title: "闻王昌龄左迁龙标遥有此寄", source: "《李太白集》", dynasty: "唐", author: "李白", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-cz7-07", id: "ts-414", title: "行军九日思长安故园", source: "《岑嘉州诗集》", dynasty: "唐", author: "岑参", gradeGroup: "卷七 五言绝句" },
+  { textRef: "poems-cz7-15", id: "ts-415", title: "春夜洛城闻笛", source: "《李太白集》", dynasty: "唐", author: "李白", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-cz7-17", id: "ts-416", title: "晚春", source: "《昌黎先生集》", dynasty: "唐", author: "韩愈", gradeGroup: "卷八 七言绝句" },
+  { textRef: "poems-cz8-07", id: "ts-417", title: "使至塞上", source: "《王右丞集》", dynasty: "唐", author: "王维", gradeGroup: "卷五 五言律诗" },
+  { textRef: "poems-cz8-09", id: "ts-418", title: "钱塘湖春行", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷六 七言律诗" },
+  { textRef: "poems-cz8-22", id: "ts-419", title: "望洞庭湖赠张丞相", source: "《孟浩然集》", dynasty: "唐", author: "孟浩然", gradeGroup: "卷五 五言律诗" },
+  { textRef: "poems-cz8-25", id: "ts-420", title: "卖炭翁", source: "《白氏长庆集》", dynasty: "唐", author: "白居易", gradeGroup: "卷四 七言乐府" },
+  { textRef: "poems-cz8-26", id: "ts-421", title: "题破山寺后禅院", source: "《全唐诗》", dynasty: "唐", author: "常建", gradeGroup: "卷五 五言律诗" },
+  { textRef: "poems-cz9-08", id: "ts-422", title: "酬乐天扬州初逢席上见赠", source: "《刘宾客文集》", dynasty: "唐", author: "刘禹锡", gradeGroup: "卷六 七言律诗" },
+  { textRef: "poems-cz9-12", id: "ts-423", title: "左迁至蓝关示侄孙湘", source: "《昌黎先生集》", dynasty: "唐", author: "韩愈", gradeGroup: "卷六 七言律诗" },
+  { textRef: "poems-cz9-13", id: "ts-424", title: "商山早行", source: "《温飞卿诗集》", dynasty: "唐", author: "温庭筠", gradeGroup: "卷五 五言律诗" },
+  { textRef: "poems-cz9-14", id: "ts-425", title: "咸阳城东楼", source: "《全唐诗》", dynasty: "唐", author: "许浑", gradeGroup: "卷六 七言律诗" },
+  { textRef: "tangshi-ts-426", id: "ts-426", title: "雁门太守行", source: "《李长吉歌诗》", dynasty: "唐", author: "李贺", gradeGroup: "卷四 七言乐府" },
+
 ];
 
 (function () {

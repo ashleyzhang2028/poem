@@ -386,4 +386,14 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-80", id: "gs-80", title: "读《岳阳楼记》", source: "《梅溪集》", dynasty: "宋", author: "王十朋", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-81", id: "gs-81", title: "天平山中", source: "《眉庵集》", dynasty: "明", author: "杨基", gradeGroup: "元明清诗" },
 
+  /* Issue #510 · 第一批：初中课内非唐古诗 7 首 —— 课内已有、集子缺，壳挂
+     textRef 指课内那一条（合流不重录），本集不另写正文。 */
+  { textRef: "poems-cz7-11", id: "gs-82", title: "十一月四日风雨大作·其二", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "poems-cz7-12", id: "gs-83", title: "潼关", source: "《谭嗣同全集》", dynasty: "清", author: "谭嗣同", gradeGroup: "元明清诗" },
+  { textRef: "poems-cz7-20", id: "gs-84", title: "登飞来峰", source: "《临川先生文集》", dynasty: "宋", author: "王安石", gradeGroup: "宋诗" },
+  { textRef: "poems-cz7-21", id: "gs-85", title: "游山西村", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
+  { textRef: "poems-cz7-22", id: "gs-86", title: "己亥杂诗·其五", source: "《己亥杂诗》", dynasty: "清", author: "龚自珍", gradeGroup: "元明清诗" },
+  { textRef: "poems-xx6-21", id: "gs-87", title: "过零丁洋", source: "《文山先生全集》", dynasty: "宋", author: "文天祥", gradeGroup: "宋诗" },
+  { textRef: "poems-cz9-26", id: "gs-88", title: "南安军", source: "《文山先生全集》", dynasty: "宋", author: "文天祥", gradeGroup: "宋诗" },
+
 ];

@@ -46,6 +46,8 @@ const LOAD = [
   'scripts/data/poems-corpus-505b.js',
   /* Issue #505 · 第三批（第 101~150 组）：古文 15 篇（其余与集内旧条同篇合流）。 */
   'scripts/data/classic-corpus-505c.js',
+  /* Issue #510 · 第一批（初中课内古诗）：唐诗 14 + 古诗「非唐代」7。 */
+  'scripts/data/poems-corpus-510a.js',
   /* Issue #505 · 第四批（末批 · 第 151~200 组）：古文 15 篇 + 古诗 8 首。 */
   'scripts/data/classic-corpus-505d.js',
   'scripts/data/poems-corpus-505c.js',
@@ -139,6 +141,9 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/classic-corpus-505b.js', v: 'CLASSIC_CORPUS_505B', book: 'classic' },
     /* Issue #505 · 第三批：古文 15 篇（壳里挂 textRef）。 */
     { f: 'scripts/data/classic-corpus-505c.js', v: 'CLASSIC_CORPUS_505C', book: 'classic' },
+    /* Issue #510 · 第一批：唐诗 1 首（雁门太守行）。其余 20 条是壳挂 textRef
+       指课内，正文不在这里（跨部的一批语料用 split 亦可，但本批拆分更简单）。 */
+    { f: 'scripts/data/poems-corpus-510a.js', v: 'POEMS_CORPUS_510A', book: 'tangshi' },
     /* Issue #505 · 第四批（末批）：古文 15 篇 + 古诗 8 首（一份语料按 id 前缀拆开）。 */
     { f: 'scripts/data/classic-corpus-505d.js', v: 'CLASSIC_CORPUS_505D', book: 'classic' },
     { f: 'scripts/data/poems-corpus-505c.js', v: 'POEMS_CORPUS_505C', split: true },
