@@ -3397,6 +3397,24 @@ window.POEMS_TANGSHI = [
     author: "皎然",
     gradeGroup: "卷二 七言古诗",
   },
+  {
+    textRef: "tangshi-ts-388",
+    id: "ts-388",
+    title: "题乌江亭",
+    source: "《樊川文集》",
+    dynasty: "唐",
+    author: "杜牧",
+    gradeGroup: "卷八 七言绝句",
+  },
+  {
+    textRef: "tangshi-ts-389",
+    id: "ts-389",
+    title: "庭竹",
+    source: "《刘宾客文集》",
+    dynasty: "唐",
+    author: "刘禹锡",
+    gradeGroup: "卷七 五言绝句",
+  },
 ];
 
 (function () {

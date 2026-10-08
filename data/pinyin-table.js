@@ -242,6 +242,7 @@ window.PINYIN_TABLE = (function () {
   "垝:guǐ","筮:shì","咥:xì","判:pàn","嬴:yíng","洎:jì","诛:zhū","革:gé","劫:jié","馑:jǐn","哂:shěn","撰:zhuàn",
   "谐:xié","阏:è","枋:fāng","舂:chōng","菌:jūn","蟪:huì","椿:chūn",
   "刁:diāo","棺:guān","銮:luán","缆:lǎn",
+  "涤:dí","掬:jū",
   ].join(",");
   var map = {};
   raw.split(",").forEach(function (pair) {

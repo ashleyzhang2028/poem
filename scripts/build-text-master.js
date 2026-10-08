@@ -27,6 +27,11 @@ const LOAD = [
   'scripts/data/ci-corpus-471.js',
   /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首（《古诗「非唐代」》9 诗 1 词）。 */
   'scripts/data/gushi-corpus-471b.js', 'scripts/data/ci-corpus-471b.js',
+  /* Issue #471 · 第三轮：杜牧《题乌江亭》（《唐诗》）。 */
+  'scripts/data/tangshi-corpus-471c.js',
+  /* Issue #471 · 第三轮：杨万里《闲居初夏午睡起二首》+ 苏轼《海棠》（《古诗「非唐代」》）、
+     刘禹锡《庭竹》（《唐诗》）。 */
+  'scripts/data/gushi-corpus-471c.js', 'scripts/data/tangshi-corpus-471d.js',
   /* Issue #480：曹植《七步诗》从《唐诗》归位到《古诗「非唐代」· 汉魏诗》。 */
   'scripts/data/gushi-corpus-480.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
@@ -110,6 +115,10 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/tangshi-corpus-461b.js', v: 'TANGSHI_CORPUS_461B', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461c.js', v: 'TANGSHI_CORPUS_461C', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461d.js', v: 'TANGSHI_CORPUS_461D', book: 'tangshi' },
+    /* Issue #471 · 第三轮：杜牧《题乌江亭》。 */
+    { f: 'scripts/data/tangshi-corpus-471c.js', v: 'TANGSHI_CORPUS_471C', book: 'tangshi' },
+    { f: 'scripts/data/tangshi-corpus-471d.js', v: 'TANGSHI_CORPUS_471D', book: 'tangshi' },
+    { f: 'scripts/data/gushi-corpus-471c.js', v: 'GUSHI_CORPUS_471C', book: 'gushi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     /* Issue #461：「宋词三百首」改名「词」—— 补五代 / 金 / 清的词。 */
     { f: 'scripts/data/ci-corpus-461.js', v: 'CIWEN_CORPUS_461', book: 'songci' },
