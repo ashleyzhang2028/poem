@@ -55,6 +55,8 @@ const LOAD = [
   'scripts/data/poems-corpus-516a.js',
   /* Issue #517 · 第一批（课本里的文言短篇）：古文 22 篇。 */
   'scripts/data/classic-corpus-517a.js',
+  /* Issue #517 · 收尾那一批：清单里缺的 9 篇 + 与《古文观止》同篇的 2 条归宿。 */
+  'scripts/data/classic-corpus-517b.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -198,6 +200,12 @@ var RAW_ENTRIES = {};
        正文在 scripts/data/guwen-corpus-222.js。语料排在壳文件之后，
        供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
     { f: 'scripts/data/guwen-corpus-222.js', v: 'GUWEN_CORPUS_222', book: 'guwen' },
+    /* Issue #517 · 收尾那一批（gw-277…gw-287）。
+       ⚠️ 排在 `data/poems-guwen.js` 之后是**必须**的：表里 `gw-285` / `gw-287`
+       与《古文观止》gwj-202 / gwj-236 是同一篇、正文一字不差 —— 它们自己没有正文，
+       靠上面那段别名兜底把 `classic-gw-285` / `classic-gw-287` 指到 guwen
+       那一份上。壳文件登记在前，这一句才补得进去。 */
+    { f: 'scripts/data/classic-corpus-517b.js', v: 'CLASSIC_CORPUS_517B', book: 'classic' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'scripts/data/qu-corpus-461.js', v: 'QU_CORPUS_461', book: 'yuanqu' },
@@ -254,6 +262,22 @@ var RAW_ENTRIES = {};
     });
   });
 })();
+/* Issue #517 · 收尾那一批：语料条目**自己没有正文、只有归宿**时（gw-285 /
+   gw-287 与《古文观止》是同篇），按它的 id 从 `RAW_ENTRIES` 里把那一份正文
+   **按引用**接过来 —— 不复制：复制出来的两份正文会让后文 `textOfEntry` 的
+   「先试 <集子前缀>-<id>、再试裸 id」落到两个不同对象上，读哪一份全看先命中哪个。
+   ⚠️ 只补没有正文的那些；有正文的语料条目原样不动。 */
+(function () {
+  Object.keys(RAW_ENTRIES).forEach(function (key) {
+    var p = RAW_ENTRIES[key];
+    if (!p || p.text || p.translation) return;
+    if (!p.id) return;
+    var alt = key.slice(key.indexOf('-') + 1);
+    var hit = RAW_ENTRIES[alt] || RAW_ENTRIES[p.id];
+    if (hit && hit !== p && (hit.text || hit.translation)) RAW_ENTRIES[key] = hit;
+  });
+})();
+
 var inIndex = {};
 sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
 
@@ -282,8 +306,14 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
   var existing = inIndex[id]
     ? sandbox.SITE_INDEX.filter(function (x) { return x && x.id === id; })[0]
     : null;
-  if (existing && (existing.text || existing.translation)) return;
-  if (existing) {
+  /* Issue #517：壳的正文可能是**装配时按 textRef 接过来的别名文本**
+     （`classic-gw-285` 的正文来自 `guwen-gwj-202`）—— 对主表来说它仍是
+     「只有归宿、没有自己那一份正文」的条目，得走正常的进表路径
+     （`textOfEntry` 会按名字取到 guwen 那一份）。
+     判据：**带 textRef、又不在这份主表里** —— 这种才放行，其余照旧短路。 */
+  if (existing && (existing.text || existing.translation)
+      && !(existing.textRef && !prev[id] && !prev[existing.textRef])) return;
+  if (existing && !existing.textRef) {
     var back = RAW_ENTRIES[id];
     var bt = { text: back.text || '', translation: back.translation || '',
       translationSource: back.translationSource || '' };

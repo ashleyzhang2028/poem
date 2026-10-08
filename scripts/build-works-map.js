@@ -63,7 +63,11 @@ LOAD.forEach(function (f) {
     /* Issue #516 · 第一批：古诗 50 篇 —— 唐诗 / 古诗「非唐代」两部，split 分派。 */
     { f: 'scripts/data/poems-corpus-516a.js', v: 'POEMS_CORPUS_516A', split: true },
     /* Issue #517 · 第一批：古文 22 篇。 */
-    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' }
+    { f: 'scripts/data/classic-corpus-517a.js', v: 'CLASSIC_CORPUS_517A', book: 'classic' },
+    /* Issue #517 · 收尾那一批：gw-277…gw-287（其中 gw-285 / gw-287 与《古文观止》
+       同篇，正文在 guwen 那一份语料里，这里登记一次让判重表认得出）。 */
+    { f: 'scripts/data/classic-corpus-517b.js', v: 'CLASSIC_CORPUS_517B', book: 'classic' },
+    { f: 'scripts/data/guwen-corpus-222.js', v: 'GUWEN_CORPUS_222', book: 'guwen' }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';

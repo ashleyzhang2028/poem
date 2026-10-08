@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 242 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 244 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -43,7 +43,7 @@
 window.WORKS_GROUPS = [
   { wid: "w-classic-gw-84", title: "田忌赛马", titles: ["田忌赛马"], entries: ["chengyu-cy-108","classic-gw-84"] },
   { wid: "w-classic-gw-39", title: "狐假虎威", titles: ["狐假虎威"], entries: ["chengyu-cy-114","classic-gw-39"] },
-  { wid: "w-classic-gw-25", title: "画蛇添足", titles: ["画蛇添足"], entries: ["chengyu-cy-115","classic-gw-25"] },
+  { wid: "w-classic-gw-25", title: "画蛇添足", titles: ["画蛇添足"], entries: ["chengyu-cy-115","classic-gw-25","classic-gw-284"] },
   { wid: "w-classic-gw-11", title: "自相矛盾", titles: ["自相矛盾"], entries: ["chengyu-cy-119","classic-gw-11"] },
   { wid: "w-classic-gw-33", title: "滥竽充数", titles: ["滥竽充数","滥竽充数（一）"], entries: ["chengyu-cy-120","classic-gw-33","classic-gw-254","classic-gw-271"] },
   { wid: "w-classic-gw-76", title: "邯郸学步", titles: ["邯郸学步","邯郸学步（一）"], entries: ["chengyu-cy-122","classic-gw-76","classic-gw-256","classic-gw-273"] },
@@ -93,6 +93,8 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-248", title: "北人食菱", titles: ["北人食菱","北人食菱（一）"], entries: ["classic-gw-248","classic-gw-268"] },
   { wid: "w-classic-gw-250", title: "铁杵成针", titles: ["铁杵成针","铁杵成针（一）"], entries: ["classic-gw-250","classic-gw-265"] },
   { wid: "w-classic-gw-27", title: "郑人买履", titles: ["郑人买履","郑人买履（一）"], entries: ["classic-gw-27","classic-gw-252","classic-gw-269"] },
+  { wid: "w-classic-gw-278", title: "郑板桥教子", titles: ["郑板桥教子","郑板桥教子（古文观止本）","潍县署中与舍弟墨第二书"], entries: ["classic-gw-278","classic-gw-287","guwen-gw-287","guwen-gwj-236"] },
+  { wid: "w-classic-gw-285", title: "心术", titles: ["心术"], entries: ["classic-gw-285","guwen-gw-285","guwen-gwj-202"] },
   { wid: "w-classic-gw-3", title: "司马光", titles: ["司马光","司马光（一）"], entries: ["classic-gw-3","classic-gw-262"] },
   { wid: "w-classic-gw-35", title: "画龙点睛", titles: ["画龙点睛"], entries: ["classic-gw-35","classic-gw-180"] },
   { wid: "w-classic-gw-37", title: "鹬蚌相争", titles: ["鹬蚌相争","鹬蚌相争（一）"], entries: ["classic-gw-37","classic-gw-253","classic-gw-270"] },

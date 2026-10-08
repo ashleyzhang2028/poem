@@ -2540,7 +2540,17 @@ window.POEMS_GUWEN = [
     selection: "《古文观止》",
     gradeGroup: "卷十二 明文",
     excerpt: "吾尝与客言，颇快意",
-  }
+  },
+  /* Issue #517 · 用户 2026-10-08 投喂的文言短篇里，与《古文观止》同篇的那两条：
+       苏洵《心术》                      → 卷十《心术》（gwj-202，正文已全、原样不动）
+       郑板桥《潍县署中与舍弟墨第二书》  → 卷十二（gwj-236，正文落在
+       scripts/data/guwen-corpus-222.js 里一份）
+     两条都只登记归属、不重录正文 —— 它们就是本集的那两篇，正文只落一份，
+     与《古文》集里那两条壳（classic-gw-285 / classic-gw-287，都指到 guwen
+     这一份，条目按正文自动合流）同属一篇作品。 */
+  { textRef: "guwen-gwj-202", id: "gw-285", title: "心术", source: "《嘉祐集·权书》", dynasty: "宋", author: "苏洵", selection: "《古文观止》", gradeGroup: "卷十 宋文", excerpt: "为将之道，当先治心" },
+  { textRef: "guwen-gwj-236", id: "gw-287", title: "潍县署中与舍弟墨第二书", source: "《郑板桥集》", dynasty: "清", author: "郑燮", selection: "《古文观止》", gradeGroup: "卷十二 明文", excerpt: "余五十二岁始得一子" },
+  { textRef: "guwen-gwj-236", id: "gwj-236", title: "潍县署中与舍弟墨第二书", source: "《郑板桥集》", dynasty: "清", author: "郑燮", selection: "《古文观止》", gradeGroup: "卷十二 明文", excerpt: "余五十二岁始得一子" }
 ];
 
 (function () {

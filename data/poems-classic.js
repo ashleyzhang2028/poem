@@ -1723,6 +1723,23 @@ window.POEMS_CLASSIC = [
   { textRef: "classic-gw-184", id: "gw-275", title: "揠苗助长（一）", source: "《孟子·公孙丑上》", dynasty: "战国", author: "孟轲", gradeGroup: "寓言故事" },
   { textRef: "classic-gw-24", id: "gw-276", title: "掩耳盗钟（一）", source: "《吕氏春秋·自知》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
 
+  /* Issue #517 · 收尾那一批（gw-277…gw-287）—— 用户那批清单里真正全站缺的，
+     以及「库中只存了节选 / 半篇、这里补全篇」的那几篇。
+     正文在 scripts/data/classic-corpus-517b.js；
+     其中最后两条与《古文观止》是同篇（正文一字不差），壳挂 textRef 指到
+     guwen 的键上，正文只在 guwen 那一份语料里落一份。 */
+  { textRef: "classic-gw-277", id: "gw-277", title: "牛郎织女", source: "《月令广义·七月令》引《小说》", dynasty: "明", author: "冯应京", gradeGroup: "神话传说" },
+  { textRef: "classic-gw-278", id: "gw-278", title: "郑板桥教子", source: "《郑板桥集·潍县署中与舍弟墨第二书》", dynasty: "清", author: "郑燮", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-279", id: "gw-279", title: "冠必正", source: "《弟子规·谨》", dynasty: "清", author: "李毓秀", gradeGroup: "蒙学经典" },
+  { textRef: "classic-gw-280", id: "gw-280", title: "训学斋规", source: "《训学斋规》", dynasty: "宋", author: "朱熹", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-281", id: "gw-281", title: "司马光", source: "《宋史·司马光传》", dynasty: "元", author: "脱脱等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-282", id: "gw-282", title: "守株待兔", source: "《韩非子·五蠹》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-283", id: "gw-283", title: "买椟还珠", source: "《韩非子·外储说左上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-284", id: "gw-284", title: "画蛇添足", source: "《战国策·齐策二》", dynasty: "西汉", author: "刘向编", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-286", id: "gw-286", title: "程门立雪", source: "《宋史·杨时传》", dynasty: "元", author: "脱脱等", gradeGroup: "人物故事" },
+  { textRef: "guwen-gw-285", id: "gw-285", title: "心术", source: "《嘉祐集·权书》", dynasty: "宋", author: "苏洵", gradeGroup: "诸子论道" },
+  { textRef: "guwen-gw-287", id: "gw-287", title: "郑板桥教子（古文观止本）", source: "《郑板桥集·潍县署中与舍弟墨第二书》", dynasty: "清", author: "郑燮", gradeGroup: "人物故事" },
+
 ];
 
 (function () {
