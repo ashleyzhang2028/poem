@@ -396,4 +396,27 @@ window.POEMS_GUSHI = [
   { textRef: "poems-xx6-21", id: "gs-87", title: "过零丁洋", source: "《文山先生全集》", dynasty: "宋", author: "文天祥", gradeGroup: "宋诗" },
   { textRef: "poems-cz9-26", id: "gs-88", title: "南安军", source: "《文山先生全集》", dynasty: "宋", author: "文天祥", gradeGroup: "宋诗" },
 
+  /* Issue #516 · 第一批：用户点名的非唐古诗 16 条（含 1 条壳指集内旧条）+ 跨部合流 3 条。
+     正文在 scripts/data/poems-corpus-516a.js，此处只挂 textRef 归属。 */
+  { textRef: "gushi-gs-93", id: "gs-93", title: "归园田居·其一", source: "《陶渊明集》", dynasty: "东晋", author: "陶渊明", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-94", id: "gs-94", title: "咏柳", source: "《元丰类稿》", dynasty: "宋", author: "曾巩", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-95", id: "gs-95", title: "春日偶成", source: "《二程集》", dynasty: "宋", author: "程颢", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-96", id: "gs-96", title: "送春", source: "《广陵先生文集》", dynasty: "宋", author: "王令", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-97", id: "gs-97", title: "鄂州南楼书事四首·其一", source: "《山谷集》", dynasty: "宋", author: "黄庭坚", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-98", id: "gs-98", title: "舟过安仁", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-99", id: "gs-99", title: "寒夜", source: "《全宋诗》", dynasty: "宋", author: "杜耒", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-100", id: "gs-100", title: "山雨", source: "《全元诗》", dynasty: "元", author: "偰逊", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-101", id: "gs-101", title: "马上作", source: "《止止堂集》", dynasty: "明", author: "戚继光", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-102", id: "gs-102", title: "出师讨满夷自瓜州至金陵", source: "《延平二王遗集》", dynasty: "明", author: "郑成功", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-103", id: "gs-103", title: "北风行", source: "《诚意伯文集》", dynasty: "明", author: "刘基", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-104", id: "gs-104", title: "首夏山中行吟", source: "《祝氏集略》", dynasty: "明", author: "祝允明", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-105", id: "gs-105", title: "绝句", source: "《甫田集》", dynasty: "明", author: "文徵明", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-106", id: "gs-106", title: "就义诗", source: "《杨忠愍公集》", dynasty: "明", author: "杨继盛", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-107", id: "gs-107", title: "锦云川", source: "《灵岩山人诗集》", dynasty: "清", author: "毕沅", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-108", id: "gs-108", title: "对酒", source: "《秋瑾集》", dynasty: "清", author: "秋瑾", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-44", id: "gs-109", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-110", id: "gs-110", title: "明日歌", source: "《鹤滩集》", dynasty: "明", author: "钱福", gradeGroup: "元明清诗" },
+  { textRef: "gushi-gs-111", id: "gs-111", title: "垓下歌", source: "《史记·项羽本纪》", dynasty: "秦末", author: "项羽", gradeGroup: "汉魏诗" },
+  { textRef: "gushi-gs-112", id: "gs-112", title: "短歌行", source: "《乐府诗集》", dynasty: "东汉", author: "曹操", gradeGroup: "汉魏诗" },
+
 ];
