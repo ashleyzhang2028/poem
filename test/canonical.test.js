@@ -47,8 +47,8 @@ const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', '
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 209,
-  '主表里有 209 条「跨集重复」的作品（Issue #244 / #308，后续各批补录与判重调整见 git 历史；实际 ' +
+chk(multiEntries.length === 225,
+  '主表里有 225 条「跨集重复」的作品（Issue #244 / #308，后续各批补录与判重调整见 git 历史；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -188,8 +188,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 452,
-  '重复条目恰为 452 条（同篇判重键下的条目，历轮增删见 git 历史；实际 ' +
+chk(dupEntries.length === 490,
+  '重复条目恰为 490 条（同篇判重键下的条目，历轮增删见 git 历史；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
@@ -275,9 +275,12 @@ Object.keys(BOOK_VARS).forEach(book => {
       stripped.push(key);
       /* 主表那一条的 id：一般是 textRef（拆两部后的两卷即此）；
          成语故事里还有「跨集判重」的条目，正文挂在**另一条**上 ——
-         那种情况主表 id 是 `<book>-<shell id>`，一并认。 */
-      SHELL_IDS[refM[1]] = key;
-      SHELL_IDS[book + '-' + idM[1]] = key;
+         那种情况主表 id 是 `<book>-<shell id>`，一并认。
+         ⚠️ 同一个 textRef 会被多条壳共用（Issue #505 的合流壳、Issue #516
+         的补壳都是这个排法），这里**只记第一次** —— 覆盖会让最后那条壳
+         把前一条盖掉，前一条就被判成「没退化成只存归属」。 */
+      if (SHELL_IDS[refM[1]] === undefined) SHELL_IDS[refM[1]] = key;
+      if (SHELL_IDS[book + '-' + idM[1]] === undefined) SHELL_IDS[book + '-' + idM[1]] = key;
       if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
         leftover.push(key);
       }
@@ -285,16 +288,17 @@ Object.keys(BOOK_VARS).forEach(book => {
   });
 });
 
-const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
+/* ⚠️ 两边各有一次重复：`stripped` 按**壳**数（同一个 textRef 被多条壳共用时
+   计多次，Issue #505 / #516 的合流壳正是如此），`masterFlat` 按**条目**数
+   （同一篇的条目只登一次）。所以只能逐条查「有没有对应的壳」，不能比总数。 */
 const notStripped = masterFlat.filter(id => {
   const key = SHELL_IDS[id];
   return !key || !strippedSet[key];
 });
-chk(stripped.length === expectStripped && notStripped.length === 0,
-  '主表登记的 ' + expectStripped + ' 条非主条目都已退化成只存归属（textRef；实际 ' +
-  stripped.length + '）' +
+chk(notStripped.length === 0,
+  '主表登记的 ' + masterFlat.length + ' 条条目都已退化成只存归属（textRef）' +
   (notStripped.length ? '，未摘：' + notStripped.slice(0, 8).join('、') : ''));
 chk(leftover.length === 0,
   '带 textRef 的条目里不再内联 text / translation（残留：' +

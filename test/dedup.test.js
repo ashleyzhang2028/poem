@@ -117,10 +117,9 @@ chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 209,
-  '同篇对照表 209 组（历轮合流 / 拆并的增减见 git 历史；实际 ' +
+chk(sb.WORKS_GROUPS.length === 225,
+  '同篇对照表 225 组（历轮合流 / 拆并的增减见 git 历史；实际 ' +
   sb.WORKS_GROUPS.length + '）');
-
 const jys = byId['xx1-09'];
 chk(!!jys, '课内《静夜思》在库（课内条目 xx1-09）');
 chk(norm(jys.text) === norm('床前明月光，疑是地上霜。举头望明月，低头思故乡。'),
@@ -310,8 +309,8 @@ MERGES.forEach(function (m) {
    按判重口径合流进《词》《唐诗》《古诗「非唐代」》《小古文》；同篇只落一份正文。 */
 chk((sb.POEMS_SONGCI || []).length === 330,
   '《词》共 330 首（实际 ' + (sb.POEMS_SONGCI || []).length + '）');
-chk((sb.POEMS_GUSHI || []).length === 81,
-  '《古诗「非唐代」》共 81 首（实际 ' + (sb.POEMS_GUSHI || []).length + '）');
+chk((sb.POEMS_GUSHI || []).length === 101,
+  '《古诗「非唐代」》共 101 首（实际 ' + (sb.POEMS_GUSHI || []).length + '）');
 /* ⚠️ Issue #471 第三轮起，《唐诗》的「每一条朝代都含『唐』」这一条基线**放宽**：
    用户点名要收杨万里《闲居初夏午睡起·其一》，而这一条已在本集卷七的
    「通用名篇段」（ts-316 及之后那一段本就是课内 / 课外通用名篇，不全是唐人），
@@ -320,8 +319,8 @@ chk((sb.POEMS_GUSHI || []).length === 81,
    （杜牧 / 刘禹锡 / 元稹 / 韦应物…）那条「非唐一律归《古诗「非唐代」》」的
    判据不变，只在 ts-390 这一条壳上开例外。 */
 const TANG_EXTRA = ['ts-390'];
-chk((sb.POEMS_TANGSHI || []).length === 416,
-  '《唐诗》共 416 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
+chk((sb.POEMS_TANGSHI || []).length === 450,
+  '《唐诗》共 450 首（实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
 
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
    非唐一律归《古诗「非唐代」》。原先把曹植《七步诗》登记在《唐诗》里是 bug。 */
