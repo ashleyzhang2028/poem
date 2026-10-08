@@ -131,7 +131,7 @@ chk(sb.WORKS_GROUPS.length === 160,
   '师说、六国论、游褒禅山记、上枢密韩太尉书 与课内或他集合流）；' +
   'Issue #471 第二轮又添 3 组（书愤 / 临安春雨初霁 与本集合流，' +
   '《鹊桥仙·华灯纵博》与集内旧条 sc-281 合流），升为 159；' +
-  'Issue #471 第三轮再添 1 组（《闲居初夏午睡起·其一》在《唐诗》卷七的壳 ts-389 ' +
+  'Issue #471 第三轮再添 1 组（《闲居初夏午睡起·其一》在《唐诗》卷七的壳 ts-390 ' +
   '与《古诗「非唐代」》gs-55 同篇），升为 160；实际 ' + sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];
@@ -331,7 +331,10 @@ MERGES.forEach(function (m) {
    第六轮（苏轼 / 李清照各 5 篇名篇）：《词》+10。
    Issue #471 第二轮（陆游）：《古诗「非唐代」》+10（陆凯《赠范晔诗》+ 陆游 9 首）、
    《词》+1（陆游《诉衷情·当年万里觅封侯》）；其中《书愤》《临安春雨初霁》课内已有、
-   《鹊桥仙·华灯纵博》集内旧条已在，按判重口径合流，壳里挂 textRef 指过去。 */
+   《鹊桥仙·华灯纵博》集内旧条已在，按判重口径合流，壳里挂 textRef 指过去。
+   Issue #471 第三轮（杜牧《题乌江亭》/ 刘禹锡《庭竹》）：《唐诗》+2；
+   （杨万里《闲居初夏午睡起二首》、苏轼《海棠》）：《古诗「非唐代」》+3；
+   元稹《菊花》、韦应物《闻雁》两首已在集内，按判重口径不重录。 */
 chk((sb.POEMS_SONGCI || []).length === 330,
   '《词》288 首（宋）+ 五代 6 / 清 5 / 金 1 + 历年遗漏 / 大会冷门 / 决赛冷门 + 扬州专辑 5 + 李清照 3 + 苏轼 / 李清照各 5 + 陆游 1 = 330（实际 ' +
   (sb.POEMS_SONGCI || []).length + '）');
@@ -341,12 +344,14 @@ chk((sb.POEMS_GUSHI || []).length === 50,
 /* ⚠️ Issue #471 第三轮起，《唐诗》的「每一条朝代都含『唐』」这一条基线**放宽**：
    用户点名要收杨万里《闲居初夏午睡起·其一》，而这一条已在本集卷七的
    「通用名篇段」（ts-316 及之后那一段本就是课内 / 课外通用名篇，不全是唐人），
-   于是照老例在卷七给它挂一个壳 ts-389，正文与《古诗「非唐代」》gs-55 同篇 ——
-   判重表按正文把两条合成一篇。唐代诸家（元稹 / 刘禹锡 / 韦应物…）那条
-   「非唐一律归《古诗「非唐代」》」的判据不变，只在 ts-389 这一条上开例外。 */
-const TANG_EXTRA = ['ts-389'];
-chk((sb.POEMS_TANGSHI || []).length === 379,
-  '《唐诗》301 首 + 校外补充 66 首 + 扬州专辑 11 首 − 曹植《七步诗》（非唐，已归位）+ 第三轮 2（刘禹锡《庭竹》、杨万里那一条壳）= 379（实际 ' +
+   于是照老例在卷七给它挂一个壳 ts-390，正文与《古诗「非唐代」》gs-55 同篇
+   （壳里挂的 `textRef` 指过去）—— 判重表按正文把两条合成一篇。唐代诸家
+   （杜牧 / 刘禹锡 / 元稹 / 韦应物…）那条「非唐一律归《古诗「非唐代」》」的
+   判据不变，只在 ts-390 这一条壳上开例外。 */
+const TANG_EXTRA = ['ts-390'];
+chk((sb.POEMS_TANGSHI || []).length === 380,
+  '《唐诗》301 首 + 校外补充 66 首 + 扬州专辑 11 首 − 曹植《七步诗》（非唐，已归位）' +
+  '+ 第三轮 3（杜牧《题乌江亭》、刘禹锡《庭竹》、杨万里那一条壳）= 380（实际 ' +
   (sb.POEMS_TANGSHI || []).length + '）');
 
 /* Issue #480：《唐诗》收什么，判据只按**朝代** —— 是唐人的诗就归《唐诗》，
@@ -355,15 +360,18 @@ const TANG_OK = /唐/;
 const tangBad = (sb.POEMS_TANGSHI || []).filter(p => !TANG_OK.test(p.dynasty || ''));
 chk(tangBad.length <= TANG_EXTRA.length, '《唐诗》里除卷七那一条壳外，每一条的朝代都含「唐」（越界：' +
   (tangBad.map(p => p.id + '（' + p.dynasty + '）').join('、') || '无') + '）');
-chk(tangBad.every(p => TANG_EXTRA.indexOf(p.id) >= 0), '越界的只有卷七那一条壳 ts-389');
-/* 两条壳里的正文都得读得到（它们本身不带 text/textRef 之外的东西）。 */
-const shell389 = (sb.POEMS_TANGSHI || []).filter(p => p.id === 'ts-389')[0];
-const t389 = shell389 && sb.masterTextOf ? sb.masterTextOf(shell389, 'tangshi') : null;
-chk(!!t389 && t389.text.indexOf('梅子留酸软齿牙') >= 0,
+chk(tangBad.every(p => TANG_EXTRA.indexOf(p.id) >= 0), '越界的只有卷七那一条壳 ts-390');
+/* 那一条壳的正文得读得到（它本身只挂 textRef 指向《古诗「非唐代」》gs-55）。 */
+const shell390 = (sb.POEMS_TANGSHI || []).filter(p => p.id === 'ts-390')[0];
+const t390 = shell390 && sb.masterTextOf ? sb.masterTextOf(shell390, 'tangshi') : null;
+chk(!!t390 && t390.text.indexOf('梅子留酸软齿牙') >= 0,
   '唐诗卷七那一条壳从主表取到正文（「梅子留酸软齿牙」）');
 const gushi55 = (sb.POEMS_GUSHI || []).filter(p => p.id === 'gs-55')[0];
-chk(!!gushi55 && WI.same('gushi-gs-55', 'tangshi-ts-389'),
+chk(!!gushi55 && WI.same('gushi-gs-55', 'tangshi-ts-390'),
   '《闲居初夏午睡起·其一》跨《唐诗》与《古诗「非唐代」》判为同一篇');
+/* 一条正文只写一份：壳不另存正文，跨部那条由《古诗「非唐代」》那份语料写。 */
+const ts390raw = (sb.TANGSHI_CORPUS_471C || []).filter(p => p.id === 'ts-390');
+chk(ts390raw.length === 0, '《唐诗》那份语料里不再重复写同文的那一条壳（ts-390）');
 const tangCao = (sb.POEMS_TANGSHI || []).filter(p => p.author === '曹植');
 chk(tangCao.length === 0, '曹植（三国魏）的诗不再出现在《唐诗》里（残留：' +
   (tangCao.map(p => p.id).join('、') || '无') + '）');

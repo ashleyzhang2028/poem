@@ -3397,12 +3397,21 @@ window.POEMS_TANGSHI = [
     author: "皎然",
     gradeGroup: "卷二 七言古诗",
   },
-
-  /* Issue #471 · 第三轮：用户点名的唐诗（刘禹锡《庭竹》）。
-     正文在 scripts/data/corpus-471c.js，此处只挂 textRef 归属。 */
   {
     textRef: "tangshi-ts-388",
     id: "ts-388",
+    title: "题乌江亭",
+    source: "《樊川文集》",
+    dynasty: "唐",
+    author: "杜牧",
+    gradeGroup: "卷八 七言绝句",
+  },
+
+  /* Issue #471 · 第三轮：用户点名的唐诗（刘禹锡《庭竹》）。
+     正文在 scripts/data/tangshi-corpus-471d.js，此处只挂 textRef 归属。 */
+  {
+    textRef: "tangshi-ts-389",
+    id: "ts-389",
     title: "庭竹",
     source: "《刘宾客文集》",
     dynasty: "唐",
@@ -3417,7 +3426,7 @@ window.POEMS_TANGSHI = [
      老例挂在卷七；判重表按正文把两条合成一篇（w-gushi-gs-55）。 */
   {
     textRef: "gushi-gs-55",
-    id: "ts-389",
+    id: "ts-390",
     title: "闲居初夏午睡起·其一",
     source: "《诚斋集》",
     dynasty: "宋",

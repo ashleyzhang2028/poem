@@ -27,11 +27,13 @@ const LOAD = [
   'scripts/data/ci-corpus-471.js',
   /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首（《古诗「非唐代」》9 诗 1 词）。 */
   'scripts/data/gushi-corpus-471b.js', 'scripts/data/ci-corpus-471b.js',
+  /* Issue #471 · 第三轮：用户点名的名篇 —— 杜牧《题乌江亭》、刘禹锡《庭竹》
+     （《唐诗》），杨万里《闲居初夏午睡起二首》+ 苏轼《海棠》（《古诗「非唐代」》）。
+     《唐诗》那一条壳（ts-390）与 gs-55 同文，正文只在「古诗」那份语料里写一份。 */
+  'scripts/data/tangshi-corpus-471c.js', 'scripts/data/tangshi-corpus-471d.js',
+  'scripts/data/gushi-corpus-471c.js',
   /* Issue #480：曹植《七步诗》从《唐诗》归位到《古诗「非唐代」· 汉魏诗》。 */
   'scripts/data/gushi-corpus-480.js',
-  /* Issue #471 · 第三轮：用户点名的五家名篇（杨万里 2 / 苏轼 1 / 刘禹锡 1；
-     《唐诗》那一条与「古诗」那首同文）。 */
-  'scripts/data/gushi-corpus-471c.js', 'scripts/data/tangshi-corpus-471c.js',
   /* Issue #461：李清照《减字木兰花·卖花担上》—— 单篇补录（让号到 sc-320）。 */
   'scripts/data/ci-corpus-461e.js',
   /* Issue #461 · 第六轮：苏轼 / 李清照各补 5 篇宋词名篇。 */
@@ -113,6 +115,9 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/tangshi-corpus-461b.js', v: 'TANGSHI_CORPUS_461B', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461c.js', v: 'TANGSHI_CORPUS_461C', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461d.js', v: 'TANGSHI_CORPUS_461D', book: 'tangshi' },
+    /* Issue #471 · 第三轮：杜牧《题乌江亭》（ts-388）、刘禹锡《庭竹》（ts-389）。 */
+    { f: 'scripts/data/tangshi-corpus-471c.js', v: 'TANGSHI_CORPUS_471C', book: 'tangshi' },
+    { f: 'scripts/data/tangshi-corpus-471d.js', v: 'TANGSHI_CORPUS_471D', book: 'tangshi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     /* Issue #461：「宋词三百首」改名「词」—— 补五代 / 金 / 清的词。 */
     { f: 'scripts/data/ci-corpus-461.js', v: 'CIWEN_CORPUS_461', book: 'songci' },
@@ -123,14 +128,14 @@ var RAW_ENTRIES = {};
     /* Issue #471 · 第二轮：陆凯《赠范晔诗》+ 陆游十首。 */
     { f: 'scripts/data/gushi-corpus-471b.js', v: 'GUSHI_CORPUS_471B', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-480.js', v: 'GUSHI_CORPUS_480', book: 'gushi' },
-    /* Issue #471 · 第三轮：用户点名的五家名篇。
+    /* Issue #471 · 第三轮：杨万里《闲居初夏午睡起二首》+ 苏轼《海棠》。
        ⚠️ 语料表按「一份文件 → 一部集子」一一对应：`book` 只用来建
        `book + '-' + id` 这个取正文的键。同一份语料登记两次，file 推出来的
        `book` 会把 list 里**每一条**都挂到第二个前缀下 —— 生成出
        `gushi-ts-388` 这种谁也不认的影子条目（正文明明只有一份）。
-       跨部的那一条（《唐诗》ts-389）该由《唐诗》自己那份语料写。 */
+       跨部的那一条壳（《唐诗》ts-390）自己不写正文，壳里挂 `textRef`
+       指向 gushi-gs-55；一份正文只落 gs-55 这一处。 */
     { f: 'scripts/data/gushi-corpus-471c.js', v: 'GUSHI_CORPUS_471C', book: 'gushi' },
-    { f: 'scripts/data/tangshi-corpus-471c.js', v: 'TANGSHI_CORPUS_471C', book: 'tangshi' },
     { f: 'scripts/data/ci-corpus-471b.js', v: 'CIWEN_CORPUS_471B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461e.js', v: 'CIWEN_CORPUS_461E', book: 'songci' },
     /* Issue #461 · 第六轮：苏轼 / 李清照宋词名篇各 5 首。 */

@@ -345,9 +345,9 @@ window.POEMS_GUSHI = [
      scripts/data/gushi-corpus-480.js，此处只挂 textRef 归属。 */
   { textRef: "gushi-gs-54", id: "gs-54", title: "七步诗", source: "《世说新语·文学》", dynasty: "三国·魏", author: "曹植", gradeGroup: "汉魏诗" },
 
-  /* Issue #471 · 第三轮：用户点名的三家（杨万里 2 / 苏轼 1）。
-     正文在 scripts/data/corpus-471c.js，此处只挂 textRef 归属。 */
-  { textRef: "gushi-gs-55", id: "gs-55", title: "闲居初夏午睡起·其一", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
-  { textRef: "gushi-gs-56", id: "gs-56", title: "闲居初夏午睡起·其二", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
+  /* Issue #471 · 第三轮：杨万里《闲居初夏午睡起二首》+ 苏轼《海棠》。
+     正文在 scripts/data/gushi-corpus-471c.js，此处只挂 textRef 归属。 */
+  { textRef: "gushi-gs-55", id: "gs-55", title: "闲居初夏午睡起二首·其一", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
+  { textRef: "gushi-gs-56", id: "gs-56", title: "闲居初夏午睡起二首·其二", source: "《诚斋集》", dynasty: "宋", author: "杨万里", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-57", id: "gs-57", title: "海棠", source: "《东坡七集》", dynasty: "宋", author: "苏轼", gradeGroup: "宋诗" },
 ];
