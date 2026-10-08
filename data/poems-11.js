@@ -37,6 +37,8 @@ window.POEMS_11 = [
     textRef: "poems-gz11-09",
   },
   { id: "gz11-10", title: "燕歌行并序", author: "高适", dynasty: "唐", grade: 11, term: 2,
+    /* 用户点名（Issue #516）：同一首又作《燕歌行·并序》（ts-72），通行简称《燕歌行》。 */
+    aliases: ["燕歌行·并序", "燕歌行"],
     textRef: "poems-gz11-10",
   },
   { id: "gz11-11", title: "李凭箜篌引", author: "李贺", dynasty: "唐", grade: 11, term: 2,

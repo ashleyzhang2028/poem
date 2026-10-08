@@ -329,7 +329,8 @@ window.POEMS_GUSHI = [
 
   /* Issue #471 · 第二轮：陆凯《赠范晔诗》与陆游十首。
      正文在 scripts/data/gushi-corpus-471b.js，此处只挂 textRef 归属。 */
-  { textRef: "gushi-gs-44", id: "gs-44", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  /* 用户点名（Issue #516）：通行简称《赠范晔》。 */
+  { textRef: "gushi-gs-44", id: "gs-44", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗", aliases: ["赠范晔"] },
   { textRef: "gushi-gs-45", id: "gs-45", title: "书愤", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-46", id: "gs-46", title: "临安春雨初霁", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-47", id: "gs-47", title: "关山月", source: "《剑南诗稿》", dynasty: "宋", author: "陆游", gradeGroup: "宋诗" },
@@ -358,7 +359,7 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-60", id: "gs-60", title: "野望", source: "《苇碧轩集》", dynasty: "宋", author: "翁卷", gradeGroup: "宋诗" },
   { textRef: "gushi-gs-61", id: "gs-61", title: "苔", source: "《小仓山房集》", dynasty: "清", author: "袁枚", gradeGroup: "元明清诗" },
   { textRef: "poems-xx2-07", id: "gs-62", title: "敕勒歌", source: "《乐府诗集》", dynasty: "北朝", author: "佚名", gradeGroup: "六朝诗" },
-  { textRef: "gushi-gs-44", id: "gs-63", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-44", id: "gs-63", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗", aliases: ["赠范晔"] },
   { textRef: "poems-xx6-11", id: "gs-64", title: "游园不值", source: "《江湖集》", dynasty: "宋", author: "叶绍翁", gradeGroup: "宋诗" },
   { textRef: "poems-xx4-06", id: "gs-65", title: "绝句", source: "《李清照集》", dynasty: "宋", author: "李清照", gradeGroup: "宋诗" },
   { textRef: "poems-xx6-19", id: "gs-66", title: "春日", source: "《晦庵集》", dynasty: "宋", author: "朱熹", gradeGroup: "宋诗" },
@@ -421,7 +422,7 @@ window.POEMS_GUSHI = [
   { textRef: "gushi-gs-106", id: "gs-106", title: "就义诗", source: "《杨忠愍公集》", dynasty: "明", author: "杨继盛", gradeGroup: "元明清诗" },
   { textRef: "gushi-gs-107", id: "gs-107", title: "锦云川", source: "《灵岩山人诗集》", dynasty: "清", author: "毕沅", gradeGroup: "元明清诗" },
   { textRef: "gushi-gs-108", id: "gs-108", title: "对酒", source: "《秋瑾集》", dynasty: "清", author: "秋瑾", gradeGroup: "元明清诗" },
-  { textRef: "gushi-gs-44", id: "gs-109", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗" },
+  { textRef: "gushi-gs-44", id: "gs-109", title: "赠范晔诗", source: "《太平御览》", dynasty: "南朝·宋", author: "陆凯", gradeGroup: "六朝诗", aliases: ["赠范晔"] },
   { textRef: "gushi-gs-110", id: "gs-110", title: "明日歌", source: "《鹤滩集》", dynasty: "明", author: "钱福", gradeGroup: "元明清诗" },
   { textRef: "gushi-gs-111", id: "gs-111", title: "垓下歌", source: "《史记·项羽本纪》", dynasty: "秦末", author: "项羽", gradeGroup: "汉魏诗" },
   { textRef: "gushi-gs-112", id: "gs-112", title: "短歌行", source: "《乐府诗集》", dynasty: "东汉", author: "曹操", gradeGroup: "汉魏诗" },
