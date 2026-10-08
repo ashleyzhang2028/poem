@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 176 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 184 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -52,6 +52,7 @@ window.WORKS_GROUPS = [
   { wid: "w-chengyu-cy-155", title: "贻笑大方", titles: ["贻笑大方","大方之家"], entries: ["chengyu-cy-155","chengyu-cy-200"] },
   { wid: "w-classic-gw-32", title: "揠苗助长", titles: ["揠苗助长"], entries: ["chengyu-cy-188","classic-gw-32"] },
   { wid: "w-classic-gw-19", title: "夸父逐日", titles: ["夸父逐日"], entries: ["chengyu-cy-2","classic-gw-19"] },
+  { wid: "w-classic-gw-201", title: "歧路亡羊", titles: ["牧竖拾金分心","歧路亡羊"], entries: ["chengyu-cy-213","classic-gw-201"] },
   { wid: "w-chengyu-cy-244", title: "运筹帷幄", titles: ["运筹帷幄","决胜千里"], entries: ["chengyu-cy-244","chengyu-cy-245"] },
   { wid: "w-chengyu-cy-276", title: "解衣推食", titles: ["解衣推食","言听计从"], entries: ["chengyu-cy-276","chengyu-cy-606"] },
   { wid: "w-chengyu-cy-283", title: "鸿鹄之志", titles: ["鸿鹄之志","燕雀安知鸿鹄之志"], entries: ["chengyu-cy-283","chengyu-cy-286"] },
@@ -65,6 +66,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","tangshi-ts-396","yuefu-yf-48"] },
   { wid: "w-chengyu-cy-504", title: "近水楼台", titles: ["近水楼台","近水楼台先得月"], entries: ["chengyu-cy-504","chengyu-cy-524"] },
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
+  { wid: "w-classic-gw-190", title: "只许州官放火不许百姓点灯", titles: ["只许州官放火","只许州官放火不许百姓点灯"], entries: ["chengyu-cy-523","classic-gw-190"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
 
   { wid: "w-classic-gw-115", title: "师说", titles: ["师说"], entries: ["classic-gw-115","guwen-gwj-232"] },
@@ -72,12 +74,15 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-117", title: "游褒禅山记", titles: ["游褒禅山记"], entries: ["classic-gw-117","guwen-gwj-234"] },
   { wid: "w-poems-gz12-17", title: "子路、曾皙、冉有、公西华侍坐", titles: ["子路曾皙冉有公西华侍坐","子路、曾皙、冉有、公西华侍坐"], entries: ["classic-gw-124","poems-gz12-17"] },
   { wid: "w-classic-gw-128", title: "上枢密韩太尉书", titles: ["上枢密韩太尉书"], entries: ["classic-gw-128","guwen-gwj-235"] },
+  { wid: "w-classic-gw-132", title: "枭逢鸠", titles: ["枭逢鸠"], entries: ["classic-gw-132","classic-gw-208"] },
   { wid: "w-classic-gw-139", title: "大铁椎传", titles: ["大铁椎传"], entries: ["classic-gw-139","guwen-gwj-231"] },
+  { wid: "w-classic-gw-24", title: "掩耳盗铃", titles: ["掩耳盗铃","掩耳盗钟"], entries: ["classic-gw-24","classic-gw-202"] },
   { wid: "w-classic-gw-35", title: "画龙点睛", titles: ["画龙点睛"], entries: ["classic-gw-35","classic-gw-180"] },
   { wid: "w-classic-gw-54", title: "管宁割席", titles: ["管宁割席","割席分坐"], entries: ["classic-gw-54","classic-gw-178"] },
   { wid: "w-classic-gw-57", title: "凿壁借光", titles: ["凿壁借光","匡衡凿壁借光"], entries: ["classic-gw-57","classic-gw-177"] },
   { wid: "w-classic-gw-6", title: "王戎不取道旁李", titles: ["王戎不取道旁李","王戎早慧"], entries: ["classic-gw-6","classic-gw-179"] },
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
+  { wid: "w-classic-gw-80", title: "执竿入城", titles: ["执竿入城","锯竿入城"], entries: ["classic-gw-80","classic-gw-207"] },
   { wid: "w-classic-gw-89", title: "陶母责子", titles: ["陶母责子"], entries: ["classic-gw-89","classic-gw-181"] },
   { wid: "w-classic-gw-94", title: "子罕辞玉", titles: ["子罕辞玉","子罕弗受玉"], entries: ["classic-gw-94","classic-gw-152"] },
 
@@ -212,10 +217,13 @@ window.WORKS_GROUPS = [
 
   { wid: "w-yuefu-yf-77", title: "春望", titles: ["春望"], entries: ["tangshi-ts-111","yuefu-yf-77"] },
   { wid: "w-yuefu-yf-97", title: "八阵图", titles: ["八阵图"], entries: ["tangshi-ts-233","yuefu-yf-97"] },
+  { wid: "w-tangshi-ts-240", title: "新嫁娘", titles: ["新嫁娘","新嫁娘词"], entries: ["tangshi-ts-240","tangshi-ts-406"] },
+  { wid: "w-tangshi-ts-246", title: "登乐游原", titles: ["登乐游原","乐游原"], entries: ["tangshi-ts-246","tangshi-ts-412"] },
   { wid: "w-yuefu-yf-53", title: "乌衣巷", titles: ["乌衣巷"], entries: ["tangshi-ts-271","yuefu-yf-53"] },
   { wid: "w-tangshi-ts-279", title: "近试上张水部", titles: ["近试上张水部","近试上张籍水部"], entries: ["tangshi-ts-279","tangshi-ts-373"] },
   { wid: "w-yuefu-yf-64", title: "秋浦歌十七首·其十五", titles: ["秋浦歌","秋浦歌十七首·其十五"], entries: ["tangshi-ts-303","yuefu-yf-64"] },
   { wid: "w-yuefu-yf-72", title: "月下独酌", titles: ["月下独酌"], entries: ["tangshi-ts-4","yuefu-yf-72"] },
+  { wid: "w-yuefu-yf-81", title: "绝句四首·其三", titles: ["绝句","绝句四首·其三"], entries: ["tangshi-ts-405","yuefu-yf-81"] },
   { wid: "w-yuefu-yf-74", title: "春思", titles: ["春思"], entries: ["tangshi-ts-5","yuefu-yf-74"] },
   { wid: "w-yuefu-yf-42", title: "渔翁", titles: ["渔翁"], entries: ["tangshi-ts-57","yuefu-yf-42"] },
   { wid: "w-yuefu-yf-32", title: "关山月", titles: ["关山月"], entries: ["tangshi-ts-63","yuefu-yf-32"] },

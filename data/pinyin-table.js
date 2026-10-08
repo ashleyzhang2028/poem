@@ -243,6 +243,8 @@ window.PINYIN_TABLE = (function () {
   "谐:xié","阏:è","枋:fāng","舂:chōng","菌:jūn","蟪:huì","椿:chūn",
   "刁:diāo","棺:guān","銮:luán","缆:lǎn",
   "涤:dí","掬:jū",
+  /* Issue #505 第二批：古文里的生字（誾誾 / 龁 / 倏 等）。 */
+  "誾:yín","龁:hé","倏:shū",
   ].join(",");
   var map = {};
   raw.split(",").forEach(function (pair) {

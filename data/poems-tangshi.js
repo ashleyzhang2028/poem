@@ -3448,6 +3448,21 @@ window.POEMS_TANGSHI = [
   { textRef: "poems-xx4-19", id: "ts-400", title: "竹枝词", source: "《刘宾客文集》", dynasty: "唐", author: "刘禹锡", gradeGroup: "卷八 七言绝句" },
   { textRef: "poems-cz7-18", id: "ts-401", title: "登幽州台歌", source: "《陈伯玉集》", dynasty: "唐", author: "陈子昂", gradeGroup: "卷二 七言古诗" },
 
+  /* Issue #505 · 第二批古诗 25 首里的唐诗（第 51~100 组，序号 52…100）。
+     正文在 scripts/data/poems-corpus-505b.js。README 口径：唐代的诗一律归本集。
+     这 11 条落库；同批另有 14 条课内 / 集内已有、按判重口径合流，本集不另挂壳。 */
+  { textRef: "tangshi-ts-402", id: "ts-402", title: "寄外征衣", source: "《全唐诗》", dynasty: "唐", author: "陈玉兰", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-403", id: "ts-403", title: "新沙", source: "《甫里先生集》", dynasty: "唐", author: "陆龟蒙", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-404", id: "ts-404", title: "山中问答", source: "《李太白集》", dynasty: "唐", author: "李白", gradeGroup: "卷七 五言绝句" },
+  { textRef: "tangshi-ts-405", id: "ts-405", title: "绝句四首·其三", source: "《杜工部集》", dynasty: "唐", author: "杜甫", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-406", id: "ts-406", title: "新嫁娘词", source: "《王建诗集》", dynasty: "唐", author: "王建", gradeGroup: "卷七 五言绝句" },
+  { textRef: "tangshi-ts-407", id: "ts-407", title: "题菊花", source: "《全唐诗》", dynasty: "唐", author: "黄巢", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-408", id: "ts-408", title: "不第后赋菊", source: "《全唐诗》", dynasty: "唐", author: "黄巢", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-409", id: "ts-409", title: "剑客", source: "《长江集》", dynasty: "唐", author: "贾岛", gradeGroup: "卷七 五言绝句" },
+  { textRef: "tangshi-ts-410", id: "ts-410", title: "过华清宫绝句·其一", source: "《樊川文集》", dynasty: "唐", author: "杜牧", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-411", id: "ts-411", title: "军城早秋", source: "《全唐诗》", dynasty: "唐", author: "严武", gradeGroup: "卷八 七言绝句" },
+  { textRef: "tangshi-ts-412", id: "ts-412", title: "乐游原", source: "《李义山诗集》", dynasty: "唐", author: "李商隐", gradeGroup: "卷七 五言绝句" },
+
 ];
 
 (function () {

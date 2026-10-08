@@ -44,12 +44,25 @@ LOAD.forEach(function (f) {
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
     { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' },
-    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' }
+    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' },
+    /* Issue #505 · 第二批：新补的语料表 —— 壳里只挂 textRef，正文在这两份里。
+       不登记的话，下面「新建站点索引条目」那一段取不到正文、条目进不了判重表
+       （同篇对照会少若干组）。 */
+    { f: 'scripts/data/classic-corpus-505b.js', v: 'CLASSIC_CORPUS_505B', book: 'classic' },
+    { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
+    var LOCAL = { ts: 'tangshi', gs: 'gushi', sc: 'songci', gw: 'classic', gwj: 'guwen' };
     (sandbox[o.v] || []).forEach(function (p) {
-      if (p && p.id) RAW[book + '-' + p.id] = p;
+      if (!p || !p.id) return;
+      if (o.split) {
+        var segs = p.id.split('-');
+        for (var i = 0; i < segs.length; i += 1) {
+          if (LOCAL[segs[i]]) { RAW[LOCAL[segs[i]] + '-' + p.id] = p; return; }
+        }
+      }
+      RAW[book + '-' + p.id] = p;
     });
   });
   var inIndex = {};
