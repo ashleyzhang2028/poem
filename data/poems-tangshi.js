@@ -3406,6 +3406,9 @@ window.POEMS_TANGSHI = [
     author: "杜牧",
     gradeGroup: "卷八 七言绝句",
   },
+
+  /* Issue #471 · 第三轮：用户点名的唐诗（刘禹锡《庭竹》）。
+     正文在 scripts/data/tangshi-corpus-471d.js，此处只挂 textRef 归属。 */
   {
     textRef: "tangshi-ts-389",
     id: "ts-389",
@@ -3413,6 +3416,21 @@ window.POEMS_TANGSHI = [
     source: "《刘宾客文集》",
     dynasty: "唐",
     author: "刘禹锡",
+    gradeGroup: "卷七 五言绝句",
+  },
+
+  /* ⚠️ 这一条是**壳**：正文与《古诗「非唐代」》gs-55 同文（都是杨万里
+     《闲居初夏午睡起·其一》）。它在两集里各站一条不是笔误 ——《唐诗》
+     卷七至卷十本就是这部集子的「课内 / 课外通用名篇」段（ts-316 及之后
+     既有唐人的《竹枝词》，也有后来的篇目），用户点名要收，就按这一段的
+     老例挂在卷七；判重表按正文把两条合成一篇（w-gushi-gs-55）。 */
+  {
+    textRef: "gushi-gs-55",
+    id: "ts-390",
+    title: "闲居初夏午睡起·其一",
+    source: "《诚斋集》",
+    dynasty: "宋",
+    author: "杨万里",
     gradeGroup: "卷七 五言绝句",
   },
 ];
