@@ -1700,6 +1700,29 @@ window.POEMS_CLASSIC = [
   { textRef: "classic-gw-257", id: "gw-257", title: "长竿入城", source: "《笑林》", dynasty: "三国·魏", author: "邯郸淳", gradeGroup: "志人逸事" },
   { textRef: "classic-gw-184", id: "gw-258", title: "揠苗助长", source: "《孟子·公孙丑上》", dynasty: "战国", author: "孟轲", gradeGroup: "寓言故事" },
 
+  /* Issue #517 · 第二批：用户投喂的这批文言短篇里，**同一篇的另一种版本**
+     （课文是节选或另一选本，本批给的是全篇 / 通行本）—— 18 条。
+     正文与集内旧条逐字不同，但它们是同一篇作品；一条作品只留一份正文，
+     故壳挂 textRef 指回集内那一篇，题名带「（一）」以示同题有别。 */
+  { textRef: "classic-gw-6", id: "gw-259", title: "王戎不取道旁李（一）", source: "《世说新语·雅量》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-12", id: "gw-260", title: "杨氏之子（一）", source: "《世说新语·言语》", dynasty: "南朝·宋", author: "刘义庆", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-15", id: "gw-261", title: "学弈（一）", source: "《孟子·告子上》", dynasty: "战国", author: "孟轲", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-3", id: "gw-262", title: "司马光（一）", source: "《宋史·司马光传》", dynasty: "元", author: "脱脱等", gradeGroup: "人物故事" },
+  { textRef: "classic-gw-7", id: "gw-263", title: "囊萤夜读（一）", source: "《晋书·车胤传》", dynasty: "唐", author: "房玄龄等", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-14", id: "gw-264", title: "书戴嵩画牛（一）", source: "《东坡志林》", dynasty: "宋", author: "苏轼", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-250", id: "gw-265", title: "铁杵成针（一）", source: "《方舆胜览·眉州·磨针溪》", dynasty: "宋", author: "祝穆", gradeGroup: "治学勤读" },
+  { textRef: "classic-gw-22", id: "gw-266", title: "共工怒触不周山（一）", source: "《淮南子·天文训》", dynasty: "西汉", author: "刘安等", gradeGroup: "神话传说" },
+  { textRef: "classic-gw-154", id: "gw-267", title: "塞翁失马（一）", source: "《淮南子·人间训》", dynasty: "西汉", author: "刘安等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-248", id: "gw-268", title: "北人食菱（一）", source: "《雪涛小说·知无涯》", dynasty: "明", author: "江盈科", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-27", id: "gw-269", title: "郑人买履（一）", source: "《韩非子·外储说左上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-37", id: "gw-270", title: "鹬蚌相争（一）", source: "《战国策·燕策二》", dynasty: "西汉", author: "刘向编", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-33", id: "gw-271", title: "滥竽充数（一）", source: "《韩非子·内储说上》", dynasty: "战国", author: "韩非", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-26", id: "gw-272", title: "刻舟求剑（一）", source: "《吕氏春秋·察今》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-76", id: "gw-273", title: "邯郸学步（一）", source: "《庄子·秋水》", dynasty: "战国", author: "庄周", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-257", id: "gw-274", title: "长竿入城（一）", source: "《笑林》", dynasty: "三国·魏", author: "邯郸淳", gradeGroup: "志人逸事" },
+  { textRef: "classic-gw-184", id: "gw-275", title: "揠苗助长（一）", source: "《孟子·公孙丑上》", dynasty: "战国", author: "孟轲", gradeGroup: "寓言故事" },
+  { textRef: "classic-gw-24", id: "gw-276", title: "掩耳盗钟（一）", source: "《吕氏春秋·自知》", dynasty: "战国", author: "吕不韦等", gradeGroup: "寓言故事" },
+
 ];
 
 (function () {
