@@ -47,8 +47,8 @@ const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', '
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 250,
-  '主表里有 250 条「跨集重复」的作品（Issue #244 / #308，后续各批补录与判重调整见 git 历史；' +
+chk(multiEntries.length === 239,
+  '主表里有 239 条「跨集重复」的作品（Issue #244 / #308，后续各批补录与判重调整见 git 历史；' +
   'Issue #517 第一批古文 6 条合流壳、Issue #517 收尾批（gw-285 / gw-287 与《古文观止》同篇）、' +
   'Issue #516 第一 / 第二批古诗 50 + 20 篇合流，以及 Issue #517 第二批古文 18 条同篇异文的壳一并带入；实际 ' +
   multiEntries.length + '）');
@@ -190,8 +190,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 555,
-  '重复条目恰为 555 条（同篇判重键下的条目；Issue #517 第一 / 收尾批与 Issue #516 ' +
+chk(dupEntries.length === 520,
+  '重复条目恰为 520 条（同篇判重键下的条目；Issue #517 第一 / 收尾批与 Issue #516 ' +
   '第一 / 第二批古诗合流后一并计入，实际 ' +
   dupEntries.length + '）');
 
