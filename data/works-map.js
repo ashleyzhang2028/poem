@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 189 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 190 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -64,6 +64,7 @@ window.WORKS_GROUPS = [
   { wid: "w-tangshi-ts-276", title: "淡扫蛾眉", titles: ["集灵台·其二","淡扫蛾眉"], entries: ["chengyu-cy-465","tangshi-ts-276"] },
   { wid: "w-chengyu-cy-471", title: "春风得意", titles: ["春风得意","走马看花"], entries: ["chengyu-cy-471","chengyu-cy-472"] },
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","tangshi-ts-396","yuefu-yf-48"] },
+  { wid: "w-classic-gw-244", title: "一字之师", titles: ["一字师","一字之师"], entries: ["chengyu-cy-478","classic-gw-244"] },
   { wid: "w-chengyu-cy-504", title: "近水楼台", titles: ["近水楼台","近水楼台先得月"], entries: ["chengyu-cy-504","chengyu-cy-524"] },
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-classic-gw-190", title: "只许州官放火不许百姓点灯", titles: ["只许州官放火","只许州官放火不许百姓点灯"], entries: ["chengyu-cy-523","classic-gw-190"] },

@@ -51,7 +51,11 @@ LOAD.forEach(function (f) {
     { f: 'scripts/data/classic-corpus-505b.js', v: 'CLASSIC_CORPUS_505B', book: 'classic' },
     { f: 'scripts/data/poems-corpus-505b.js', v: 'POEMS_CORPUS_505B', split: true },
     /* Issue #505 · 第三批：古文 15 篇。 */
-    { f: 'scripts/data/classic-corpus-505c.js', v: 'CLASSIC_CORPUS_505C', book: 'classic' }
+    { f: 'scripts/data/classic-corpus-505c.js', v: 'CLASSIC_CORPUS_505C', book: 'classic' },
+    /* Issue #505 · 第四批（末批 · 第 151~200 组）：古文 15 篇 + 古诗 8 首
+       （古诗那份按 id 前缀拆分，见 split 分支）。 */
+    { f: 'scripts/data/classic-corpus-505d.js', v: 'CLASSIC_CORPUS_505D', book: 'classic' },
+    { f: 'scripts/data/poems-corpus-505c.js', v: 'POEMS_CORPUS_505C', split: true }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
