@@ -455,7 +455,9 @@ body.reader-open .dock { display: none; }
 @keyframes readerIn { from { opacity: .4; transform: translateY(14px) } to { opacity: 1; transform: none } }
 
 .reader > .topbar {
-  background: var(--bg-soft);
+  /* 跟页底那条 `.reader-nav` 同一份底色：95% 不透明（Issue #484 二轮）。
+     一上一下封住这一屏的是同一条半透明的带子，两处的透明度必须一致。 */
+  background: rgba(252, 250, 243, .95);
   border-bottom: 1px solid var(--line);
 
   width: 100%;
@@ -876,7 +878,14 @@ body.reader-open .dock { display: none; }
   padding: 12px calc(var(--col-side) + var(--safe-right))
            calc(12px + var(--safe-bottom)) calc(var(--col-side) + var(--safe-left));
 
-  background: var(--bg-soft);
+  /* 底色 95% 不透明（Issue #484 二轮）—— `--bg-soft` 是实色，直接铺上去
+     等于把正文盖死；这里用同一支色值加 5% 的透明，栏底下那一行字透出来一点点，
+     栏才像是浮在页面上、不是页面被截掉一段。
+
+     为什么不用 `backdrop-filter: blur()`：全站只有 dock / 遮罩三处在用，
+     移动端上这块滤镜的开销远比一条半透明底划算不来；读者滚的是长正文，
+     这条栏一直挂在视口里，模糊是每帧都要算的。就用纯色 + 透明。 */
+  background: rgba(252, 250, 243, .95);
   border-top: 1px solid var(--line);
 }
 @media (min-width: 1024px) {

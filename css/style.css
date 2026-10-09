@@ -2191,6 +2191,18 @@ html, body {
   box-sizing: border-box;
 }
 
+/* 详情页开着的时候，页顶这层 .topbar 还在最上面露着（阅读器那一层从它底下
+   开始），页面本身照旧要往下滚。这时候它得跟阅读器的那条标题栏长得一样：
+   底色 95% 不透明（Issue #484 二轮）。
+
+   用 `:has()` 挂条件，不写死 `.reader` 的 id —— 全站 20 个页面各自持有自己的
+   阅读器层，`document.querySelector('.reader')` 在文件层面是抓不到的。
+   窄屏上（≤480px）阅读器铺满整屏，这层被盖住了，写上去也无妨。 */
+body:has(.reader:not([hidden])) .app > .topbar,
+body:has(.reader:not([hidden])) .topbar:not(.reader > .topbar) {
+  background: rgba(252, 250, 243, .95);
+}
+
 .brand {
   display: flex;
   align-items: center;
