@@ -258,9 +258,15 @@ bash test/run.sh   # 等价于 npm test
 
 Vercel Serverless，同源、无 CORS。**线上只有 1 个函数**：`api/handler.js` 按 `api/_lib/routes.js` 的路由表派给 `api/_routes/`（Hobby 档上限 12 个函数，故必须收口）；`vercel.json` 一条 rewrite 接外部地址。业务内核在 `api/_lib/core.js`。
 
-主要接口：`/api/me`（权益的唯一来源）、`/api/send-code` 与 `/api/verify-code`（随机码登录）、`/api/register` `/api/login` `/api/verify-email` `/api/reset-*`（完整登录流程）、`/api/sync/pull|push`（跨设备同步）、`/api/avatar`（头像）、`/api/report`（用户报告）、`/api/admin/grant|accounts|role|reports|pinyin|feedback`（管理后台）、`/api/pinyin-fixes`（全站生效的注音勘误，公开只读）、`/api/feedback`（意见反馈，登录与设备号访客都能用）、`/api/diag`（自助排查，只回形状不回值）。完整台账见 `docs/architecture.md` §4.3。
+主要接口：`/api/me`（权益的唯一来源）、`/api/send-code` 与 `/api/verify-code`（随机码登录）、`/api/register` `/api/login` `/api/verify-email` `/api/reset-*`（完整登录流程）、**`/api/wx/login` 与 `/api/wx/refresh`（微信小程序登录，见下）**、`/api/sync/pull|push`（跨设备同步）、`/api/avatar`（头像）、`/api/report`（用户报告）、`/api/admin/grant|accounts|role|reports|pinyin|feedback`（管理后台）、`/api/pinyin-fixes`（全站生效的注音勘误，公开只读）、`/api/feedback`（意见反馈，登录与设备号访客都能用）、`/api/diag`（自助排查，只回形状不回值）。完整台账见 `docs/architecture.md` §4.3。
 
 **四条硬规矩**：明文验证码不进日志；权益只从 `/api/me` 来，请求体里的 `plan` 一律忽略；写接口都有频控；改别人数据的接口有服务端角色闸（`403`）。
+
+**会话从两个地方取，Cookie 优先**（2026-10-11，Issue #71）：`api/_lib/handler.js` 的 `tokenOf()` 同时认 `kbsid` Cookie（网页版）与 `Authorization: Bearer <token>`（微信小程序）。小程序里没有 Cookie 这回事 —— `wx.request` 不共享浏览器的 Cookie 罐 —— 它只能把长凭证放在请求头里。少了这一条，现象是「登录一路绿灯、跟着每一条 `/api/sync/*` 都 401」：两端都没有一句话是错的，所以谁也定位不到。
+
+**微信小程序登录**（`/api/wx/login`、`/api/wx/refresh`）：`code2Session` 要 `WX_APPID` / `WX_SECRET` 两个环境变量，缺了如实回 `503 E_WX_NOT_CONFIGURED`（不假装成功）。账号落在 `wx_accounts` 表，`uid` 与 `accounts` **同一个域**，所以小程序改的档网页版读得到。微信没有邮箱，`accounts.email` 用按 uid 派生的占位地址占位（登不进、也发不到）。契约与建表语句见小程序仓库的 `docs/wx-login-server.md`。
+
+同步那道闸**只判「有没有会话」，不再判档位**（用户 2026-10-04 裁决）：登录即得跨设备同步，「确保用户数据不丢失」。`settings:v1` / `profile:v1` 两行有服务端白名单，认不出的行 id 会被 `sanitizePayload` 清成 `{}` —— 那是「同步成功但什么也没发生」的成因。
 
 **登录状态只有一个答案**：会话有两种存在方式 —— 服务端的 `kbsid` Cookie 与本机的 `poem_auth_v1.sessions`（云端不可用时的降级路）。界面上每一处「登录了没」都问同一个出口 `Entitlement.identity()` / `cookieSession()`。`js/chrome.js` 在顶栏就位时问一次 `/api/me`，答案一到就喊 `account:ready`。退出走两半：`POST /api/logout` 撤服务端会话，`AuthCore.signOut()` 清本机那份。
 
@@ -288,7 +294,8 @@ npm run env:example > .env.example
 
 - **免费不残缺**：现有功能不收回；pro / max 只**加**新能力与额度。
 - **要登录的三件（免费档）**：语音播放、进度导出、莱特纳盒。按钮可见，点下去得到「登录可用」。
-- **每道门都在服务端**：云同步在界面层与服务端（`403 E_TIER`）两处都拦。
+- **每道门都在服务端**：需要档位的接口在界面层与服务端两处都拦。
+- **云同步不看档位**（2026-10-04 改）：只判有没有登录 —— 进度不该因为没付费而丢。
 
 管理员诞生：配 `OWNER_EMAILS` 后用它登录一次 → 在 `/admin/` 给他人改角色（只有 owner 改得动，改不了自己与种子主人）→ 或在 Supabase 改 `accounts.role`。**不配 `OWNER_EMAILS` 时一个 owner 都没有**，`/admin/` 如实关门。
 
