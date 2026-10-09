@@ -445,6 +445,11 @@ body.reader-open .dock { display: none; }
   display: flex;
   flex-direction: column;
   animation: readerIn .22s cubic-bezier(.2, .8, .3, 1);
+
+  /* 页底那条固定导航栏的高度（Issue #484）。写在 `.reader` 上而不是 `:root`：
+     阅读器是全屏覆盖，能看见这条栏的只有这一层。正文末尾拿它算让位，
+     窄屏 / 横屏矮窗那两条媒体查询再把它收小。 */
+  --reader-nav-h: 58px;
 }
 .reader[hidden] { display: none; }
 @keyframes readerIn { from { opacity: .4; transform: translateY(14px) } to { opacity: 1; transform: none } }
@@ -469,7 +474,12 @@ body.reader-open .dock { display: none; }
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
+  padding: 20px calc(18px + var(--safe-right)) 0 calc(18px + var(--safe-left));
+
+  /* 正文末尾让出页底那条固定栏的高度（Issue #484）—— 栏是 `.reader-body` 的
+     兄弟（见文件后半 `.reader-nav` 那段），已经不在这条滚动流里了。
+     栏高统一写在 `.reader` 的 `--reader-nav-h` 上，这里跟它要。 */
+  padding-bottom: calc(var(--reader-nav-h) + var(--safe-bottom) + 24px);
 
   width: min(var(--content-w, 692px), var(--read-w, 720px));
   max-width: calc(100% - var(--safe-left) - var(--safe-right));
@@ -806,19 +816,93 @@ body.reader-open .dock { display: none; }
   color: var(--ink-3);
 }
 
-.reader-nav {
-  display: flex;
-  gap: 10px;
+/* 详情页底部的「上一篇 / 下一篇」（Issue #484）
+   --------------------------------------------------------------------------
+   用户 2026-10-09：「所有带上一篇和下一篇导航的详情页，可不可以将他们向页顶的
+   标题栏一样在页底固定住，总共两列，左侧左对齐，右侧右对齐，全部垂直居中，
+   border-top 用整个标题栏底部的 border-bottom 一样的样式」。
 
-  margin: 26px auto calc(118px + var(--safe-bottom));
+   于是它从「正文末尾的一段」翻了个个儿，变成**页底那条固定栏** —— 跟页顶
+   `.topbar` 完全对称的一件东西：
+
+     页顶：通栏 · 两侧 `--col-side` 留白 · 底边一条 `--line` 分割线
+     页底：通栏 · 两侧 `--col-side` 留白 · 顶边同一条 `--line` 分割线
+
+   具体四件事，都是照用户那几句话来的：
+
+     · 固定 —— `position: fixed; bottom: 0`，正文再长也不用一路滚到底；
+     · 两列 —— `grid-template-columns: 1fr 1fr`，左列 `justify-self: start`
+       贴左、右列 `justify-self: end` 贴右；
+     · 垂直居中 —— 两格都 `align-items: center`；
+     · 那条线 —— `border-top: 1px solid var(--line)`，跟页顶 `.topbar` 的
+       `border-bottom` 逐字一样，一上一下封住这一屏。
+
+   两条配套的账：
+
+     1. 它挪出了 `.reader-body` 的滚动流，正文末尾得自己让出它的高度 ——
+        见 `.reader-body` 的 `padding-bottom`，两边共用 `--reader-nav-h`；
+     2. 两列各收一道 `--read-w / 2`（见 `.reader-nav > *`）：窄屏上它不起作用，
+        左列就贴到 `--col-side` 那一沿；宽屏上它封住上限，两列落在正文那一列的
+        宽度里，不会隔着大半个屏幕说话。收的是两列，栏本身照旧通栏。
+
+   还有一条踩过的坑：栏**必须待在 `.reader` 里面**。它曾经被摆到 body 上，结果
+   整条都不见了 —— `.reader` 自带 `z-index: 66`，自成一层，栏在外头跟在它后面
+   兄弟元素的上面，`fixed` 也救不了。摆在 `.reader-body` 之后当兄弟，`z-index: 3`
+   就够了。
+
+   桌面端（≥1024px）底栏是左侧竖排的 rail，底部这条栏跟着右移 `--rail-w`。 */
+.reader-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  /* 页顶 `.topbar` 是「通栏 + 两侧 `--col-side` 留白 + 底部一条 `--line` 的
+     分割线」，这条栏反过来做同一件事：通栏、两侧同一份留白、顶部同一条线。
+     两条线于是从屏幕一头拉到另一头，宽度也一致。 */
+  z-index: 3;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  column-gap: 10px;
+
+  height: var(--reader-nav-h);
+
+  padding-left: calc(var(--col-side) + var(--safe-left));
+  padding-right: calc(var(--col-side) + var(--safe-right));
+  padding-bottom: var(--safe-bottom);
+
+  background: var(--bg-soft);
+  border-top: 1px solid var(--line);
 }
 @media (min-width: 1024px) {
-  .reader-nav {
-    max-width: var(--read-w, 720px);
-  }
+  .reader-nav { left: var(--rail-w, 92px); }
+}
+
+/* 两列 —— grid 的两格。左列贴左、右列贴右，两格里的内容各自垂直居中。
+
+   两格各拿一半（`1fr`），但每一格自己再收一道：`--reader-w / 2`。
+   窄屏上它比半栏宽，不起作用，左列就贴到 `--col-side` 那一沿；
+   宽屏上它封住上限，两列于是落在正文那一列的宽度里，不会隔着大半个屏幕说话。
+   跟页顶一样，栏本身始终通栏 —— 收的是两列，不是那条 border-top。 */
+.reader-nav > * {
+  min-width: 0;
+  max-width: calc(var(--read-w, 720px) / 2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.reader-nav > *:first-child {
+  justify-self: start;
+  text-align: left;
+}
+.reader-nav > *:last-child {
+  justify-self: end;
+  justify-content: flex-end;
+  text-align: right;
 }
 .reader-nav button {
-  flex: 1;
   min-width: 0;
 
   border: none;
@@ -2201,4 +2285,19 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
    不至于横着扫一整个屏幕。 */
 @media (min-width: 1024px) {
   .authors-index .author-chips { max-width: 880px; }
+}
+
+/* 窄屏（手机）：54px 里要装下「标签 + 题名」两行，字号与行距各收一点 ——
+   不是把两行压扁，是让它们刚好合身（Issue #484）。 */
+@media (max-width: 480px) {
+  .reader { --reader-nav-h: 54px; }
+  .reader-nav button { padding: 8px 0; font-size: 13px; }
+  .reader-nav .nav-label { font-size: 10.5px; }
+}
+
+/* 横屏矮窗（高 ≤ 480px）：46px 是 320px 高一屏的一成，收到刚好够点。 */
+@media (max-height: 480px) and (orientation: landscape) {
+  .reader { --reader-nav-h: 46px; }
+  .reader-nav button { padding: 5px 0; font-size: 12.5px; }
+  .reader-nav .nav-label { font-size: 10px; }
 }

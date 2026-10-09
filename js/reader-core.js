@@ -2234,6 +2234,20 @@
     return out;
   }
 
+  /* ⚠️ 有一条不许动（Issue #484）：页底那条「上一篇 / 下一篇」
+     （`.reader-nav`）必须留在**`.reader` 里面**，摆在 `.reader-body` 之后当兄弟。
+
+     它 `position: fixed; bottom: 0`，摆哪儿看起来都落在页底 —— 实际上不是：
+
+       · 留在 `.reader` 里 —— `.reader` 自带 `z-index: 66`，自成一层，栏的
+         `z-index: 3` 只在层内比大小，稳稳在 `.reader-body`（滚动容器，自己开
+         一层）前面，钉得住；
+       · 挪到 body 上（跟 `.reader` 平级）—— 66 > 3，整条栏被 `.reader` 压在下头，
+         页面上一个像素都看不见。页顶 `.topbar` 能放 body 上是因为它在源码里排在
+         前面，栏排在后面，吃的就是这条亏。
+
+     至于换会话：作者索引那层 `unmount` 上一个再 `mount` 下一个，旧 reader 连同
+     栏一起撤、新 reader 自带自己那条，天然各归各的，这里不必再做什么。 */
   function init(session) {
     var s = session || live;
 
