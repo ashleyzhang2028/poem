@@ -81,6 +81,15 @@
   --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* 页顶标题栏（`.topbar`）的高度，也是页底那条「上一篇 / 下一篇」栏
+     （`.reader-nav`）要照齐的高度（Issue #484）。两处都写在同一个变量上，
+     谁也不再各自写一个数 —— 改了这里，上下两条栏一起变。
+
+     70px 是 `.topbar` 的实高：内容 43px（`.brand-text` 两行）＋上下内边距
+     26px（14 + 12）＋底边那条 1px 的 `--line`。栏不设死高，改成
+     `min-height` + `align-items: center`，内边距再宽一点也让内容居中。 */
+  --topbar-h: 70px;
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
   --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
 
@@ -2167,6 +2176,12 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+
+  /* 页顶这条栏与页底 `.reader-nav` 共用一个高度 `--topbar-h`（Issue #484）。
+     这里用 `min-height` 托底、内容 `align-items: center` 居中，内边距照旧 ——
+     字号或两行文案稍有出入也还是同一条高度，两栏不会各走各的。 */
+  min-height: var(--topbar-h);
+  box-sizing: border-box;
 
   padding: calc(14px + var(--safe-top)) 0 12px;
 
