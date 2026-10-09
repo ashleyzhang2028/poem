@@ -446,10 +446,10 @@ body.reader-open .dock { display: none; }
   flex-direction: column;
   animation: readerIn .22s cubic-bezier(.2, .8, .3, 1);
 
-  /* 页底那条固定导航栏的高度（Issue #484）。写在 `.reader` 上而不是 `:root`：
-     阅读器是全屏覆盖，能看见这条栏的只有这一层。正文末尾拿它算让位，
-     窄屏 / 横屏矮窗那两条媒体查询再把它收小。 */
-  --reader-nav-h: 58px;
+  /* 页底那条固定导航栏的高度（Issue #484）。跟页顶 `.topbar` 齐平 ——
+     两边读同一个 `--topbar-h`（写在 `:root`，见 css/style.css），谁也不再
+     各写一个数。正文末尾拿它算让位。 */
+  --reader-nav-h: var(--topbar-h, 70px);
 }
 .reader[hidden] { display: none; }
 @keyframes readerIn { from { opacity: .4; transform: translateY(14px) } to { opacity: 1; transform: none } }
@@ -867,11 +867,14 @@ body.reader-open .dock { display: none; }
   align-items: center;
   column-gap: 10px;
 
-  height: var(--reader-nav-h);
+  /* 跟页顶 `.topbar` 一样高（Issue #484）：不把两行字压进一个矮盒子，而是给足
+     上下内边距让栏长到 `--topbar-h`，两列内容由 `align-items: center` 钉在中间。
+     用 `min-height` 托底而不是 `height` 写死 —— 万一某档字大一号，栏跟着长高
+     一点，内容不至于被裁。上下内边距相等（下边再加安全区），内容自然居中。 */
+  min-height: var(--reader-nav-h);
 
-  padding-left: calc(var(--col-side) + var(--safe-left));
-  padding-right: calc(var(--col-side) + var(--safe-right));
-  padding-bottom: var(--safe-bottom);
+  padding: 12px calc(var(--col-side) + var(--safe-right))
+           calc(12px + var(--safe-bottom)) calc(var(--col-side) + var(--safe-left));
 
   background: var(--bg-soft);
   border-top: 1px solid var(--line);
@@ -909,7 +912,11 @@ body.reader-open .dock { display: none; }
   background: transparent;
   color: var(--green);
   border-radius: 0;
-  padding: 11px 0;
+
+  /* 竖直方向不再由按钮自己撑高（Issue #484）：栏高与居中交给 `.reader-nav` 的
+     `min-height` 与 `padding`，按钮只留内容本身的个头，两行字在 70px 里居中。
+     以前这里的 11px 上下内边距，加上栏的 12px，会把栏顶到 81px —— 比页顶还高。 */
+  padding: 0;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -2287,17 +2294,15 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
   .authors-index .author-chips { max-width: 880px; }
 }
 
-/* 窄屏（手机）：54px 里要装下「标签 + 题名」两行，字号与行距各收一点 ——
-   不是把两行压扁，是让它们刚好合身（Issue #484）。 */
+/* 高度不再分档（Issue #484）：以前窄屏收到 54px、横屏矮窗收到 46px，是因为
+   那会儿栏里要硬挤「标签 + 题名」两行。现在栏跟页顶 `.topbar` 一样高（70px），
+   空间多是，两行本来就放得下 —— 高度统一读 `--topbar-h`，不再各写一个数。
+   窄屏只把字号收半号，是让长题名少折一点，不影响高度。 */
 @media (max-width: 480px) {
-  .reader { --reader-nav-h: 54px; }
-  .reader-nav button { padding: 8px 0; font-size: 13px; }
+  .reader-nav button { font-size: 13px; }
   .reader-nav .nav-label { font-size: 10.5px; }
 }
-
-/* 横屏矮窗（高 ≤ 480px）：46px 是 320px 高一屏的一成，收到刚好够点。 */
 @media (max-height: 480px) and (orientation: landscape) {
-  .reader { --reader-nav-h: 46px; }
-  .reader-nav button { padding: 5px 0; font-size: 12.5px; }
+  .reader-nav button { font-size: 12.5px; }
   .reader-nav .nav-label { font-size: 10px; }
 }
