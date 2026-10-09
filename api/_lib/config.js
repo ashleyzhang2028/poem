@@ -59,6 +59,12 @@ var CONFIG = {
 
   smsResendCooldownMs: intEnv("SMS_RESEND_COOLDOWN_MS", 60 * 1000),
   sessionDays: intEnv("SESSION_DAYS", 30),
+
+  // 微信小程序登录（Issue #71）。缺任一个时 /api/wx/* 如实回 503，
+  // 不假装成功 —— appsecret 不能进小程序包，只能落在服务端环境变量里。
+  wxAppId: env("WX_APPID"),
+  wxSecret: env("WX_SECRET"),
+
   cookieName: env("COOKIE_NAME", "kbsid"),
 
   mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),

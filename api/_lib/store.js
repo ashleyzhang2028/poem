@@ -3,7 +3,7 @@
 var upstream = require("./upstream");
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {}, feedbackThreads: {}, feedbackComments: {}, examRecords: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, wxAccounts: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {}, feedbackThreads: {}, feedbackComments: {}, examRecords: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -19,6 +19,36 @@ function memoryStore() {
 
     degrade: function () { return []; },
     deleteAccount: function (uid) { delete db.accounts[uid]; return true; },
+
+    // 微信账号（Issue #71）。内存档也认这两条，否则没配 Supabase 时
+    // `/api/wx/login` 会 500 —— 而那种「配一半」最难查。
+    getWxAccountByOpenid: function (openid) {
+      var ids = Object.keys(db.wxAccounts || {});
+      for (var i = 0; i < ids.length; i++) {
+        if (db.wxAccounts[ids[i]].openid === openid) return db.wxAccounts[ids[i]];
+      }
+      return null;
+    },
+    getWxAccountByUnionid: function (unionid) {
+      if (!unionid) return null;
+      var ids = Object.keys(db.wxAccounts || {});
+      for (var i = 0; i < ids.length; i++) {
+        if (db.wxAccounts[ids[i]].unionid === unionid) return db.wxAccounts[ids[i]];
+      }
+      return null;
+    },
+    putWxAccount: function (row) {
+      db.wxAccounts = db.wxAccounts || {};
+      db.wxAccounts[row.uid] = row;
+      return row;
+    },
+    patchWxAccount: function (uid, patch) {
+      db.wxAccounts = db.wxAccounts || {};
+      var w = db.wxAccounts[uid];
+      if (!w) return false;
+      Object.keys(patch).forEach(function (k) { w[k] = patch[k]; });
+      return true;
+    },
 
     putCode: function (rec) { db.codes[rec.code_id] = rec; return rec; },
     getCode: function (codeId) { return db.codes[codeId] || null; },
@@ -448,6 +478,30 @@ function supabaseStore(cfg) {
     degrade: function () { return degraded.slice(); },
     deleteAccount: function (uid) {
       return call("/accounts?uid=eq." + q(uid), { method: "DELETE", prefer: "return=minimal" }).then(function () { return true; });
+    },
+
+    /* 微信账号表（Issue #71）。**不在 accounts 里加列** —— 网页版那套登录
+       一行都不该动，而且微信没有邮箱，`email_hash` 的唯一索引会拦下来。
+       表结构见 docs/wx-login-server.md「要用到的那张表」；没建表时这里会抛
+       「relation wx_accounts does not exist」，由 core 的 isWxAccountsMissing
+       转成一句人话（503 E_WX_TABLE），而不是 500。 */
+    getWxAccountByOpenid: function (openid) {
+      return call("/wx_accounts?openid=eq." + q(String(openid || "")) + "&limit=1")
+        .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+    },
+    getWxAccountByUnionid: function (unionid) {
+      if (!unionid) return null;
+      return call("/wx_accounts?unionid=eq." + q(String(unionid)) + "&limit=1")
+        .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+    },
+    putWxAccount: function (row) {
+      return call("/wx_accounts?on_conflict=uid", {
+        method: "POST", body: row, prefer: "resolution=merge-duplicates,return=representation"
+      }).then(function (rows) { return rows && rows[0] ? rows[0] : row; });
+    },
+    patchWxAccount: function (uid, patch) {
+      return call("/wx_accounts?uid=eq." + q(uid), { method: "PATCH", body: patch, prefer: "return=minimal" })
+        .then(function () { return true; });
     },
 
     putCode: function (rec) {

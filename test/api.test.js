@@ -651,24 +651,45 @@ async function main() {
     acc.plan = "pro";
     store.putAccount(acc);
 
+    /* ⚠️ 这一节在 2026-10-04 反过来了：原先守的是「free 档推不上去（403 E_TIER）」，
+       用户裁决改成「同步功能只要用户登录就全部提供，确保用户数据不丢失」。
+       于是服务端这道闸只判「有没有会话」—— 判据从「403」变成「200」。
+       客户端那一半在自检的能力表里（同步从 pro 改成登录即得）。
+
+       留着这一节的理由不是「记历史」：**它挡的是把闸重新加回去**。
+       哪天有人顺手把档位判定写回 syncTierGate，这儿立刻红。 */
     {
       const freeAcc = store.getAccount(uid);
       freeAcc.plan = "free";
       store.putAccount(freeAcc);
       const freeD = Object.assign({}, d, { account: { uid } });
-      const noPush = await core.syncPush(freeD, { deviceId: "A", recs: [{ id: "x", payload: {}, updatedAt: t }] });
-      eq(noPush.status, 403, "free 账号推不上去（403，不是静默成功）");
-      eq(noPush.body.code, "E_TIER", "错误码 E_TIER");
-      eq(noPush.body.minTier, "pro", "如实回门槛是 pro");
-      const noPull = await core.syncPull(freeD, { deviceId: "A" });
-      eq(noPull.status, 403, "free 账号也拉不下来（拉同样要 Pro）");
 
-      chk(noPush.body.code !== "E_NO_SESSION", "403 不说成「还没登录」");
-      chk(/Pro/.test(noPush.body.message), "文案里如实写明要 Pro 起");
-      chk(/本机/.test(noPush.body.message), "文案里如实写明本机进度不受影响");
+      const freePush = await core.syncPush(freeD, { deviceId: "A", recs: [{ id: "x", payload: { level: 1 }, updatedAt: t }] });
+      eq(freePush.status, 200, "free 账号也推得上去（登录即得，不看档位）");
+      eq(freePush.body.applied, 1, "那条真写进去了（不是「200 但什么也没做」）");
+      const freePull = await core.syncPull(freeD, { deviceId: "A" });
+      eq(freePull.status, 200, "free 账号也拉得下来");
+      eq(freePull.body.recs.length, 1, "拉得到刚推上去那一条");
+      chk(!freePush.body.minTier, "不再回什么「门槛是 pro」");
+
+      const goneD = Object.assign({}, d, { account: null });
+      const gonePush = await core.syncPush(goneD, { deviceId: "A", recs: [] });
+      eq(gonePush.status, 401, "没登录仍然推不上去（闸松的是档位，不是会话）");
+      eq(gonePush.body.code, "E_NO_SESSION", "没登录回的是 E_NO_SESSION");
+
       freeAcc.plan = "pro";
       store.putAccount(freeAcc);
     }
+
+    /* 上面 free 档那一推是真写进去了的（那正是这条裁决的意思）。这一节要数条数，
+       先把那条标成删除 —— 注意**墓碑也是一行**（deleted=1），所以下面数的是
+       「非 deleted 的行」，不是 recs 的长度。 */
+    await core.syncPush(Object.assign({}, d, { account: { uid } }), {
+      deviceId: "A",
+      recs: [{ id: "x", payload: {}, updatedAt: t + 1, deleted: true }]
+    });
+    const cleared = await core.syncPull(Object.assign({}, d, { account: { uid } }), { deviceId: "A" });
+    eq(cleared.body.recs.filter(r => !r.deleted).length, 0, "清盘：x 已经标删（墓碑留着，是同步该有的样子）");
 
     const dd = Object.assign({}, d, { account: { uid } });
 
@@ -685,7 +706,8 @@ async function main() {
     eq(p1.body.conflicts.length, 0, "无冲突时 conflicts 为空数组");
 
     const pull1 = await core.syncPull(dd, { deviceId: "A" });
-    eq(pull1.body.recs.length, 3, "pull 拿到 3 条");
+    eq(pull1.body.recs.filter(r => !r.deleted).length, 3, "pull 拿到 3 条（那条墓碑不算）");
+    eq(pull1.body.recs.filter(r => r.deleted).length, 1, "墓碑也在 recs 里 —— 删掉的记录要能传到另一台机器");
     eq(pull1.body.serverTime, t, "serverTime 是服务端时间（供下次当游标）");
 
     t += 5000;
@@ -2889,8 +2911,11 @@ async function main() {
       eq(g278.status, 200, "⑥ GET /api/me 仍然走原来的路（新加的 PATCH 没把它挤掉）");
 
       const coreSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
-      eq((coreSrc278.match(/session\.issue\(cfg, acc\.uid, t\)/g) || []).length, 1,
-        "⑦ **签会话只写一处**（`issueSessionFor`）——原先这个调用在原码里手抄了三份");
+      eq((coreSrc278.match(/session\.issue\(cfg, /g) || []).length, 2,
+        "⑦ **签会话只写两处**：`issueSessionFor`（网页版那条路）与 `wxIssueSession`（小程序，Issue #71）——原先这个调用在原码里手抄了三份");
+      /* 微信那条路（Issue #71）签的是**同一枚**会话令牌，形状抄自 issueSessionFor。
+         两处是一处对应一条登录路，不是「同一个东西写两份」——真要再冒第三处，
+         说明有人手抄了一份新的签发逻辑，那才是要拦的。 */
       eq((coreSrc278.match(/function issueSessionFor\(/g) || []).length, 1,
         "⑦ `issueSessionFor()` 只有一份定义");
       chk(/issueSessionFor\(deps, cur, firstVerify\)/.test(coreSrc278),

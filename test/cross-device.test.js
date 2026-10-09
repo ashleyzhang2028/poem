@@ -228,8 +228,12 @@ async function main() {
     } finally { env.restore(); }
   }
 
-  console.log("\n=== 四、名册与进度共用同一把闸（Pro 起） ===");
+  console.log("\n=== 四、名册与进度共用同一把闸（只判会话，不判档位） ===");
   {
+    /* ⚠️ 这一节的判据 2026-10-04 反过来了：上面那把小闸原先判档位（free → 403 E_TIER），
+       用户裁决「同步功能只要用户登录就全部提供」。名册与进度共用同一把闸，
+       所以名册也跟着放开。留着这一节的理由同 api.test.js：
+       **它挡的是把档位判定重新加回 syncTierGate**。 */
     const env = bootServer({});
     try {
       const core = require("../api/_lib/core.js");
@@ -238,15 +242,18 @@ async function main() {
 
       await store.putAccount({ uid: "u_1", email_hash: "h", email: "a@qq.com", nickname: "", plan: "free", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
       const r1 = await core.familyPut(d, { family: { v: 1, at: "f-a", profiles: [{ id: "f-a", nickname: "A" }] } });
-      eq(r1.status, 403, "free 写名册回 403（与 sync/push 同一把闸）");
-      eq(r1.body.code, "E_TIER", "码是 E_TIER（不是「连不上」——那会让人一直重试）");
+      eq(r1.status, 200, "free 写名册也放行（与 sync/push 同一把闸：只判会话）");
 
       const r2 = await core.familyGet(d);
-      eq(r2.status, 200, "**读**名册仍回 200（读不涉及上传，不占层级）");
+      eq(r2.status, 200, "**读**名册回 200");
+
+      const anonPut = await core.familyPut(serverDeps(store, { account: null }), { family: { v: 1, at: "", profiles: [] } });
+      eq(anonPut.status, 401, "没登录写名册回 401（闸松的是档位，不是会话）");
+      eq(anonPut.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
 
       await store.patchAccount("u_1", { plan: "pro" });
       const r3 = await core.familyPut(d, { family: { v: 1, at: "f-a", profiles: [{ id: "f-a", nickname: "A" }] } });
-      eq(r3.status, 200, "pro 写名册放行");
+      eq(r3.status, 200, "pro 写名册同样放行");
 
       const anon = await core.familyGet(serverDeps(store, { account: null }));
       eq(anon.status, 401, "没登录读名册回 401（与 403 分开：一个去登录、一个去找管理员）");

@@ -1294,3 +1294,37 @@ Issue #278 删界面测试时，`truncation.test.js` 被当「纯界面」一并
 - `sw.js` v366 → **v371**，`js/settings-nav.js` 的 `APP_VERSION` 同一轮前进。
 
 **验证**：`bash test/run.sh` 全绿（含新捡回的 `truncation.test.js`）。
+
+## 微信小程序登录（Issue #71，2026-10-11）
+
+小程序端是另一个仓库（`npu-gpu-cpu/poem-wechat-mini-program`），但它打的接口在**这里**：
+账号、进度、会话、`code2Session` 全在 `api/_lib/` 里。理由只有一条 ——
+`wx_accounts.uid` 必须与 `accounts.uid` **同一个域**，否则同步与管理两头认不出是同一个人：
+小程序里改的档网页版读不到，网页版背的进度小程序拉不回来。这不是「接口对齐」能解决的，
+是同一份身份要落进同一张表。
+
+| 路由 | 在哪 | 干什么 |
+|---|---|---|
+| `POST /api/wx/login` | `api/_routes/wx/login.js` → `core.wxLogin` | `code` 换 openid，认回/新建账号，签发会话 |
+| `POST /api/wx/refresh` | `api/_routes/wx/refresh.js` → `core.wxRefresh` | 换一枚新令牌，**旧的当场吊销** |
+
+报文与响应字段名**以小程序端 `utils/auth.js` 的 `applySession()` 读的为准**，
+完整契约见小程序仓库 `docs/wx-login-server.md`。三处容易写歪的地方：
+
+1. **字段名是 `device`，不是 `deviceId`**。`/api/sync/*` 那两条用 `deviceId`，
+   而 `/api/wx/*` 这两条用 `device` —— 两套在本仓库里并存。服务端读不到设备号
+   不报错，但会话签不出 `sessions.device`、限流拆成一堆空桶 —— 没人会去查。
+2. **刷新不回一枚新的 refreshToken**：`accessToken` 与 `refreshToken` 是**同一枚**
+   会话令牌。它必须落进 `sessions.refresh_token` 才能按它找回那一行；不落的话
+   刷新永远验不过，而客户端只会看到「登录过期了」。刷新时把旧那一行**吊销**
+   （`revoked = 1`），否则一枚被偷走的 refreshToken 可以一直用下去。
+3. **会话解析要同时认 Cookie 与 Bearer**（`handler.tokenOf()`），Cookie 优先。
+   这一条是 Issue #71 里最阴的那个：路由加对了、登录一路绿灯、跟着每条同步都 401。
+
+数据库那一张 `wx_accounts` 表不在 `api/_lib/schema.sql` 里（那份是网页版的），
+建表语句在小程序仓库的 `docs/wx-login-server.md`。没建表时登录回
+`503 E_WX_TABLE` 并指路，不是 500。
+
+微信没有邮箱，而 `accounts.email_hash` 上有唯一索引 —— 所以微信账号用
+**按 uid 派生**的占位地址（`wx-<uid>@wx.local`）占住那一列，认人只认
+openid / unionid。这一条不改 `accounts` 的形状，也不动网页版登录的任何一行。
