@@ -1,0 +1,26 @@
+# 云托管只跑服务进程，不进构建上下文的东西一律挡在外面。
+# 挡住的是**构建上下文体积**（每次部署都要上传），不是运行时 —— 运行时靠
+# `COPY . .`，所以下面每一条都得先确认「serve.js 用不到」。
+
+# 版本库与 CI：容器里没有 git，也没有 CNB 流水线
+.git
+.github
+.cnb
+.cnb.yml
+.vscode
+
+# 本地依赖与密钥：镜像里现装、现注入
+node_modules
+.env
+.env.local
+.env.*.local
+
+# 测试与文档：跑服务和被服务的是两回事
+test
+docs
+
+# 开发期工具与产物
+*.log
+*.md
+.cache
+pwa-*.png
