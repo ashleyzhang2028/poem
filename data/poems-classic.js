@@ -1740,6 +1740,12 @@ window.POEMS_CLASSIC = [
   { textRef: "guwen-gw-285", id: "gw-285", title: "心术", source: "《嘉祐集·权书》", dynasty: "宋", author: "苏洵", gradeGroup: "诸子论道" },
   { textRef: "guwen-gw-287", id: "gw-287", title: "郑板桥教子（古文观止本）", source: "《郑板桥集·潍县署中与舍弟墨第二书》", dynasty: "清", author: "郑燮", gradeGroup: "人物故事" },
 
+  /* Issue #539 · 用户 2026-10-10 点名补录《答司马谏议书》。
+     正文在 scripts/data/classic-corpus-539.js；归「诸子论道」一组
+     （与《心术》《过秦论》《六国论》同类，是本集的议论文一类）。
+     它不是《古文观止》选的篇目，故不写 `selection`。 */
+  { textRef: "classic-gw-288", id: "gw-288", title: "答司马谏议书", source: "《临川先生文集》", dynasty: "宋", author: "王安石", gradeGroup: "诸子论道" },
+
 ];
 
 (function () {
