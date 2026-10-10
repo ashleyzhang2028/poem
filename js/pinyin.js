@@ -129,7 +129,33 @@
     "扁舟": ["piān", "zhōu"],
     "小舟": ["xiǎo", "zhōu"],
     "恰好": ["qià", "hǎo"],
-    "见牛羊": ["xiàn", "niú", "yáng"]
+    "见牛羊": ["xiàn", "niú", "yáng"],
+
+    /* ── Issue #539 · 荀子《劝学》全文（《古文》那一条） ──────────────────
+       这一篇的单字默认音有九处对不上，逐条钉住。判据是**中学语文教科书
+       的读法**（与课内那一课同一套），不另立一套：                         */
+    /* 「虽有槁暴」——「暴」同「曝」，晒干，读 pù（不是 bào）。 */
+    "槁暴": ["gǎo", "pù"],
+    /* 「君子博学而日参省乎己」——「参」是「检验」（同「三」的活用），
+       读 cān 不读 cēn；「省」读 xǐng（反省），不是 shěng。 */
+    "参省": ["cān", "xǐng"],
+    /* 「则知明而行无过矣」——「知」同「智」，读 zhì。 */
+    "知明": ["zhì", "míng"],
+    /* 「君子生非异也」——「生」同「性」，读 xìng。 */
+    "生非异": ["xìng", "fēi", "yì"],
+    /* 「学恶乎始？恶乎终？」——「恶」读 wū（哪里、怎么）。 */
+    "恶乎": ["wū", "hū"],
+    /* 「锲而不舍」——「舍」是「舍弃」，读 shě；单字默认的 shè 到这儿会错。
+       「驽马十驾，功在不舍」「故学数有终，若其义则不可须臾舍也」同。 */
+    "不舍": ["bù", "shě"],
+    "而舍": ["ér", "shě"],
+    "须臾舍": ["xū", "yú", "shě"],
+    /* 「顺者不可胜数也」——「数」读 shǔ（计算），不是 shù。 */
+    "胜数": ["shēng", "shǔ"],
+    "不可胜数": ["bù", "kě", "shēng", "shǔ"],
+    /* 「树成荫」——旧读 yìn，普通话「荫」在「树荫 / 成荫」里读 yīn。
+       通行表里两读并存，表里只收了 yìn，这里按普通话钉住。 */
+    "成荫": ["chéng", "yīn"]
   };
 
   function readings(ch) {
@@ -180,13 +206,22 @@
   function readOf(ch, text, i) {
     const list = readings(ch);
     if (!list.length) return "";
-    if (list.length === 1) return list[0];
 
     const fixed = fixAt(ch, text, i);
     if (fixed) return fixed;
 
+    /* ⚠️ 词表要**排在**「单音字直接返回」前面（Issue #539）。
+       原先的顺序是 `if (list.length === 1) return list[0]` 先跑，
+       于是**单音字的词表条永远轮不到** —— 「恶」（表里只有 è）在
+       「恶乎」（wū）里照样读 è；「暴」（bào）在「槁暴」（pù）里读 bào；
+       「知」（zhī）在「知明」（zhì）里读 zhī。
+       这些正是古汉语里最常见的通假 / 活用，恰好多是单音字 ——
+       词表本来就是为它们准备的，卡在前面等于白写。
+       顺序改成：勘误 → 词表 → 单音字 → 多音字规则。 */
     const hit = wordAt(text, i);
     if (hit && ch !== "一" && ch !== "不") return hit;
+
+    if (list.length === 1) return list[0];
 
     const next = text[i + 1];
     if (ch === "不") {
@@ -239,8 +274,22 @@
     return false;
   }
 
+  /* 词表里**多字词**优先于单字词：`Object.keys` 是按插入顺序来的，
+     "恶"（单字）排在 "恶乎" 前面时，`wordAt` 先撞上单字那条就返回了，
+     后面那条多字词永远轮不到。按长度从长到短排一次，长的先试。
+     ⚠️ 只排一次、缓存在 `WORD_KEYS` 上 —— 词表是模块级常量，不会中途变。 */
+  let WORD_KEYS = null;
+  function wordKeys() {
+    if (!WORD_KEYS) {
+      WORD_KEYS = Object.keys(WORDS).sort(function (a, b) {
+        return Array.from(b).length - Array.from(a).length;
+      });
+    }
+    return WORD_KEYS;
+  }
+
   function wordAt(text, i) {
-    const keys = Object.keys(WORDS);
+    const keys = wordKeys();
     for (let k = 0; k < keys.length; k++) {
       const w = keys[k];
       const arr = Array.from(w);

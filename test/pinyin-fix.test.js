@@ -232,5 +232,44 @@ chk(/pinyinFix: "poem_pinyin_fix_v1"/.test(pstore), "ProgressStore 的 KEYS 里�
 chk(/\{ key: KEYS\.pinyinFix, domain: "progress", local: false, perChild: true \}/.test(pstore),
   "分域表写的是「上云 + 跟孩子走」");
 
+/* Issue #539：《劝学》全文里那些**通假 / 活用**的读法 —— 它们在表里多是
+   单音字（恶 è、暴 bào、知 zhī），词表条原先卡在「单音字直接返回」后面，
+   永远轮不到。这一条守的是顺序本身。 */
+[
+  ['虽有槁暴', '暴', 'pù'],
+  ['君子博学而日参省乎己', '省', 'xǐng'],
+  ['则知明而行无过矣', '知', 'zhì'],
+  ['君子生非异也', '生', 'xìng'],
+  ['学恶乎始', '恶', 'wū'],
+  ['锲而不舍', '舍', 'shě'],
+  ['功在不舍', '舍', 'shě'],
+  ['顺者不可胜数也', '数', 'shǔ'],
+  ['树成荫', '荫', 'yīn']
+].forEach(function (row) {
+  const html = P.annotateHtml(row[0], 'all');
+  const re = new RegExp('<ruby>' + row[1] + '<rt>' + row[2] + '</rt></ruby>');
+  chk(re.test(html), '《劝学》「' + row[0] + '」里「' + row[1] + '」读 ' + row[2]);
+});
+
 console.log(fails === 0 ? "\n🎉 注音勘误测试全部通过" : "\n❌ " + fails + " 项失败");
 process.exit(fails ? 1 : 0);
+
+/* Issue #539：《劝学》全文里那些**通假 / 活用**的读法 —— 它们在表里多是
+   单音字（恶 è、暴 bào、知 zhī），词表条原先卡在「单音字直接返回」后面，
+   永远轮不到。这一条守的是顺序本身。 */
+const QX_READ = [
+  ['虽有槁暴', '暴', 'pù'],
+  ['君子博学而日参省乎己', '省', 'xǐng'],
+  ['则知明而行无过矣', '知', 'zhì'],
+  ['君子生非异也', '生', 'xìng'],
+  ['学恶乎始', '恶', 'wū'],
+  ['锲而不舍', '舍', 'shě'],
+  ['功在不舍', '舍', 'shě'],
+  ['顺者不可胜数也', '数', 'shǔ'],
+  ['树成荫', '阴', 'yīn']
+];
+QX_READ.forEach(function (row) {
+  const html = P.annotateHtml(row[0], 'all');
+  const re = new RegExp('<ruby>' + row[1] + '<rt>' + row[2] + '</rt></ruby>');
+  chk(re.test(html), '《劝学》「' + row[0] + '」里「' + row[1] + '」读 ' + row[2]);
+});
