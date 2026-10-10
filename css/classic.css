@@ -2226,7 +2226,7 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
    「最后一行不收线」要按每种列数各写一条 `nth-child` 规则，还得跟着
    断点走；渐变只认行高，几列都一样，末行自然没有线（渐变画到网格底
    就停了）。代价是行高得是定数 —— 所以 `grid-auto-rows` 锁死，一格
-   里那一行字靠 `line-height` 与格高对齐，名字超长就地省略号。
+   里那一行字靠 `line-height` 与格高对齐，名字超长就地省略号。 */
 
 .authors-index {
   display: flex;
@@ -2263,6 +2263,14 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
   display: grid;
   grid-template-columns: repeat(var(--author-cols), minmax(0, 1fr));
   grid-auto-rows: var(--author-row-h);
+
+  /* 格与格之间的缝（Issue #484 第六轮）：等分格排满一行四格时，上一格
+     数字的右端与下一格名字的起笔只隔着各自那点内边距，两列的字几乎
+     贴在一起，看着是「四格」、读着是一栏。补一道细缝隔开。
+
+     ⚠️ 只写 `column-gap`，`row-gap` 必须是 0 —— 行分隔线是 `grid-auto-rows`
+     那条 32px 的渐变画的，行与行之间一留空，线就落不到格底。 */
+  column-gap: 6px;
 
   /* ⚠️ ≥768px 时 `.group-card` 是 `display: flex`（一段里的条目排两列用的，
      见本文件上面那一段），名册跟着成了 flex 项 —— 不写这两行，网格会被
@@ -2335,9 +2343,11 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
    最长的五字名 65px；四字名（52px）加 2px 的缝与两位数的条数（约 12.6px）
    要一格 74px 才不省，五字名要 87px。
 
-   于是（实测）：320px 视口一格 69.5px、360px 一格 79.5px —— 全名册只有
-   「孔子及弟子 / 墨翟及弟子 / 求那毗地译」这三个五字名会省成「孔子及…」；
-   375px 起（一格 83.3px）534 位一个不省。往上加列一格更宽，更不会省。 */
+   格宽还要先扣掉每行那道 `column-gap`（6px × 3 = 18px）。于是（实测）：
+   390px 视口一格 82.5px，534 位一个不省；375px 一格 78.8px，只有「孔子及
+   弟子 / 墨翟及弟子」这两个五字名省成「孔子及…」；320px 一格 65px，
+   也是这两个。往上加列一格更宽，更不会省 —— 5 列 98.8px、6 列 108px、
+   8 列 115.6px，一个字不省。 */
 @media (min-width: 560px) { .authors-index .author-grid { --author-cols: 5; } }
 @media (min-width: 720px) { .authors-index .author-grid { --author-cols: 6; } }
 @media (min-width: 1024px) { .authors-index .author-grid { --author-cols: 8; } }
