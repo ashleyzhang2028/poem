@@ -59,6 +59,8 @@ const LOAD = [
   'scripts/data/classic-corpus-517a.js',
   /* Issue #517 · 收尾那一批：清单里缺的 9 篇 + 与《古文观止》同篇的 2 条归宿。 */
   'scripts/data/classic-corpus-517b.js',
+  /* Issue #539 · 《答司马谏议书》（宋 · 王安石）单篇补录。 */
+  'scripts/data/classic-corpus-539.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
   'scripts/data/guwen-corpus-222.js',
@@ -210,6 +212,8 @@ var RAW_ENTRIES = {};
        靠上面那段别名兜底把 `classic-gw-285` / `classic-gw-287` 指到 guwen
        那一份上。壳文件登记在前，这一句才补得进去。 */
     { f: 'scripts/data/classic-corpus-517b.js', v: 'CLASSIC_CORPUS_517B', book: 'classic' },
+    /* Issue #539 · 《答司马谏议书》单篇（壳里挂 textRef）。 */
+    { f: 'scripts/data/classic-corpus-539.js', v: 'CLASSIC_CORPUS_539', book: 'classic' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'scripts/data/qu-corpus-461.js', v: 'QU_CORPUS_461', book: 'yuanqu' },
