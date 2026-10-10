@@ -3,6 +3,7 @@
 // GA 的 base tag 只报 page_view；这一层守的是「加了事件，别假加了」：
 //
 //   1. 每个跑 gtag 的页面都引到 js/analytics.js（不引 = 那个页面一个事件都发不出）
+//      反向也守：admin/* 内部页一个 gtag 都不许有（Issue #538）
 //   2. js/analytics.js 自己：没 gtag 时不抛（统计挂了不能带垮功能）、
 //      只有白名单里的参数能出去（别把搜索词一类的东西顺手送走）
 //   3. 几个约定要报的动作仍在原位 —— 连读、切换集子、翻页。
@@ -79,10 +80,13 @@ htmlFiles(root, []).forEach(function (f) {
   chk((src.match(/js\/analytics\.js/g) || []).length === 1, rel + ' 只引一份 analytics.js');
 });
 console.log('=== 带 GA 的页面共 ' + withGA.length + ' 个 ===');
-chk(withGA.length >= 42, '带 GA 的页面都在（实际 ' + withGA.length + ' 个）');
-/* 只有 admin/index-old.html 无引用、无 GA —— 死文件，两样都没有才对。 */
-chk(noGA.every(f => f === 'admin/index-old.html'),
-  '没挂 GA 的只剩死文件 admin/index-old.html（实际 ' + noGA.join(', ') + '）');
+chk(withGA.length >= 37, '带 GA 的页面都在（实际 ' + withGA.length + ' 个）');
+/* admin/* 是内部页，不上统计（Issue #538）：后台几页一个 gtag 都不该有 ——
+   内部页的行为进同一个媒体资源会把外部数字搅浑。admin/index-old.html 是
+   死文件，照旧两样都没有。 */
+chk(noGA.every(f => f === 'admin/index-old.html' || f.startsWith('admin/')),
+  '没挂 GA 的只剩 admin/*（内部页，含死文件 index-old.html）（实际 ' + noGA.join(', ') + '）');
+chk(withGA.every(f => !f.startsWith('admin/')), 'admin/* 一个 GA 都不带（内部页不进外部报表）');
 
 // ---------------------------------------------------------------------------
 // 3 · 约定要报的动作还在不在
