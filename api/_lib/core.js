@@ -1508,7 +1508,7 @@ function wxLogin(deps, input) {
       wxRow = row;
       return wxEnsureAccount(deps, r.body, row, t);
     }).then(function (acc) {
-      if (acc && acc.status && acc.code) return acc;   // 已经是 err() 了
+      if (acc && acc.body && acc.body.code) return acc;   // 已经是 err() 了（err() 把 code 放在 body 里）
       acc.wx_avatar_url = (wxRow && wxRow.avatar_url) || "";
       return Promise.resolve(store.patchAccount ? store.patchAccount(acc.uid, { last_login_at: t }) : null)
         .then(function () { return acc; }, function () { return acc; })

@@ -215,6 +215,37 @@ async function main() {
     }
   }
 
+  /* ---------- 三b、wx_accounts 缺表：必须回 503，不许当成登录成功 ---------- */
+  {
+    const env = boot({ WX_APPID: "wx_test", WX_SECRET: "sec_test" });
+    fakeWx();
+    const srv = await serve();
+    try {
+      /* 让「读 wx_accounts」这一步抛出 Postgres 的缺表错（42P01 / does not exist），
+         这正是 core 里 isWxAccountsMissing 认的那两个特征。 */
+      const store = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const savedGet = store.getWxAccountByOpenid;
+      store.getWxAccountByOpenid = () => Promise.reject(
+        new Error('supabase 404: {"code":"42P01","message":"relation \\"wx_accounts\\" does not exist"}')
+      );
+      try {
+        const r = await call(srv.base, "POST", "/api/wx/login", { code: "CT", device: "d1" });
+        /* 判据写的是 err() 的形状：{ status, body: { code } } —— code 在 body 里。
+           写成顶层 acc.code 的话恒为假，这条链会把 503 当成登录成功，
+           接着 patchAccount(undefined) 并下发一枚会话；症状是
+           「数据库里少一张表」表现为「小程序能登录、但一切都不对」，无处报错。 */
+        eq(r.status, 503, "wx_accounts 缺表时回 503");
+        eq(r.body.code, "E_WX_TABLE", "回的是 E_WX_TABLE（告诉运维去建表）");
+        chk(!("accessToken" in (r.body || {})), "绝不把缺表当成登录成功（不下发 token）");
+      } finally {
+        store.getWxAccountByOpenid = savedGet;
+      }
+    } finally {
+      await srv.close();
+      env.restore();
+    }
+  }
+
   /* ---------- 四、settings:v1 / profile:v1 的服务端白名单 ---------- */
   {
     const env = boot({ WX_APPID: "wx_test", WX_SECRET: "sec_test" });
