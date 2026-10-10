@@ -147,16 +147,23 @@
   }
 
   /* ── ① 各朝代段：段里是这一朝的作者 ─────────────────────────────────
-     段里**只有**「作者名 + 条数」两件事，排成一行行的胶囊（一行三个起步）。
+     段里**只有**「作者名 + 条数」两件事，排成和顶上那张朝代索引卡**同一副
+     长相**的格子：左名右数、一条细线分隔，名字左对齐、数字右对齐。
 
      为什么不是一行一位作者：手机上那是一个作者一行、右边一颗箭头一把小字，
      一部《唐诗》就摆出上百行，读者要点着滚动条把一整朝滤一遍。名册要的是
      「扫一眼有谁」，不是「读一行的详情」—— 朝代、集子名、条数这些小字
-     全都不进名册，名字自己就是索引。点哪一颗进哪一位的作品列表，
+     全都不进名册，名字自己就是索引。点哪一格进哪一位的作品列表，
      该有的信息在②层里一条不少。
 
-     字号 / 字形取搜索页那颗「作者索引」入口那一档（13.5px、UI 黑体），
-     与①层那张朝代索引卡同一族。 */
+     为什么不是行内胶囊（Issue #484 第五轮）：胶囊按名字长短各拿各的宽，
+     一行三四个、行行参差，数字也跟在名字屁股后头跳来跳去 —— 用户原话
+     「还是显得乱了」。改成等分格子后，每一列的名字起笔对齐、数字右端
+     对齐，一竖列扫下来就是一张表。
+
+     字号 / 字形取搜索页那颗「作者索引」入口那一档（13px、UI 黑体），
+     与①层那张朝代索引卡同一族 —— 名册一行四格起步，字号比朝代卡收半号，
+     长名字才放得下。 */
   function eraCard(g) {
     var people = peopleOf(g.at);
     var sec = document.createElement("section");
@@ -171,11 +178,11 @@
     sec.appendChild(head);
 
     var wrap = document.createElement("div");
-    wrap.className = "author-chips";
+    wrap.className = "author-grid";
     people.forEach(function (w) {
       var el = document.createElement("button");
       el.type = "button";
-      el.className = "author-chip";
+      el.className = "author-cell";
       el.dataset.author = w.name;
       el.innerHTML =
         '<span class="author-name">' + esc(w.name) + "</span>" +
