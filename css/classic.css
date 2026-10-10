@@ -2204,19 +2204,29 @@ body[data-nav="search"] #site-gw-list .empty[data-empty="idle"] { padding: 0; }
 
    这一节只管 ① 层那两件：
      · 容器 `.authors-index` 撑成与 `.app` 内容同宽的竖排；
-     · 各朝代段里的作者 —— 一行行的**胶囊**（`.author-chip`），不是
-       一行一位作者的行。
+     · 各朝代段里的作者 —— 与顶上那张朝代索引卡**同一副长相**的等分格子
+       （`.author-grid` / `.author-cell`，左名右数），不是一行一位作者的行、
+       也不是行内胶囊。
 
-   ## 胶囊为什么是胶囊（Issue #480 第三轮）
+   ## 为什么从胶囊回到「表」（Issue #484 第五轮）
 
-   用户原话：手机上一行一位作者，一朝的作者要滚上半天；把「作者 + 数量」
-   直接做成行内胶囊，一张卡一行就能放下三个以上，别的一律不要，字号与
-   搜索页那颗「作者索引」入口一样大，字形黑体。
+   第三轮把作者做成行内胶囊（名字 + 条数，一行三个起步），是为了让一朝
+   上百位作者别排成上百行。但胶囊各按名字长短拿宽，行行参差，数字跟在
+   名字屁股后头跳来跳去 —— 用户 2026-10-10 原话：「还是显得乱了」。
 
-   所以胶囊里只有两样：名字、条数。朝代 / 集子名那一行小字（老 `eraLine()`）
-   整个不进名册 —— 一串小字会把每颗胶囊顶到半屏宽，「一行三个」就没了。
-   名册是拿来扫名字的，详情归②层。
-   ========================================================================== */
+   所以回到顶上那张朝代索引卡的做法：**等分格子，左名右数，一条细线分隔**。
+   名字起笔对齐一列，数字右端对齐一列，一竖列扫下来就是一张表。行高比
+   朝代卡矮一点（32px 对 39px）—— 朝代卡一行至多两格、留白多些才不挤，
+   名册一行四格起步、行数多，行距收紧才看得完一朝。
+
+   ## 行线为什么是渐变画的
+
+   行分隔线用 `repeating-linear-gradient` 画在 `.author-grid` 的底上，
+   不是每格一条 `border-bottom`：一行几格随断点变（4 / 5 / 6 / 8），
+   「最后一行不收线」要按每种列数各写一条 `nth-child` 规则，还得跟着
+   断点走；渐变只认行高，几列都一样，末行自然没有线（渐变画到网格底
+   就停了）。代价是行高得是定数 —— 所以 `grid-auto-rows` 锁死，一格
+   里那一行字靠 `line-height` 与格高对齐，名字超长就地省略号。
 
 .authors-index {
   display: flex;
@@ -2239,49 +2249,72 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
   margin-top: 0;
 }
 
-/* ── 各朝代段里的作者：一行行胶囊 ───────────────────────────────────────
-   `flex-wrap` 让每颗胶囊按自己的名字长短拿宽，一行塞不下就整颗换行 ——
-   不用 grid 的等分列：`李白` 与 `诸葛亮` 差着两个字，等分会把短名字
-   泡在一片空里，一行三个的说法也就成了三个半。
-   `gap` 是行内间距，行距另给一点（`row-gap` 略大于 `column-gap`），
-   免得上下两行粘成一团。 */
-.authors-index .author-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 6px;
-  padding: 2px 12px 12px 12px;
+/* ── 各朝代段里的作者：等分格子，左名右数 ─────────────────────────────
+   手机竖屏一行四格（用户定的），往上逐档加列：≥560px 五格、≥720px 六格、
+   ≥1024px 八格。列数走 `--author-cols` 一个变量，`grid-template-columns`
+   只有一处。
+
+   `minmax(0, 1fr)` 而不是 `1fr`：不写 `minmax` 的话列的「最小内容宽」会
+   把长名字那一列撑过半格、四列一起顶出卡外。 */
+.authors-index .author-grid {
+  --author-cols: 4;
+  --author-row-h: 32px;
+
+  display: grid;
+  grid-template-columns: repeat(var(--author-cols), minmax(0, 1fr));
+  grid-auto-rows: var(--author-row-h);
+
+  /* ⚠️ ≥768px 时 `.group-card` 是 `display: flex`（一段里的条目排两列用的，
+     见本文件上面那一段），名册跟着成了 flex 项 —— 不写这两行，网格会被
+     按 max-content 缩成 705px（实测），八列反而比六列还窄。 */
+  flex: 1 1 100%;
+  max-width: 100%;
+
+  /* 行线：每 32px 一条 1px 的线，画到网格底就停 —— 最后一行下面没有线，
+     顶上那条正好接住 `.group-head`（= 卡头下的分隔线）。
+     `origin` / `clip` 都取 content-box：线**不**伸进左右那 6px 内边距，
+     起笔就与第一格的名字对齐。 */
+  padding: 0 6px 6px;
+  background-image: repeating-linear-gradient(to bottom,
+    var(--line) 0 1px, transparent 1px var(--author-row-h));
+  background-origin: content-box;
+  background-clip: content-box;
 }
 
-.authors-index .author-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-
-  /* 一颗胶囊自己就是一块可点区，别让 flex 把它拉长 / 压扁 */
-  flex: 0 0 auto;
-  max-width: 100%;
+.authors-index .author-cell {
+  display: flex;
+  align-items: center;
+  /* 名字与数字之间的缝：2px 是省出来的 —— 手机竖屏四格一格才 87px，
+     五字名（65px）本来就顶到边，四字名（52px）要留着这条缝才不省略号。 */
+  gap: 2px;
+  min-width: 0;
   box-sizing: border-box;
 
-  padding: 4px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card-2, transparent);
+  /* 一格自己就是一块可点区：左右只留够点到的那点内边距，竖直方向不写 ——
+     行高由 `grid-auto-rows` 定，字在格里自己居中。 */
+  padding: 0 4px 0 3px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 
+  text-align: left;
   font: inherit;
-  /* 与搜索页那颗「作者索引」入口同一档（13.5px），字形走 UI 黑体 ——
+  /* 与搜索页那颗「作者索引」入口同一档，字形走 UI 黑体 ——
      名册是索引、不是诗文，`--font-ui` 正是那套无衬线。 */
   font-family: var(--font-ui);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.3;
   color: var(--ink);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.authors-index .author-chip:hover { background: var(--green-light); }
-.authors-index .author-chip:active { opacity: .7; }
+.authors-index .author-cell:hover { background: var(--green-light); }
+.authors-index .author-cell:active { background: var(--card-2); }
 
-.authors-index .author-chip .author-name {
+/* 名字：左端，占满剩下的宽，长了就地省略号（最长的「孔子及弟子」五个字，
+   320px 视口下省成「孔子及…」，不至于把数字顶出格）。 */
+.authors-index .author-cell .author-name {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2289,19 +2322,25 @@ body[data-nav="search"] [data-lib-view="author"] > .toolbar {
   font-weight: 600;
 }
 
-/* 条数：跟在名字后面，压淡、小一号 —— 它是注解，不该与名字抢眼。 */
-.authors-index .author-chip .author-count {
+/* 条数：右端一列，压淡、小一号 —— 它是注解，不该与名字抢眼。 */
+.authors-index .author-cell .author-count {
   flex: 0 0 auto;
-  font-size: 11.5px;
+  margin-left: auto;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
 
-/* 宽屏：一段宽，胶囊会一直摊到很长的行。卡里给一道上限，读起来像一列，
-   不至于横着扫一整个屏幕。 */
-@media (min-width: 1024px) {
-  .authors-index .author-chips { max-width: 880px; }
-}
+/* 逐档加列。数字是量出来的（390px 视口、UI 黑体 13px）：名字一字 13px，
+   最长的五字名 65px；四字名（52px）加 2px 的缝与两位数的条数（约 12.6px）
+   要一格 74px 才不省，五字名要 87px。
+
+   于是（实测）：320px 视口一格 69.5px、360px 一格 79.5px —— 全名册只有
+   「孔子及弟子 / 墨翟及弟子 / 求那毗地译」这三个五字名会省成「孔子及…」；
+   375px 起（一格 83.3px）534 位一个不省。往上加列一格更宽，更不会省。 */
+@media (min-width: 560px) { .authors-index .author-grid { --author-cols: 5; } }
+@media (min-width: 720px) { .authors-index .author-grid { --author-cols: 6; } }
+@media (min-width: 1024px) { .authors-index .author-grid { --author-cols: 8; } }
 
 /* 高度不再分档（Issue #484）：以前窄屏收到 54px、横屏矮窗收到 46px，是因为
    那会儿栏里要硬挤「标签 + 题名」两行。现在栏跟页顶 `.topbar` 一样高（70px），
