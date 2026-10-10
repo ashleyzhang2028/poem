@@ -1,6 +1,17 @@
 (function () {
   "use strict";
 
+  /* 事件上报（Issue #535）。
+     ---------------------------------------------------------------
+     这一页「切换集子」有两种进法：网格上点一张卡，进来之后在左侧栏又点
+     另一部 —— 两个入口都汇到 `enterBook`，所以埋点只放这一处，
+     参数 `from` 说明是从哪儿进来的（grid / rail）。
+     上报本身不在这儿判 gtag 在不在，`js/analytics.js` 会兜。 */
+  function track(name, params) {
+    if (typeof window === "undefined" || !window.Analytics) return;
+    window.Analytics.track(name, params);
+  }
+
   var ENTRIES = [
     {
       id: "poems",
@@ -222,10 +233,11 @@
   /* 一条子入口：名字 + 条数 + 右端一枚箭头，点它就地进集子（与旧卡片同一条路）。
      Issue #484：块状卡片改成目录行；第二版起一行两项，列间距折进行的内边距，
      箭头的位移与变色都在 CSS 里（.library-sub-go）。 */
-  function subItemHtml(it) {
+  function subItemHtml(it, g) {
     var tag = it.book ? "button" : "a";
     var attr = it.book ? ' type="button"' : ' href="' + it.page + '"';
-    return "<" + tag + ' class="library-sub" data-book="' + it.id + '"' + attr + ">" +
+    return "<" + tag + ' class="library-sub" data-book="' + it.id + '"' +
+      (g ? ' data-group="' + esc(g.id) + '"' : "") + attr + ">" +
       '<span class="library-sub-name">' + esc(it.name) + "</span>" +
       '<span class="library-sub-count">' + countOf(it.id) + " " + esc(it.unit) + "</span>" +
       '<span class="library-sub-go" aria-hidden="true">' + CHEVRON + "</span>" +
@@ -241,7 +253,7 @@
       '<span class="library-group-name">' + esc(g.name) + "</span>" +
       '<span class="library-group-note">' + esc(g.note) + "</span>" +
       "</header>" +
-      '<div class="library-subs">' + members.map(subItemHtml).join("") + "</div>" +
+      '<div class="library-subs">' + members.map(function (it) { return subItemHtml(it, g); }).join("") + "</div>" +
       "</section>";
   }
 
@@ -312,11 +324,21 @@
     return (cfg && cfg.pageSub) || "";
   }
 
-  function enterBook(bookId) {
+  /* 这一部归在哪一组（诗文典籍 / 人物 / 文史常识）。
+     只为了让「切换集子」看得出一来一回是在组内还是跨组 —— 课内诗词不入组。 */
+  function entryGroup(bookId) {
+    for (var i = 0; i < GROUPS.length; i++) {
+      if (GROUPS[i].members.indexOf(bookId) > -1) return GROUPS[i].id;
+    }
+    return "";
+  }
+
+  function enterBook(bookId, place) {
     var entry = entryOf(bookId);
     if (!entry) return;
     if (!entry.book) {
 
+      track("book_open", { book: entry.id, from: "grid", kind: "jump" });
       location.href = entry.page;
       return;
     }
@@ -352,6 +374,12 @@
     var api = window.ReaderEngine.mount(cfg);
     if (!api) return;
 
+    track("book_open", {
+      book: entry.id,
+      from: place,
+      group: entryGroup(entry.id),
+      items: items.length
+    });
     paintBack();
     window.scrollTo(0, 0);
   }
@@ -418,7 +446,7 @@
 
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
       e.preventDefault();
-      enterBook(entry.id);
+      enterBook(entry.id, "grid");
     });
   }
 
@@ -443,6 +471,7 @@
 
     open: enterBook,
     close: exitBook,
+    track: track,
     current: function () { return current ? current.id : ""; },
     rail: function () { return rail; }
   };

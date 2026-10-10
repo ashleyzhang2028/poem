@@ -667,6 +667,13 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
+
+      /* 底部导航的去向（Issue #535）。这里是全站唯一一处 `data-nav-go` 的
+         点击出口，所以埋一次就够 —— 页面自己另挂的 <a> 不经过这里，不在
+         统计范围内，也不该硬塞。 */
+      if (window.Analytics) {
+        window.Analytics.track("nav_go", { to: dest, from: "dock" });
+      }
       location.href = want;
     });
   }
