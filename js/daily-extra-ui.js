@@ -1,7 +1,15 @@
 (function () {
   "use strict";
 
+  /* 与搜索页同一套：先铺一批（`SUGGEST_MAX`），滚到底再续一批
+     （`SUGGEST_BATCH`），直到全量命中铺完（Issue #539 追问）。 */
   var SUGGEST_MAX = 8;
+
+  var SUGGEST_BATCH = 8;
+
+  var SUGGEST_ROW_H = 44;
+
+  var SUGGEST_EXTEND_GAP = 60;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -166,9 +174,10 @@
      同一档上 —— 口径不一致，两张下拉就会给出两个次序。 */
   function bookRankOf(p) { return p && p.book === "poems" ? 0 : 1; }
 
-  function suggestOf(kw) {
+  function suggestOf(kw, limit) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
+    var cap = limit === undefined ? SUGGEST_MAX : limit;
     var hit = allItems().filter(function (p) { return matchScore(p, q) > 0; });
     hit.sort(function (a, b) {
       var sa = matchScore(a, q);
@@ -179,7 +188,7 @@
       if (ra !== rb) return ra - rb;
       return String(a.title).length - String(b.title).length;
     });
-    return hit.slice(0, SUGGEST_MAX);
+    return hit.slice(0, Math.max(0, cap));
   }
 
   function metaOf(p) {
@@ -199,6 +208,49 @@
 
     var index = -1;
     var items = [];
+    var extTimer = 0;
+
+    function rowHtml(p, i) {
+      var on = has(p);
+      var label = on ? STATE_WORDS.in : STATE_WORDS.add;
+      return '<div class="suggest-row" data-suggest="' + i + '">' +
+        '<button type="button" class="suggest-add" data-daily-suggest="' + i + '" ' +
+        'data-on="' + (on ? "1" : "0") + '" aria-pressed="' + (on ? "true" : "false") + '" ' +
+        'title="' + esc(on ? STATE_WORDS.remove : label) + '" ' +
+        'aria-label="' + esc(p.title) + "：" + esc(on ? STATE_WORDS.remove : label) + '">' +
+        glyph() + "</button>" +
+        '<button type="button" class="suggest-item" data-suggest-open="' + i + '" ' +
+        'role="option" aria-selected="' + (i === index ? "true" : "false") + '">' +
+        '<span class="suggest-title">' + esc(p.title) + "</span>" +
+        '<span class="suggest-meta">' + metaOf(p) + "</span></button>" +
+        "</div>";
+    }
+
+    function fill(list, reset) {
+      var html = list.map(rowHtml).join("");
+      if (reset) box.innerHTML = html;
+      else box.insertAdjacentHTML("beforeend", html);
+      box.dataset.items = JSON.stringify(list.map(function (p) { return p.id; }));
+      box.dataset.shown = String(list.length);
+    }
+
+    /* 已经铺出来的条数：换词就从第一批起，滚到底就多给一批。 */
+    function shownCount(kw) {
+      if (box.dataset.kw !== kw) return SUGGEST_MAX;
+      var n = parseInt(box.dataset.shown, 10);
+      return isNaN(n) ? SUGGEST_MAX : Math.max(SUGGEST_MAX, n);
+    }
+
+    function extend() {
+      if (box.hidden) return false;
+      var kw = box.dataset.kw || "";
+      var shown = shownCount(kw);
+      if (shown >= suggestOf(kw, Infinity).length) return false;
+      items = suggestOf(kw, shown + SUGGEST_BATCH);
+      if (items.length <= shown) return false;
+      fill(items, false);
+      return true;
+    }
 
     function paint(kw) {
       items = suggestOf(kw);
@@ -207,25 +259,13 @@
         box.hidden = true;
         box.innerHTML = "";
         box.dataset.items = "";
+        box.dataset.kw = "";
+        box.dataset.shown = "";
         input.setAttribute("aria-expanded", "false");
         return;
       }
-      box.innerHTML = items.map(function (p, i) {
-        var on = has(p);
-        var label = on ? STATE_WORDS.in : STATE_WORDS.add;
-        return '<div class="suggest-row" data-suggest="' + i + '">' +
-          '<button type="button" class="suggest-add" data-daily-suggest="' + i + '" ' +
-          'data-on="' + (on ? "1" : "0") + '" aria-pressed="' + (on ? "true" : "false") + '" ' +
-          'title="' + esc(on ? STATE_WORDS.remove : label) + '" ' +
-          'aria-label="' + esc(p.title) + "：" + esc(on ? STATE_WORDS.remove : label) + '">' +
-          glyph() + "</button>" +
-          '<button type="button" class="suggest-item" data-suggest-open="' + i + '" ' +
-          'role="option" aria-selected="' + (i === index ? "true" : "false") + '">' +
-          '<span class="suggest-title">' + esc(p.title) + "</span>" +
-          '<span class="suggest-meta">' + metaOf(p) + "</span></button>" +
-          "</div>";
-      }).join("");
-      box.dataset.items = JSON.stringify(items.map(function (p) { return p.id; }));
+      box.dataset.kw = kw;
+      fill(items, true);
       box.scrollTop = 0;
       box.hidden = false;
       input.setAttribute("aria-expanded", "true");
@@ -302,6 +342,12 @@
         hide();
       }, 180);
     });
+
+    box.addEventListener("scroll", function () {
+      if (box.scrollHeight - box.scrollTop - box.clientHeight > SUGGEST_ROW_H) return;
+      clearTimeout(extTimer);
+      extTimer = setTimeout(extend, SUGGEST_EXTEND_GAP);
+    }, { passive: true });
 
     box.addEventListener("mousedown", function (e) {
 

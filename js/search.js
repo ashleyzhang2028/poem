@@ -17,7 +17,16 @@
 
   var SLASH_KEYS = ["/", "／"];
 
+  /* 候选下拉先给一批（`SUGGEST_MAX`），用户滚到底再续下一批
+     （`SUGGEST_BATCH`，同宽），滚到没有为止（Issue #539 追问）。
+
+     为什么不是一次铺完：候选框高按 `SUGGEST_ROWS = 5` 定死，超出要滚；
+     而「一」「春」这类单字在全站命中 550+ / 1390+ 条（2033 条里），
+     一次铺几百行 DOM 是 Issue #370 那笔卡顿账的老路。先铺一批、滚了再续，
+     既不挡着「我就想看看第 9 条」的人，又不为没滚到的地方付费。 */
   var SUGGEST_MAX = 8;
+
+  var SUGGEST_BATCH = 8;
 
   var SUGGEST_ROWS = 5;
   var SUGGEST_ROW_H = 44;
@@ -29,6 +38,8 @@
   var BLUR_SETTLE_DELAY = 220;
 
   var SUGGEST_BLUR_DELAY = 180;
+
+  var SUGGEST_EXTEND_GAP = 60;
 
   var KEYWORD_HOLD_DELAY = 800;
 
@@ -301,10 +312,21 @@
     RS.open(p, hitDocs);
   }
 
-  function suggestItems(kw) {
+  /* 已经铺出来的候选条数。``suggestShown ~ kw`` 写在框上
+     （`data-kw` / `data-shown`）：换词就从头一批起，滚到底就多给一批。
+     数只记在框上，不改 `suggestItems()` 的原意（那是「这个框能给出多少」，
+     现在是全量命中，截断交给下面两处）。 */
+  function suggestShown(box, kw) {
+    if (!box || box.dataset.kw !== kw) return SUGGEST_MAX;
+    var n = parseInt(box.dataset.shown, 10);
+    return isNaN(n) ? SUGGEST_MAX : Math.max(SUGGEST_MAX, n);
+  }
+
+  function suggestItems(kw, limit) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
-    return hitsOf(q).slice(0, SUGGEST_MAX);
+    var cap = limit === undefined ? SUGGEST_MAX : limit;
+    return hitsOf(q).slice(0, Math.max(0, cap));
   }
 
   function suggestMeta(p) {
@@ -316,29 +338,62 @@
     return left + (left ? " · " : "") + "<em>" + esc(p.bookName) + "</em>";
   }
 
+  function suggestRowHtml(p, i) {
+    return '<button type="button" class="suggest-item" role="option" data-suggest="' + i + '"' +
+      ' aria-selected="false">' +
+      '<span class="suggest-title">' + esc(p.title) + "</span>" +
+      '<span class="suggest-meta">' + suggestMeta(p) + "</span></button>";
+  }
+
+  function fillSuggest(box, list, reset) {
+    var html = list.map(suggestRowHtml).join("");
+    if (reset) box.innerHTML = html;
+    else box.insertAdjacentHTML("beforeend", html);
+    box.dataset.items = JSON.stringify(list.map(function (p) { return p.id; }));
+    box.dataset.shown = String(list.length);
+  }
+
   function renderSuggest(kw) {
     var box = suggestBox();
     if (!box) return;
-    var list = suggestItems(kw);
+    var list = suggestItems(kw, SUGGEST_MAX);
     suggestIndex = -1;
     if (!list.length) {
       box.hidden = true;
       box.innerHTML = "";
       box.dataset.items = "";
+      box.dataset.kw = "";
+      box.dataset.shown = "";
       setExpanded(false);
       return;
     }
-    box.innerHTML = list.map(function (p, i) {
-      return '<button type="button" class="suggest-item" role="option" data-suggest="' + i + '"' +
-        ' aria-selected="false">' +
-        '<span class="suggest-title">' + esc(p.title) + "</span>" +
-        '<span class="suggest-meta">' + suggestMeta(p) + "</span></button>";
-    }).join("");
-    box.dataset.items = JSON.stringify(list.map(function (p) { return p.id; }));
+    box.dataset.kw = kw;
+    fillSuggest(box, list, true);
 
     box.scrollTop = 0;
     box.hidden = false;
     setExpanded(true);
+  }
+
+  /* 滚到底（差一行以内）就续下一批。没有下一批了就不再动 —— 全量命中的
+     条数按下标数（`dataset.items` 就是全量 id 表），滚到底自然停住。 */
+  function extendSuggest() {
+    var box = suggestBox();
+    if (!box || box.hidden) return false;
+    var kw = box.dataset.kw || "";
+    var shown = suggestShown(box, kw);
+    var total = suggestItems(kw, Infinity).length;
+    if (shown >= total) return false;
+
+    var list = suggestItems(kw, shown + SUGGEST_BATCH);
+    if (list.length <= shown) return false;
+    fillSuggest(box, list, false);
+    return true;
+  }
+
+  /* 只在「快到底」时续：`scrollHeight - scrollTop - clientHeight` 留一行余量。 */
+  function nearSuggestBottom(box) {
+    return box.scrollHeight - box.scrollTop - box.clientHeight <= SUGGEST_ROW_H;
   }
 
   function setExpanded(on) {
@@ -704,11 +759,25 @@
     }
 
     bindSuggestDismiss();
+    bindSuggestScroll();
 
     window.addEventListener("pagehide", onLiftLost);
 
     renderBody();
     syncHeroState();
+  }
+
+  /* 候选框自己滚到底 → 续下一批。监听挂在框上（不是文档），只在框真
+     在滚的时候触发；滚轮/touch 走 passive，交给浏览器合成滚动，不拦手感。 */
+  function bindSuggestScroll() {
+    var box = suggestBox();
+    if (!box) return;
+    var timer = 0;
+    box.addEventListener("scroll", function () {
+      if (!nearSuggestBottom(box)) return;
+      clearTimeout(timer);
+      timer = setTimeout(extendSuggest, SUGGEST_EXTEND_GAP);
+    }, { passive: true });
   }
 
   function bindSuggestDismiss() {
@@ -760,7 +829,7 @@
 
   window.SiteSearch = {
     items: function () { return allItems(); },
-    suggest: function (kw) { return suggestItems(kw); },
+    suggest: function (kw, limit) { return suggestItems(kw, limit); },
 
     keyword: function () {
       var input = document.getElementById("site-search");
