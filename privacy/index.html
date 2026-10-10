@@ -51,7 +51,7 @@
           <li><span class="mini-k">密码</span><span class="mini-v">密码不以明文形式存储，服务器仅保存经加盐单向哈希（scrypt）处理后的摘要，无法反向还原。密码遗忘时须通过邮件链接重新设置，服务方无法代为找回原密码。</span></li>
           <li><span class="mini-k">邮件通知</span><span class="mini-v">注册后系统发送一封确认邮件，用于核实邮箱所有权。确认链接有效期 24 小时，重设密码链接有效期 1 小时，均为一次性使用。邮件发送异常时系统可能自动重试。</span></li>
           <li><span class="mini-k">用户反馈</span><span class="mini-v">用户主动提交的错误报告或意见反馈，将随附提交时的邮箱、昵称（如已登录）用于处理与回复；未登录用户按设备生成的随机标识识别，该标识仅存储于本机浏览器，不用于跨站追踪。</span></li>
-          <li><span class="mini-k">访问统计</span><span class="mini-v">使用 Google Analytics（gtag.js）统计页面访问量，用于了解整体使用情况。该服务会收集访问的页面地址、来源与匿名设备／浏览器信息，由 Google 按其隐私政策处理；不用于用户画像、不投放广告、不接入社交插件，也不与学习数据关联。</span></li>
+          <li><span class="mini-k">访问统计</span><span class="mini-v">使用 Google Analytics（gtag.js）统计页面访问量与功能使用情况（如是否开启连续朗读、从哪个集子切到哪个集子、翻到下一篇、加入自选集合），用于了解哪些内容真正被使用。该服务会收集访问的页面地址、来源与匿名设备／浏览器信息，由 Google 按其隐私政策处理；统计中不包含邮箱、账号标识或背诵内容，<b>搜索词本身也不上报</b>（只记搜索词长度）；不用于用户画像、不投放广告、不接入社交插件，也不与学习数据关联。</span></li>
           <li><span class="mini-k">权益层级</span><span class="mini-v">账号的功能层级（Free / Pro / Max）由服务器下发，与任何支付信息无关；本产品不具备收款能力，层级标识不构成支付凭证。</span></li>
           <li><span class="mini-k">设备权限</span><span class="mini-v">不请求通讯录、相册、麦克风或地理位置权限。</span></li>
         </ul>
@@ -107,6 +107,7 @@
   <script src="/js/family.js"></script>
   <script src="/js/avatar.js"></script>
   <script src="/js/chrome.js"></script>
+  <script src="/js/analytics.js"></script>
   <script src="/js/contact.js"></script>
 </body>
 </html>

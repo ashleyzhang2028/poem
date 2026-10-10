@@ -710,9 +710,11 @@
       autoReading = false;
       window.Speech.stop();
       if (window.ReaderPlayer) window.ReaderPlayer.close();
+      track("read_stop", { source_view: "原文", source: "item" });
       showToast("已停止朗读");
     } else {
       const ok = window.Speech.speak(speechText(p));
+      track("read_start", { source_view: "原文", source: "item", ok: ok ? "1" : "0" });
       showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败");
     }
     syncAllReadState();
@@ -1142,6 +1144,10 @@
 
     var printBtn = document.querySelector("[data-print-open]");
     if (printBtn) printBtn.setAttribute("data-print-poem", p.id || "");
+
+    /* 连读自然翻页时 openReader 会被一篇接一篇地调 —— 那也是「读到了下一篇」，
+       记下来才看得出连读到底走了多远。 */
+    track("reader_open", { item: p.id || "", gradeGroup: p.gradeGroup || "" });
         window.scrollTo(0, 0);
   }
 
@@ -1170,6 +1176,7 @@
     const list = allItems();
     const i = idIndex(current) + dir;
     if (i < 0 || i >= list.length) return;
+    track("nav_switch", { direction: dir < 0 ? "prev" : "next" });
     if (window.Speech) window.Speech.stop();
     openReader(list[i]);
   }
@@ -1345,6 +1352,7 @@
       if (tbox && tbox.hidden) showTransBox(true);
       speakingTarget = "译文";
       const ok = window.Speech.speak(t);
+      track("read_start", { source_view: "译文", ok: ok ? "1" : "0" });
       showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
     }
     syncAllReadState();
@@ -1398,6 +1406,7 @@
   }
 
   function hideReader() {
+    if (current) track("reader_close", { item: current.id });
     if (window.Speech) window.Speech.stop();
     autoReading = false;
     speakingTarget = "原文";
@@ -1572,7 +1581,11 @@
   }
 
   function startPlay(btn) {
+    var loc = playLoc(btn);
     if (!speechReady()) {
+      /* 语音门挡下来也要记一笔：不然「连读用得少」看着像没人想用，
+         其实是门外站着进不来。这是转不转化最要紧的一格。 */
+      track("play_blocked", { source: loc });
       showToast(speechHint());
       return;
     }
@@ -1584,17 +1597,32 @@
       clearHighlight();
       syncPlayBtn();
       syncItemPlayBtns();
+      track("play_stop", { source: loc });
       showToast("已停止连读");
       return;
     }
     var list = buildQueue(playPool(btn), playModeInfo());
     if (!list.length) {
-
+      var mode0 = playModeInfo();
+      track("play_empty", {
+        source: loc,
+        mode: mode0.id,
+        source_view: mode0.source,
+        gradeGroup: (btn && btn.dataset.randomGroup) || ""
+      });
       showToast(btn
-        ? "本分类暂无" + (playModeInfo().source === "原文" ? "可读篇目" : "译文可读")
+        ? "本分类暂无" + (mode0.source === "原文" ? "可读篇目" : "译文可读")
         : W.noReadable);
       return;
     }
+    var mode1 = playModeInfo();
+    track("play_start", {
+      source: loc,
+      mode: mode1.id,
+      source_view: mode1.source,
+      gradeGroup: (btn && btn.dataset.randomGroup) || "",
+      item_count: list.length
+    });
     closePlayMenus();
     autoReading = true;
     syncPlayBtn();
@@ -1694,6 +1722,44 @@
     showToast(mode === "left" ? "正文左对齐" : "正文居中对齐");
   }
 
+  /* ==========================================================================
+     事件上报（Issue #535）
+     --------------------------------------------------------------------------
+     GA 的 base tag 只报 page_view；这里补的是「人按了什么」。
+     统一从这一个口子出去，调用点只写业务参数（book / mode / source…），
+     名字的拼法、gtag 在不在、失败怎么办都在下面兜着。
+
+     ⚠️ **不报「停止连读」**：连读结束有三种由头 —— 用户按停、播完了、读
+     失败 —— 而 `onEnd` 那一枪对三者一视同仁（`autoReading = false`）。要
+     区分就得从 `js/speech.js` 再引一路状态上来，为一个统计维度不值。宁缺
+     勿滥：只报按下去的那一下（play_start），它认得出是停止还是开播。
+
+     ⚠️ **不报搜索词**：`query_length` 给的是敲了几个字，字本身不出站。
+     隐私页刚为 GA 改过一轮措辞（PR #537），再把搜索词送出去就又是一回事了。
+     ========================================================================== */
+  function track(name, params) {
+    var A = typeof window !== "undefined" ? window.Analytics : null;
+    if (!A) return;
+    var p = params || {};
+    var out = {};
+    for (var k in p) {
+      if (Object.prototype.hasOwnProperty.call(p, k)) out[k] = p[k];
+    }
+    if (!out.book) {
+
+      var b = (current && (current.book || CFG.id || "")) || "";
+      if (!b && CFG && CFG.id) b = CFG.id;
+      if (b) out.book = b;
+    }
+    A.track(name, out);
+  }
+
+  function playLoc(btn) {
+
+    if (!btn) return "all";
+    return btn.dataset.randomGroup ? "group" : "book";
+  }
+
   function showToast(msg) {
     const t = $("#toast");
     t.textContent = msg;
@@ -1736,6 +1802,7 @@
       b.addEventListener("click", function (e) {
         claim(e);
         filter = b.dataset.filter;
+        track("list_filter", { filter: filter });
         $$all("[data-filter]").forEach(function (x) {
           if (sessionOf(x) !== live) return;
           var on = x === b;
@@ -1780,7 +1847,13 @@
         var mi = target.closest(".gw-menu-item");
         if (mi) {
           e.stopPropagation();
-          setPlayMode(mi.dataset.mode);
+          var changed = setPlayMode(mi.dataset.mode);
+          if (changed) {
+            track("play_mode_switch", {
+              mode: mi.dataset.mode,
+              source: playLoc(mi.closest(".gw-play-sm"))
+            });
+          }
           closePlayMenus();
           startPlay(mi.closest(".gw-play-sm"));
           return;
@@ -1856,6 +1929,7 @@
       if (!current) return;
       var now = isRead(current.id);
       setRead(current.id, !now);
+      track("mark_read", { read: now ? "0" : "1", source: "reader" });
       syncDoneButton();
       showToast(now ? "已取消「已读」" : "已标记为已读");
     });
@@ -1992,8 +2066,13 @@
     });
 
     window.addEventListener("reader-read-change", function (e) {
+      var d = e.detail || {};
+      /* ⚠️ mark_read **不**挂在这条事件上：`reader-read-change` 只说「某一篇
+         的已读变了」，不说「谁点的」—— 翻页补记、跨设备同步回来都会发它，
+         挂在事件上会把那些不算人按的也算进去。入口只有阅读器那颗 `[data-gw="done"]`
+         （`bindEvents` 里），就近上报才准。 */
       mounts.forEach(function (s) {
-        if (s.words.readStore !== (e.detail && e.detail.store)) return;
+        if (s.words.readStore !== d.store) return;
         withSession(s, function () { onReadChange(e); });
       });
     });
@@ -2358,6 +2437,7 @@
     var r = U.toggle(p);
     if (r.message) showToast(r.message);
     if (r.ok === false) return;
+    track("daily_toggle", { item: p.id || "", on: r.on === false ? "0" : "1" });
     syncDailyButton();
   }
 
@@ -2518,6 +2598,7 @@
         if (!p || !C) return;
         var cid = colBtn.getAttribute("data-col");
         var was = C.collectionsOf(p.id).some(function (c) { return c.id === cid; });
+        track("recite_toggle", { collection: cid, on: was ? "0" : "1" });
         if (was) {
           C.removeItem(p.id, cid);
           showToast("已移出「" + (C.get(cid) ? C.get(cid).name : "") + "」的背诵清单");
