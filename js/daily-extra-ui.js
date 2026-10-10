@@ -160,6 +160,12 @@
     return out;
   }
 
+  /* 同分先看集子：**课内诗词排前面**（与搜索页同一条口径，见 js/search.js
+     的 `bookRankOf`）。首页这里默认只挂着课内诗词，本来看不出差别；但
+     `pullBook` 会把课外集子补进来，补进来之后同一位作者的作品就会撞在
+     同一档上 —— 口径不一致，两张下拉就会给出两个次序。 */
+  function bookRankOf(p) { return p && p.book === "poems" ? 0 : 1; }
+
   function suggestOf(kw) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
@@ -168,6 +174,9 @@
       var sa = matchScore(a, q);
       var sb = matchScore(b, q);
       if (sa !== sb) return sb - sa;
+      var ra = bookRankOf(a);
+      var rb = bookRankOf(b);
+      if (ra !== rb) return ra - rb;
       return String(a.title).length - String(b.title).length;
     });
     return hit.slice(0, SUGGEST_MAX);

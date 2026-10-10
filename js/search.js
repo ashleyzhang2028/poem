@@ -136,6 +136,20 @@
     return 0;
   }
 
+  /* 同分时的第二眼：**课内诗词排前面**（Issue #539）。
+
+     问一个作者名（「王安石」「李白」）时，命中的十几条全落在同一档
+     （作者档 = 3）—— 光按分数排，它们谁先谁后是碰运气。原先的同分
+     判据只有「篇名短的在前」，于是《梅花》《元日》排在前面，而
+     《书湖阴先生壁》被挤到第 10 位，候选下拉只留 8 条（SUGGEST_MAX），
+     它就掉出去了 —— 用户看到的正是「搜作者搜不到这首课内诗」。
+
+     课内诗词是这份 App 的初心（见 js/library.js：它单列、排第一），
+     按它优先既合情也稳定：同一批同分的篇目里，孩子真正在背的那几首
+     先露面。`data/works-index.js` 的 `BOOK_RANK` 早就是这个口径
+     （`poems: 0`），这里跟它对齐，不另立一套。 */
+  function bookRankOf(p) { return p && p.book === "poems" ? 0 : 1; }
+
   var queryCache = {};
   var queryOrder = [];
 
@@ -149,6 +163,9 @@
     }
     out.sort(function (a, b) {
       if (a.sc !== b.sc) return b.sc - a.sc;
+      var ra = bookRankOf(a.f.p);
+      var rb = bookRankOf(b.f.p);
+      if (ra !== rb) return ra - rb;
       var la = String(a.f.p.title).length;
       var lb = String(b.f.p.title).length;
       if (la !== lb) return la - lb;
