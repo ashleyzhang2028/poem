@@ -196,6 +196,17 @@ def graft(dst_path, src_files, chars):
     else:
         new_order = raw_order
     dst.setGlyphOrder(new_order)
+    # ⚠️ 这一句是**必须的**（Issue #539）：CFF 的字形序列挂在 `top.charset` 上，
+    #    光调 `setGlyphOrder()` 只改了内存里那张表 —— 存盘后 fontTools 从 CFF
+    #    重新读字形名，新增的那几个 `tmp-xxxx` 就没了，于是 `maxp.numGlyphs`
+    #    说 11451、实际 11445，`hmtx` 一读就 IndexError。
+    #    症状不是「报错」而是**静默降级**：字体照样加载，个别字悄悄回退到
+    #    系统字体，那一格的字形与字号都不对（曾经正是这样漏过去的）。
+    if is_cid:
+        top.charset = new_order
+        fdsel = getattr(top, 'FDSelect', None)
+        if fdsel is not None:
+            fdsel.gidArray = [0] * len(new_order)
     # CID 重排后，charstrings / hmtx / vmtx 的键要与字形序列对齐；
     # 原字体本就稀疏，缺键会让 hmtx.compile() 直接 KeyError。
     for gn in new_order:
@@ -206,13 +217,21 @@ def graft(dst_path, src_files, chars):
         if 'vmtx' in dst and gn not in dst['vmtx'].metrics:
             dst['vmtx'].metrics[gn] = dst['vmtx'].metrics.get('.notdef', (1000, 0))
     dst['maxp'].numGlyphs = len(new_order)
-    if is_cid:
-        top.charset = new_order
-        fdsel = getattr(top, 'FDSelect', None)
-        if fdsel is not None:
-            fdsel.gidArray = [0] * len(new_order)
+    # ⚠️ `hhea.numberOfHMetrics` 是「尾部同宽压缩」的临界值，**不能**改成字形
+    #    总数 —— 改了 `hmtx` 就解不出来（同上面那一段的症状：静默降级）。
     dst.flavor = 'woff2'
     dst.save(dst_path)
+
+    # 存盘后读一遍复核：五张表数量对齐、新增的字真在 cmap 里
+    chk = TTFont(dst_path)
+    n = len(chk.getGlyphOrder())
+    assert n == len(new_order), '复核：字形数 %d != %d' % (n, len(new_order))
+    assert len(chk['hmtx'].metrics) == n, '复核：hmtx 对不上'
+    if 'vmtx' in chk:
+        assert len(chk['vmtx'].metrics) == n, '复核：vmtx 对不上'
+    cm = set(chk.getBestCmap())
+    still_bad = [c for c in sorted(missing) if ord(c) not in cm and c not in remaining]
+    assert not still_bad, '复核：存盘后仍缺 ' + ''.join(still_bad)
     return added, remaining
 
 def main():

@@ -222,9 +222,35 @@ twoIds.forEach(function (row) {
   chk(a.indexOf(row[3]) >= 0, row[2] + ' 取的是教材写法（含「' + row[3] + '」）');
 });
 
-chk((sb.WORKS_NEAR_DUP || []).length === 0,
-  'WORKS_NEAR_DUP 已清空（这一批已合并，不再并列；实际 ' +
-  (sb.WORKS_NEAR_DUP || []).length + ' 组）');
+/* Issue #539：用户先问「《劝学》为什么两条一模一样」，再说「古文里那条压根
+   不是全文」—— 真相是**两条都不全**：课内那一课是教材节选（止于「锲而不舍，
+   金石可镂」），《古文》那一条本轮补成了《荀子》整篇。教材的节选范围是教材
+   定的、学生背的就是课本那一份，所以**课内那一条一个字没动**；
+   两条并列、各背各的，靠近重复对守住「不并」。 */
+const qxGz = sb.SITE_INDEX.filter(p => p.id === 'poems-gz10-10')[0];
+const qxGw = sb.SITE_INDEX.filter(p => p.id === 'classic-gw-114')[0];
+chk(!!qxGz && !!qxGw, '《劝学》两条都在站点索引里');
+chk(!WI.same('poems-gz10-10', 'classic-gw-114'),
+  '《劝学》课内与《古文》**不并**（收录范围不同，判重键对不上）');
+chk(qxGz && qxGz.text.indexOf('锲而不舍，金石可镂') >= 0 &&
+    qxGz.text.indexOf('是故无冥冥之志者') < 0,
+  '课内《劝学》仍是教材节选（止于「锲而不舍，金石可镂」，一个字没动）');
+chk(qxGz && qxGz.text.indexOf('用心躁也') >= 0,
+  '课内《劝学》的文末仍是教材那一份（「…用心躁也」，不是选本的末段）');
+chk(qxGw && qxGw.text.indexOf('故不登高山，不知天之高也') >= 0,
+  '《古文》《劝学》读得到「故不登高山，不知天之高也」（教材节选之外）');
+chk(qxGw && qxGw.text.indexOf('昔者瓠巴鼓瑟') >= 0,
+  '《古文》《劝学》读得到「昔者瓠巴鼓瑟」（教材节选之外）');
+chk(qxGw && qxGw.text.indexOf('君子贵其全也') >= 0,
+  '《古文》《劝学》读得到末段「…君子贵其全也」（整篇收齐）');
+
+const near = (sb.WORKS_NEAR_DUP || []).filter(function (p) {
+  return p.entries.indexOf('poems-gz10-10') >= 0 && p.entries.indexOf('classic-gw-114') >= 0;
+});
+chk(near.length === 1,
+  '《劝学》两条记进近重复对（看着像同一篇、故意不合并；实际 ' + near.length + ' 条）');
+chk(near.length === 1 && /收录范围/.test(near[0].reason),
+  '近重对里写明「为什么并列」（收录范围不同，不是一字之差的异文）');
 chk((sb.TEXT_NEAR_DUP || []).length === 0,
   'TEXT_NEAR_DUP 已清空（实际 ' + (sb.TEXT_NEAR_DUP || []).length + ' 组）');
 
