@@ -293,6 +293,9 @@
   var LIT_BOOKS = ["poems", "classic", "yuefu", "tangshi", "gushi", "songci",
     "yuanqu", "guwen", "jinxiandai", "zhaoming"];
 
+  /* 每次重算都**当场**读一遍 `window.SITE_INDEX`，不收进闭包里的常量：
+     正文片是异步到的，片到之后 `js/text-shards.js` 会重建这份索引 ——
+     捏着旧那一份，片之后到的条目就永远进不了名册。 */
   function rawIndex() {
     return ((typeof window !== "undefined" && window.SITE_INDEX) || [])
       .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
@@ -394,11 +397,15 @@
      重建一次（片是异步取的，装配时主表是空的，`data/site-index.js` 的
      `NEED_TRANS` 会把「没有正文」的条目整条丢掉）。名册要是只在模块加载时算
      一遍，那些条目就永远进不来 —— 线上实测 322 位，重算后是 495 位。
-     分片到齐后由页面调 `rebuild()`。 */
+
+     片到后由 `js/text-shards.js` 的 `rebuildIndex()` 调 `window.rebuildSiteTables`，
+     走的就是这里；`js/authors.js` 自己也挂在 `TextShards.onArrive` 上重画①层。 */
   function rebuild() {
     PEOPLE = build();
     return PEOPLE;
   }
+
+  window.rebuildSiteTables = rebuild;
 
   /* 索引卡的段：**只要有作者**就有段，哪怕这一朝只有一位（不像集子列表页
      的索引卡要求「分类多于一段」—— 这一页的存在理由就是那张朝代表）。 */
