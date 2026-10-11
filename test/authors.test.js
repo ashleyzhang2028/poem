@@ -25,7 +25,7 @@ const sb = { window: {}, console, document: { readyState: 'complete', addEventLi
 sb.window = sb;
 vm.createContext(sb);
 
-[
+require('./master-env').expandMaster([
   'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
@@ -39,7 +39,7 @@ vm.createContext(sb);
   // 名册本身那一份（朝代归一表 + 异名表 + 收哪十部）—— `AuthorsPage.index()`
   // 要的那三张表就是它铺出来的（Issue #480 第二轮并入时补上）
   'data/author-index.js'
-].forEach(f => vm.runInContext(read(f), sb, { filename: f }));
+]).forEach(f => vm.runInContext(read(f), sb, { filename: f }));
 
 vm.runInContext(read('js/authors.js'), sb, { filename: 'js/authors.js' });
 chk(!!(sb.AuthorsPage && sb.AuthorsPage.index), 'js/authors.js 挂出了 AuthorsPage.index()');

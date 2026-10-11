@@ -98,11 +98,7 @@
     try { backing.setItem(key, text); return true; } catch (e) { return false; }
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function firstCharOf(nickname) {
     var s = String(nickname == null ? "" : nickname).trim();

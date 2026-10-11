@@ -11,11 +11,7 @@
 
   var SUGGEST_EXTEND_GAP = 60;
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function mod() {
     return (typeof window !== "undefined" && window.DailyExtra) || null;

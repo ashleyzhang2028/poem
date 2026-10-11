@@ -43,7 +43,7 @@ const VARS = [
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-['data/text-master.js'].concat(FILES).forEach(f =>
+require('./master-env').expandMaster(['data/text-master.js']).concat(FILES).forEach(f =>
   vm.runInContext(fs.readFileSync(f, 'utf8'), sandbox, { filename: f }));
 
 // 「……」是原诗标点、不是截断的例外（逐条写清理由）

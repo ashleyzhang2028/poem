@@ -27,7 +27,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const TARGET = path.join(ROOT, 'data/poems-yuanqu.js');
 const ZONGJI = '《全元散曲》';
 
@@ -35,7 +35,7 @@ function loadWorks() {
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, 'data/qu-works.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data/qu-works.js'), 'utf8'), sandbox);
   return sandbox.window.QU_WORKS;
 }
 

@@ -66,11 +66,7 @@
     return Array.prototype.slice.call((root || document).querySelectorAll(sel));
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function clip(s, max) {
     var v = String(s == null ? "" : s);

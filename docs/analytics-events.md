@@ -129,7 +129,7 @@
 `admin/*` 是内部页，PR #537 依「所有页面」一并挂了 GA。内部页的行为进了同一个
 媒体资源会把外部数字搅浑，所以这五个页面（`accounts` `feedback` `index`
 `pinyin` `reports`）的 gtag base tag 与 `/js/analytics.js` 一并撤掉，一个事件
-都不发。`admin/index-old.html` 本就是死文件，照旧两样都没有。
+都不发。
 
 撤掉之后带 GA 的页面从 42 个降到 37 个。这是**统计口径**的收窄，不涉及功能：
 `js/analytics.js` 里没有 gtag 就静默丢掉的约定（见第二节）正好兜住 —— 内部页

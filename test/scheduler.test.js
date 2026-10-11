@@ -14,10 +14,11 @@ const sandbox = {
 sandbox.window = sandbox;
 vm.createContext(sandbox);
 
-const files = ['data/text-master',
+const files = ['data/text-master'].concat(require('./master-env').pieceFilesStem(),
+  [
   'data/poems-1','data/poems-2','data/poems-3','data/poems-4','data/poems-5','data/poems-6',
   'data/poems-7','data/poems-8','data/poems-9','data/poems-10','data/poems-11','data/poems-12','data/index',
-  'js/storage','js/scheduler'];
+  'js/storage','js/scheduler']);
 files.forEach(f => vm.runInContext(fs.readFileSync(require('path').join(__dirname, '..', f + '.js'), 'utf8'), sandbox, { filename: f }));
 
 const { Scheduler, Storage } = sandbox;

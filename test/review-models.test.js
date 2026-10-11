@@ -11,7 +11,7 @@ const DAY = 86400000;
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
-['data/text-master', 'data/poems-1', 'js/review-models', 'js/scheduler'].forEach(f =>
+['data/text-master'].concat(require('./master-env').pieceFilesStem(), ['data/poems-1', 'js/review-models', 'js/scheduler']).forEach(f =>
   vm.runInContext(fs.readFileSync(path + f + '.js', 'utf8'), sb, { filename: f }));
 const RM = sb.ReviewModels;
 const S = sb.Scheduler;
@@ -96,7 +96,7 @@ chk(RM.allowedKey('', undefined) === 'ebbinghaus',
   const sb2 = { window: {}, console };
   sb2.window = sb2;
   vm.createContext(sb2);
-  ['data/text-master', 'data/poems-1', 'js/review-models'].forEach(f =>
+  ['data/text-master'].concat(require('./master-env').pieceFilesStem(), ['data/poems-1', 'js/review-models']).forEach(f =>
     vm.runInContext(fs.readFileSync(path + f + '.js', 'utf8'), sb2, { filename: f }));
   const R2 = sb2.ReviewModels;
   chk(R2.allowed('fsrs', TIERS.max) === false && R2.allowedKey('fsrs', TIERS.max) === 'ebbinghaus',

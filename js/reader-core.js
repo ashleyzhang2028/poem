@@ -649,11 +649,7 @@
     return out;
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   /* 列表行首的序号徽标（Issue #484）：同 js/app.js 里的 numHTML —— 三位及以上
      挂 `.is-num-wide`，样式表把它从圆变成胶囊、字号收一档。 */

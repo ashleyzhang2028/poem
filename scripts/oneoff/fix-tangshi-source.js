@@ -34,7 +34,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 
 /* 课内古诗词的通行著录：课本篇目一律《全唐诗》。 */
 const COURSE_BOOK = '《全唐诗》';

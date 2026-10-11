@@ -1,4 +1,5 @@
 (function () {
+  "use strict";
 
   var USER_REV = "ppaubiuk";
   var DOMAIN_REV = "moc.361";

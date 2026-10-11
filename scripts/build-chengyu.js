@@ -6,15 +6,15 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
 const STEPS = [
-  ['apply-chengyu-meaning.js', '写「成语释义」栏'],
-  ['apply-chengyu-tier1.js', '追加第一档教材常用成语'],
-  ['apply-chengyu-tier2.js', '追加第二至五档常用成语'],
+  ['oneoff/apply-chengyu-meaning.js', '写「成语释义」栏'],
+  ['oneoff/apply-chengyu-tier1.js', '追加第一档教材常用成语'],
+  ['oneoff/apply-chengyu-tier2.js', '追加第二至五档常用成语'],
   ['build-text-master.js', '正文收归主表'],
   ['apply-text-master.js', '摘去内联正文副本'],
-  ['apply-chengyu-yuben.js', '把「（语本）」占位换成原句并同步摘句'],
-  ['apply-chengyu-gloss.js', '把正文里的编者括注搬进「语源 / 典故」栏'],
+  ['oneoff/apply-chengyu-yuben.js', '把「（语本）」占位换成原句并同步摘句'],
+  ['oneoff/apply-chengyu-gloss.js', '把正文里的编者括注搬进「语源 / 典故」栏'],
   ['build-works-map.js', '重算同篇对照表'],
-  ['apply-chengyu-trans-fix.js', '把手工表里的译文修订落到译文上']
+  ['oneoff/apply-chengyu-trans-fix.js', '把手工表里的译文修订落到译文上']
 ];
 
 STEPS.forEach(function (s) {

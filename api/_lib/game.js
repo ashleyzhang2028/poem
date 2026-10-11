@@ -49,6 +49,13 @@ function corpus() {
       extra = ["data/index.js"];
     }
     extra = extra.concat(["data/text-master.js"]);
+    /** 正文主表按集子分片，页面与这里同一排法：先入口、再各片。 */
+    var pieceDir = path.join(ROOT, "data/text-master");
+    if (fs.existsSync(pieceDir)) {
+      fs.readdirSync(pieceDir).sort().forEach(function (f) {
+        if (/\.js$/.test(f)) extra.push("data/text-master/" + f);
+      });
+    }
     extra = extra.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
     var win = runInSandbox(files.concat(extra));
     var list = (win[b.varName] || []).map(function (p) {

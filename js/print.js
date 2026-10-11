@@ -22,11 +22,7 @@
   var entryUrl = null;
 
   function $(sel, base) { return (base || host || document).querySelector(sel); }
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function backing() {
     try { return window.localStorage; } catch (e) { return null; }

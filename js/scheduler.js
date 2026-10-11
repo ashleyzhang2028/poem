@@ -1,4 +1,6 @@
 (function () {
+  "use strict";
+
   const DAY = 24 * 60 * 60 * 1000;
 
   const FALLBACK_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240];

@@ -18,7 +18,7 @@ function loadSiteIndex() {
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  const files = ["data/text-master.js"].concat(
+  const files = require('./master-env').expandMaster(["data/text-master.js"]).concat(
     ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(n => "data/poems-" + n + ".js")
   ).concat([
     "data/index.js", "data/poems-classic.js", "data/poems-tangshi.js", "data/poems-gushi.js",

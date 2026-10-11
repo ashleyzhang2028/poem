@@ -3,6 +3,15 @@ const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
+/* 正文主表按集子分片在 data/text-master/ 下，页面自己把该部的片并进
+   window.TEXT_MASTER；这里按同样的排法给沙盒备一份 —— 少了这一步，
+   装配期 masterTextOf 取不到正文，条目会静默掉出主表。 */
+const PIECES = fs.existsSync(path.join(ROOT, 'data/text-master'))
+  ? fs.readdirSync(path.join(ROOT, 'data/text-master')).sort()
+    .filter(function (f) { return /\.js$/.test(f); })
+    .map(function (f) { return 'data/text-master/' + f; })
+  : [];
+
 const LOAD = [
   'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
@@ -77,6 +86,11 @@ sandbox.window = sandbox;
 vm.createContext(sandbox);
 LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
+  if (f === 'data/text-master.js') {
+    PIECES.forEach(function (p) {
+      vm.runInContext(fs.readFileSync(path.join(ROOT, p), 'utf8'), sandbox, { filename: p });
+    });
+  }
 });
 
 const WI = sandbox.WorksIndex;
@@ -88,12 +102,22 @@ try {
   const prevSandbox = { window: {}, console };
   prevSandbox.window = prevSandbox;
   vm.createContext(prevSandbox);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/text-master.js'), 'utf8'),
-    prevSandbox, { filename: 'data/text-master.js' });
+  const prevFiles = [path.join(ROOT, 'data/text-master.js')];
+  const pieceDir = path.join(ROOT, 'data/text-master');
+  if (fs.existsSync(pieceDir)) {
+    fs.readdirSync(pieceDir).sort().forEach(function (f) {
+      if (/\.js$/.test(f)) prevFiles.push(path.join(pieceDir, f));
+    });
+  }
+  prevFiles.forEach(function (f) {
+    if (fs.existsSync(f)) {
+      vm.runInContext(fs.readFileSync(f, 'utf8'), prevSandbox, { filename: f });
+    }
+  });
 
-  (prevSandbox.TEXT_MASTER || []).forEach(function (m) {
-    if (!m) return;
-    if (m.id && !prev[m.id]) prev[m.id] = m;
+  const prevRows = (prevSandbox.TEXT_MASTER || []).filter(Boolean);
+  prevRows.forEach(function (m) { if (m.id && !prev[m.id]) prev[m.id] = m; });
+  prevRows.forEach(function (m) {
     (m.entries || []).forEach(function (e) { if (e && !prev[e]) prev[e] = m; });
   });
 } catch (e) {  }
@@ -757,10 +781,13 @@ if (empty.length) {
 
 const BT = '`';
 let out = '';
+/* 这一份只剩「取数入口」：正文按集子切进 data/text-master/ 各片，
+   由壳文件加载后自己拼回 window.TEXT_MASTER。*/
 out += '/* ==========================================================================\n';
 out += '   正文存储主表（同一篇作品的正文 / 译文只落一份）\n';
 out += '   --------------------------------------------------------------------------\n';
-out += '   由 scripts/build-text-master.js 离线算出，共 ' + master.length + ' 条。\n';
+out += '   由 scripts/build-text-master.js 离线算出，共 ' + master.length + ' 条；\n';
+out += '   正文按集子分片落在 data/text-master/，本文件只留取数入口。\n';
 out += '\n';
 out += '   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，\n';
 out += '      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。\n';
@@ -785,7 +812,7 @@ out += '   ## 与另外两张表的分工\n';
 out += '     data/works-map.js        哪些条目是**同一篇作品**（判重、搜索去重、排程合流）\n';
 out += '     data/canonical-texts.js  显示层：同一篇**显示**用哪一份正文（收归之后已收敛为空表，\n';
 out += '                              机制留着给日后真出现异文时用）\n';
-out += '     data/text-master.js      存储层：同一篇的正文 / 译文**只落一份**（本文件）\n';
+out += '     data/text-master/*.js    存储层：同一篇的正文 / 译文**只落一份**（按集子分片）\n';
 out += '   三张表由同一套口径算出（课内条目为主条目），一起重跑。\n';
 out += '\n';
 out += '   ## 字段\n';
@@ -799,20 +826,26 @@ out += '     translationSource 译文来源\n';
 out += '     version     内容的短摘要（版次）—— 客户端据它认出「这一条改过」，\n';
 out += '                 好把本机存的老快照刷新掉（见 scripts/build-text-master.js）\n';
 out += '   ========================================================================== */\n';
-out += 'window.TEXT_MASTER = [\n';
-master.forEach(function (m) {
-  out += '  {\n';
-  out += '    work: ' + JSON.stringify(m.work) + ',\n';
-  out += '    id: ' + JSON.stringify(m.id) + ',\n';
-  out += '    title: ' + JSON.stringify(m.title) + ',\n';
-  out += '    entries: [' + m.entries.map(function (e) { return JSON.stringify(e); }).join(', ') + '],\n';
-  out += '    text: ' + JSON.stringify(m.text) + ',\n';
-  out += '    translation: ' + JSON.stringify(m.translation) + ',\n';
-  out += '    translationSource: ' + JSON.stringify(m.translationSource) + ',\n';
-  out += '    version: ' + JSON.stringify(versionOf(m)) + '\n';
-  out += '  },\n';
-});
-out += '];\n';
+out += '\n';
+out += '/* ==========================================================================\n';
+out += '   正文按集子分片：各片由壳文件加载后交到这里，按 id 去重合一\n';
+out += '   --------------------------------------------------------------------------\n';
+out += '   跨部同篇的那一行（《心术》既在《古文观止》又在《小古文》）会出现在\n';
+out += '   两个片里 —— 两部的页面各自需要它。去重是为了让 window.TEXT_MASTER\n';
+out += '   仍是「一行一篇」，各消费方拿到的形状与分片之前一模一样。\n';
+out += '   页面引片的次序：本文件在前，data/text-master/<集子>.js 在后。\n';
+out += '   ========================================================================== */\n';
+out += 'window.textMasterAdd = (function () {\n';
+out += '  var seen = {};\n';
+out += '  return function (rows) {\n';
+out += '    var list = window.TEXT_MASTER = window.TEXT_MASTER || [];\n';
+out += '    (rows || []).forEach(function (m) {\n';
+out += '      if (!m || !m.id || seen[m.id]) return;\n';
+out += '      seen[m.id] = true;\n';
+out += '      list.push(m);\n';
+out += '    });\n';
+out += '  };\n';
+out += '})();\n';
 out += '\n';
 out += '/* ==========================================================================\n';
 out += '   近重复对：同一篇却有两种写法，**故意不合并**\n';
@@ -944,5 +977,60 @@ out += '  };\n';
 out += '})();\n';
 out += '\n';
 
+fs.mkdirSync(path.join(ROOT, 'data/text-master'), { recursive: true });
+for (const f of fs.readdirSync(path.join(ROOT, 'data/text-master'))) {
+  if (/\.js$/.test(f)) fs.unlinkSync(path.join(ROOT, 'data/text-master', f));
+}
+
+/* 按集子切片：`poems-*` 一律归 `poems`，其余取 id 前缀。
+   一行只落在它认领的**一部**集子上（`entries` 里跨部的那些按主条目 id 归主部）——
+   一部集子页只加载它自己那一片，页面上的装配口径与原先「一整张表」完全一致。 */
+function bookOfEntry(e) {
+  return e.indexOf('poems-') === 0 ? 'poems' : e.split('-')[0];
+}
+/* 一行落在**它引用的每一部**集子上：`entries` 跨部的那些（《心术》既在
+   《古文观止》又在《小古文》），只看主条目 id 会漏掉另一部 —— 那一部的
+   页面加载了它自己的片，`masterTextOf` 却查不到这一行，正文静默空白。 */
+const pieces = {};
+master.forEach(function (m) {
+  const books = {};
+  books[bookOfEntry(m.id)] = true;
+  (m.entries || []).forEach(function (e) { if (e) books[bookOfEntry(e)] = true; });
+  Object.keys(books).forEach(function (b) { (pieces[b] = pieces[b] || []).push(m); });
+});
+
+let total = 0;
+Object.keys(pieces).sort().forEach(function (b) {
+  const rows = pieces[b];
+  let src = '/* ' + b + ' 部正文（' + rows.length + ' 条）。\n';
+  src += '   ⚠️ 生成文件：见 scripts/build-text-master.js。改动请改生成器后重跑。\n';
+  src += '   壳文件加载后把它并进 window.TEXT_MASTER，装配期取数入口在 data/text-master.js。 */\n';
+  src += 'window.textMasterAdd([\n';
+  rows.forEach(function (m) {
+    src += '  {\n';
+    src += '    work: ' + JSON.stringify(m.work) + ',\n';
+    src += '    id: ' + JSON.stringify(m.id) + ',\n';
+    src += '    title: ' + JSON.stringify(m.title) + ',\n';
+    src += '    entries: [' + m.entries.map(function (e) { return JSON.stringify(e); }).join(', ') + '],\n';
+    src += '    text: ' + JSON.stringify(m.text) + ',\n';
+    src += '    translation: ' + JSON.stringify(m.translation) + ',\n';
+    src += '    translationSource: ' + JSON.stringify(m.translationSource) + ',\n';
+    src += '    version: ' + JSON.stringify(versionOf(m)) + '\n';
+    src += '  },\n';
+  });
+  src += ']);\n';
+  fs.writeFileSync(path.join(ROOT, 'data/text-master', b + '.js'), src, 'utf8');
+  total += rows.length;
+});
+const pieceRows = {};
+Object.keys(pieces).forEach(function (b) {
+  pieces[b].forEach(function (m) { pieceRows[m.id] = true; });
+});
+if (Object.keys(pieceRows).length !== master.length) {
+  console.error('✗ 切片后漏条：' + Object.keys(pieceRows).length + ' != ' + master.length);
+  process.exit(1);
+}
+
 fs.writeFileSync(path.join(ROOT, 'data/text-master.js'), out, 'utf8');
-console.log('✓ data/text-master.js 已生成，共 ' + master.length + ' 条');
+console.log('✓ data/text-master.js（取数入口）与 data/text-master/ 下 ' +
+  Object.keys(pieces).length + ' 片已生成，共 ' + master.length + ' 条');
