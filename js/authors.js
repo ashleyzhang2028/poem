@@ -434,6 +434,27 @@
     });
   }
 
+  /* 正文分片是**异步**取回来的（`js/text-shards.js`）：装配 `SITE_INDEX`
+     那一刻主表还是空的，「正文 / 译文为空」的条目按 `NEED_TRANS` 被整条丢掉
+     ——近现代诗词 24 条里有 21 条、全站 229 位作者都落在这里。片到齐后
+     `text-shards.js` 会重建 `SITE_INDEX`，这里跟着把名册重算、重画。
+
+     ⚠️ 重画只在①层做：②③层是阅读器会话，`items` 在 `mount` 时就定死了，
+     重画名册不该把用户正读着的那一篇搅掉。分片到齐是首屏之后的事，那时
+     多半还停在①层；真进了②层就等退回①层时再重画（`leaveAuthor()` 会调
+     `renderIndex()`）。 */
+  function watchShards() {
+    var T = window.TextShards;
+    if (!T || !T.onArrive) return;
+    T.onArrive(function () {
+      if (!AI || !AI.rebuild) return;
+      AI.rebuild();
+      if (current) return;
+      renderIndex();
+      paintHead("");
+    });
+  }
+
   function boot() {
     AI = window.AuthorIndex;
     if (!AI) return;
@@ -452,6 +473,7 @@
     bind();
     paintHead("");
     paintBack();
+    watchShards();
 
     /* 返回键（浏览器 / 手机手势）在这一页上 = 退一层，不是离开这一页：
        详情页 → 作者的作品列表 → 名册 → 搜索。不接这一个，一路退回去会

@@ -293,8 +293,10 @@
   var LIT_BOOKS = ["poems", "classic", "yuefu", "tangshi", "gushi", "songci",
     "yuanqu", "guwen", "jinxiandai", "zhaoming"];
 
-  var raw = ((typeof window !== "undefined" && window.SITE_INDEX) || [])
-    .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
+  function rawIndex() {
+    return ((typeof window !== "undefined" && window.SITE_INDEX) || [])
+      .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
+  }
 
   function personOf(p) {
     var name = norm(p.author);
@@ -356,7 +358,7 @@
 
     var seenWid = {};
 
-    raw.forEach(function (p) {
+    rawIndex().forEach(function (p) {
       /* 合编课文按 `ATTRIB` 指定的人归属 —— 覆写 `who` 与 `d`，
          其余条目一个字不动（见 `ATTRIB` 那一段的长注释）。 */
       var fix = ATTRIB[norm(p.id)] || null;
@@ -387,6 +389,16 @@
   }
 
   var PEOPLE = build();
+
+  /* 名册要能**重算**：`SITE_INDEX` 会被 `js/text-shards.js` 在正文分片到齐后
+     重建一次（片是异步取的，装配时主表是空的，`data/site-index.js` 的
+     `NEED_TRANS` 会把「没有正文」的条目整条丢掉）。名册要是只在模块加载时算
+     一遍，那些条目就永远进不来 —— 线上实测 322 位，重算后是 495 位。
+     分片到齐后由页面调 `rebuild()`。 */
+  function rebuild() {
+    PEOPLE = build();
+    return PEOPLE;
+  }
 
   /* 索引卡的段：**只要有作者**就有段，哪怕这一朝只有一位（不像集子列表页
      的索引卡要求「分类多于一段」—— 这一页的存在理由就是那张朝代表）。 */
@@ -465,6 +477,7 @@
 
     itemsOf: itemsOf,
     total: function () { return PEOPLE.length; },
+    rebuild: rebuild,
 
     /* 「某某等」那四位的注（见 `COLLECTED`）。页面在作品列表顶上把它铺出来，
        名字对不上时回空串 —— 别的作者没有这一行。 */

@@ -2197,14 +2197,20 @@
      `dwang-waiguo`，片名却是 `mingren` / `dwang`（`refPrefix` 显式给，
      见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。
 
-     搜索页那条会话（id 为 "search"）不是某一片的主人，返回空。 */
+     ⚠️ 不是集子的会话（搜索页那条 id 为 "search"、作者索引那条 id 为
+     "authors"）都不是某一片的主人，返回空。判据是「`SITE_BOOKS_DEF` 里真
+     有这个 id」—— 那张清单是集子的唯一来源（data/site-books.js）。
+
+     原来对清单里找不到的 id 走 `return bookId` 兜底，于是 `authors` 被当成
+     一片：`TextShards.loaded("authors")` 永远为假、`mount()` 一直返回 null，
+     作者名册点得开、点作者进不去（Issue #480 追问）。 */
   function shardOf(bookId) {
-    if (!bookId || bookId === "search") return "";
+    if (!bookId) return "";
     var defs = (typeof window !== "undefined" && window.SITE_BOOKS_DEF) || [];
     for (var i = 0; i < defs.length; i++) {
       if (defs[i].id === bookId) return defs[i].refPrefix || defs[i].id;
     }
-    return bookId;
+    return "";
   }
 
   function mount(config) {
