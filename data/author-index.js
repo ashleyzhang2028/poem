@@ -293,8 +293,12 @@
   var LIT_BOOKS = ["poems", "classic", "yuefu", "tangshi", "gushi", "songci",
     "yuanqu", "guwen", "jinxiandai", "zhaoming"];
 
-  var raw = ((typeof window !== "undefined" && window.SITE_INDEX) || [])
-    .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
+  var raw = [];
+  function collect() {
+    raw = ((typeof window !== "undefined" && window.SITE_INDEX) || [])
+      .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
+  }
+  collect();
 
   function personOf(p) {
     var name = norm(p.author);
@@ -387,6 +391,20 @@
   }
 
   var PEOPLE = build();
+
+  /* 索引重装配（Issue #554）：`PEOPLE` 是**装配那一刻**按 `raw` 摊平的，
+     而 `raw` 里那些条目的正文要等片到（`SITE_INDEX` 重建）才补得上。
+     `js/text-shards.js` 每收到一片就调一次这里，把名册重摊一遍 ——
+     否则已经进过这一页的人手里那份名册永远是「条目在那儿、正文是空的」，
+     点开详情页写着「本篇原文尚在整理中」。
+
+     ⚠️ 归堆（`build()`）只认 `author` / `dynasty`，重建前后**人物与条数
+     完全一样**，重建的只是每一条上带的正文 / 译文。 */
+  function rebuild() {
+    collect();
+    PEOPLE = build();
+  }
+  window.rebuildSiteTables = rebuild;
 
   /* 索引卡的段：**只要有作者**就有段，哪怕这一朝只有一位（不像集子列表页
      的索引卡要求「分类多于一段」—— 这一页的存在理由就是那张朝代表）。 */
