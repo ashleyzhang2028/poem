@@ -329,6 +329,10 @@
     return "";
   }
 
+  /* 集子的正文片按需取：壳里只有索引字段（篇名 / 作者 / 出处 / 分组），
+     正文落在 data/text-master/<集子>.js。**挂载这一道不在这里守** ——
+     `ReaderEngine.mount` 是全站唯一的挂载入口，片没到它会取回来再挂
+     （见 js/reader-core.js），各页不各写一遍。 */
   function enterBook(bookId, place) {
     var entry = entryOf(bookId);
     if (!entry) return;
@@ -453,6 +457,25 @@
     render();
     bindGrid();
     paintHeader(null);
+    warmShards();
+  }
+
+  /* 首屏画完就去后台把 15 片正文取回来。这一页的第一屏只需要壳里的索引
+     字段（集子目录与计数），正文一条都不显示 —— 所以片不挡首屏，
+     取回来是为了**用户点进某一部时不用等**。
+
+     用 requestIdleCallback 让出主线程：片合起来 24 MB，解析不能挤在
+     首屏那几帧里。浏览器不支持就退回 setTimeout。 */
+  function warmShards() {
+    var T = window.TextShards;
+    if (!T) return;
+    /* 片到一片重画一次：`countOf` 优先读壳里的条数（片到不到都一样），
+       只有个别集子退回读索引 —— 那一路要等片到才有数。重画很便宜（十几行
+       DOM），不必为它分辨「这次到的是不是有用的那一片」。 */
+    T.onArrive(function () { if (!current) render(); });
+    var run = function () { T.needAll(); };
+    if (window.requestIdleCallback) window.requestIdleCallback(run);
+    else setTimeout(run, 200);
   }
 
   if (document.readyState === "loading") {

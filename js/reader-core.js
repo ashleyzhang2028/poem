@@ -2190,6 +2190,23 @@
     return true;
   }
 
+  /* 集子 id → 正文片名（不引这一片就不该挂载这一部的阅读器）。
+
+     ⚠️ 两者**并不总是同名**：名家 / 帝王各拆两卷（中国 / 外国），两卷各出
+     一份壳，正文却只有一份 —— 外国那两卷的 id 是 `mingren-waiguo` /
+     `dwang-waiguo`，片名却是 `mingren` / `dwang`（`refPrefix` 显式给，
+     见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。
+
+     搜索页那条会话（id 为 "search"）不是某一片的主人，返回空。 */
+  function shardOf(bookId) {
+    if (!bookId || bookId === "search") return "";
+    var defs = (typeof window !== "undefined" && window.SITE_BOOKS_DEF) || [];
+    for (var i = 0; i < defs.length; i++) {
+      if (defs[i].id === bookId) return defs[i].refPrefix || defs[i].id;
+    }
+    return bookId;
+  }
+
   function mount(config) {
     var cfg = config || {};
 
@@ -2197,6 +2214,24 @@
     var rootSel = cfg.root || "[data-gw-root]";
     var rootEl = typeof rootSel === "string" ? document.querySelector(rootSel) : rootSel;
     if (!rootEl) return null;
+
+    /* 集子页的正文片按需取（Issue #550）：壳里只有索引字段，正文落在
+       data/text-master/<集子>.js。列表**行上带一句正文摘句**（见 rowHtml），
+       所以片没到就直接挂 —— 满屏摘句会是空白，看着像数据坏了。
+
+       这里在**唯一的挂载入口**上挡一道：片没到就取回来再挂。各集子引擎
+       （js/classic.js、js/mingshu.js……）不各写一遍，口径只此一处。
+       ⚠️ 搜索页那条会话（id 为 "search"）不走这一道 —— 它不是某一片的主人。 */
+    var shard = shardOf(cfg.id);
+    if (shard && window.TextShards && !window.TextShards.loaded(shard)) {
+      window.TextShards.need(shard).then(function () {
+        mount(cfg);
+      }, function () {
+        /* 取不到就不挂：铺不出正文的列表不如不铺（各引擎自己的
+           「数据加载失败」分支走不到这里）。 */
+      });
+      return null;
+    }
 
     for (var i = 0; i < mounts.length; i++) {
       if (mounts[i].root === rootEl && mounts[i].cfg === cfg) return mounts[i];

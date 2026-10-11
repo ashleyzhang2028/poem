@@ -761,6 +761,65 @@
 
     renderBody();
     syncHeroState();
+    loadShards();
+  }
+
+  /* 正文片按需取（Issue #550）。
+     ---------------------------------------------------------------
+     这一页原来把 15 片正文（5.5 MB）用 `<script src>` 同步拉下来 —— 只为
+     了「搜正文」那一档（`body` 字段 = 正文 + 译文 + 释义 + 注脚）。改用
+     按需之后：
+
+       · 首屏只引壳（索引字段齐了），**篇名 / 作者 / 朝代 / 出处**那一档
+         立刻就能搜 —— 这一档本来就在壳里；
+       · 正文片在首屏之后**后台取全**，取回来把索引缓存作废、重算一遍，
+         当前这次查询**再渲染一次**。所以「搜正文」的命中一条不漏，
+         只是比索引命中晚一步到（页面上那句「搜索中」的态照旧）。
+
+     ⚠️ 必须把片**取全**才谈得上「不漏」：少一片，那一片的正文里有的字
+        就搜不到，而界面上看不出差来。 */
+  var shardsWired = false;
+
+  function loadShards() {
+    var T = window.TextShards;
+    if (!T) return;
+    if (!shardsWired) {
+      shardsWired = true;
+      /* 片**每**到一片都通知一次（`text-shards.js` 内部会顺手重建
+         SITE_INDEX）—— 订阅挂在这里，不挂在各片的 promise 上：
+         重建之后的索引条目才是「有条目、有正文」的那一份。 */
+      T.onArrive(onShardArrived);
+    }
+    /* 只取**本页真收了壳**的那几部（`T.books()` 是全站的 15 片，
+       本页只引了 10 部的壳）—— 取没有壳的那些片，也没有行可挂。 */
+    T.books().forEach(function (b) {
+      if (!shellLoaded(b)) return;
+      T.need(b).catch(function () {});
+    });
+  }
+
+  /* 这一部的壳在不在本页（`data/poems-<...>.js` 铺出的数组）。
+     集子清单只此一份（`data/site-books.js` 的 `SITE_BOOKS_DEF`）。 */
+  function shellLoaded(bookId) {
+    var defs = window.SITE_BOOKS_DEF || [];
+    for (var i = 0; i < defs.length; i++) {
+      if (defs[i].id !== bookId) continue;
+      return !!window[defs[i].varName];
+    }
+    return false;
+  }
+
+  function onShardArrived() {
+    fieldCache = null;
+    fieldCacheKey = "";
+    allCache = null;
+    allCacheKey = "";
+    queryCache = {};
+    queryOrder.length = 0;
+    var input = document.getElementById("site-search");
+    var kw = input && input.value ? String(input.value).trim() : "";
+    renderBody();
+    if (kw) renderSuggest(kw);
   }
 
   /* 候选框自己滚到底 → 续下一批。监听挂在框上（不是文档），只在框真
