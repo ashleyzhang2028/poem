@@ -2196,15 +2196,20 @@
      的判据（`mount` 里拿它取片）：原样回传就等于宣布「本页有这一片」，
      于是去取一个不存在的文件 —— 404、挂载被拦下、页面一动不动且不报错。
 
-     踩过一次，正是作者索引：那条会话的 id 是 `authors`
-     （`js/authors.js` 的 `mountConfig`），它压根不是集子，正文由
-     `itemsOf()` 从索引里带全、不归任何一片。原样回传之后 `mount` 去取
-     `data/text-master/authors.js`，404 —— 名册里**一位作者都进不去**。
-
      ⚠️ 集子 id 与片名**并不总是同名**：名家 / 帝王各拆两卷（中国 / 外国），
      两卷各出一份壳，正文却只有一份 —— 外国那两卷的 id 是 `mingren-waiguo` /
      `dwang-waiguo`，片名却是 `mingren` / `dwang`（`refPrefix` 显式给，
-     见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。 */
+     见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。
+
+     ⚠️ 不是集子的会话（搜索页那条 id 为 "search"、作者索引那条 id 为
+     "authors"）都不是某一片的主人：它们的正文由自己的 items 带全，不归任何
+     一片。判据是「`SITE_BOOKS_DEF` 里真有这个 id」—— 那张清单是集子的唯一
+     来源（data/site-books.js）。
+
+     踩过一次，正是作者索引：原来对清单里找不到的 id 走 `return bookId` 兜底，
+     于是 `authors` 被当成一片、`mount` 去取 `data/text-master/authors.js`，
+     404 —— `TextShards.loaded("authors")` 永远为假、`mount()` 一直返回 null，
+     名册里一位作者都进不去（Issue #480 追问）。 */
   function shardOf(bookId) {
     if (!bookId) return "";
     var defs = (typeof window !== "undefined" && window.SITE_BOOKS_DEF) || [];

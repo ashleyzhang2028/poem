@@ -293,12 +293,13 @@
   var LIT_BOOKS = ["poems", "classic", "yuefu", "tangshi", "gushi", "songci",
     "yuanqu", "guwen", "jinxiandai", "zhaoming"];
 
-  var raw = [];
-  function collect() {
-    raw = ((typeof window !== "undefined" && window.SITE_INDEX) || [])
+  /* 每次重算都**当场**读一遍 `window.SITE_INDEX`，不收进闭包里的常量：
+     正文片是异步到的，片到之后 `js/text-shards.js` 会重建这份索引 ——
+     捏着旧那一份，片之后到的条目就永远进不了名册。 */
+  function rawIndex() {
+    return ((typeof window !== "undefined" && window.SITE_INDEX) || [])
       .filter(function (p) { return p && !p.isBook && LIT_BOOKS.indexOf(p.book) >= 0; });
   }
-  collect();
 
   function personOf(p) {
     var name = norm(p.author);
@@ -360,7 +361,7 @@
 
     var seenWid = {};
 
-    raw.forEach(function (p) {
+    rawIndex().forEach(function (p) {
       /* 合编课文按 `ATTRIB` 指定的人归属 —— 覆写 `who` 与 `d`，
          其余条目一个字不动（见 `ATTRIB` 那一段的长注释）。 */
       var fix = ATTRIB[norm(p.id)] || null;
@@ -392,18 +393,18 @@
 
   var PEOPLE = build();
 
-  /* 索引重装配（Issue #554）：`PEOPLE` 是**装配那一刻**按 `raw` 摊平的，
-     而 `raw` 里那些条目的正文要等片到（`SITE_INDEX` 重建）才补得上。
-     `js/text-shards.js` 每收到一片就调一次这里，把名册重摊一遍 ——
-     否则已经进过这一页的人手里那份名册永远是「条目在那儿、正文是空的」，
-     点开详情页写着「本篇原文尚在整理中」。
+  /* 名册要能**重算**：`SITE_INDEX` 会被 `js/text-shards.js` 在正文分片到齐后
+     重建一次（片是异步取的，装配时主表是空的，`data/site-index.js` 的
+     `NEED_TRANS` 会把「没有正文」的条目整条丢掉）。名册要是只在模块加载时算
+     一遍，那些条目就永远进不来 —— 线上实测 322 位，重算后是 495 位。
 
-     ⚠️ 归堆（`build()`）只认 `author` / `dynasty`，重建前后**人物与条数
-     完全一样**，重建的只是每一条上带的正文 / 译文。 */
+     片到后由 `js/text-shards.js` 的 `rebuildIndex()` 调 `window.rebuildSiteTables`，
+     走的就是这里；`js/authors.js` 自己也挂在 `TextShards.onArrive` 上重画①层。 */
   function rebuild() {
-    collect();
     PEOPLE = build();
+    return PEOPLE;
   }
+
   window.rebuildSiteTables = rebuild;
 
   /* 索引卡的段：**只要有作者**就有段，哪怕这一朝只有一位（不像集子列表页
@@ -483,6 +484,7 @@
 
     itemsOf: itemsOf,
     total: function () { return PEOPLE.length; },
+    rebuild: rebuild,
 
     /* 「某某等」那四位的注（见 `COLLECTED`）。页面在作品列表顶上把它铺出来，
        名字对不上时回空串 —— 别的作者没有这一行。 */

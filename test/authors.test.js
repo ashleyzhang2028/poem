@@ -298,6 +298,75 @@ chk(/function bindSettings\(\) \{\s*\n\s*if \(bindSettings\.done\) return;/.test
 chk(!/el\.addEventListener\("click", function \(\) \{ enterAuthor\(/.test(authorsJs),
   'js/authors.js 里没有「格子自接 enterAuthor」那种写法（它就是叠 handler 的入口）');
 
+// ── 名册要跟得上正文分片后到的时机（正文分片按需加载 · Issue #550 的回归）──
+//
+// 用户报的病（Issue #480 追问）：
+//   「作者索引页没在 近现代 看到 陈毅，但数据库里是有他的作品的，
+//     例如 青松 和 梅岭三章 是哪里错了？是不是有其他作者也有类似的被遗漏？」
+//
+// 病根不在作者名册的归并，在**装配时机**：
+//   · 正文收归主表后条目只留 `textRef`（正文在 `data/text-master/*.js` 分片里）；
+//   · `data/site-index.js` 的 NEED_TRANS 含 `jinxiandai`，装配那一刻主表还是空的
+//     → 「没有正文」的条目整条被丢；
+//   · 片是**异步**取的，到了以后 `js/text-shards.js` 重建 `SITE_INDEX` ——
+//     可名册 `PEOPLE` 是模块加载时算一次的常量，没有跟着重建。
+//
+// 于是近现代 24 条只进来 3 条（毛泽东那几首与课内同篇、随同步引的课内片先到），
+// 陈毅 / 夏明翰 / 鲁迅 / 周恩来…… 全缺席；全站名册 322 位，重算后是 495 位。
+//
+// 本层守两件事：
+//   ① `AuthorIndex.rebuild()` 重算之后，陈毅回来、近现代那一段满员；
+//   ② 页面（`js/authors.js`）在片到时真的会调它 —— 光数据层能重算不够。
+//
+// 沙盒里**不引任何分片**重现「装配时主表为空」那一刹那（`master-env.expandMaster`
+// 会把分片展开进来，所以这一层另起一个只点壳的沙盒）。
+const sbBare = { window: {}, console };
+sbBare.window = sbBare;
+vm.createContext(sbBare);
+[
+  'data/text-master.js',
+  'data/index.js',
+  'data/poems-classic.js', 'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-gushi.js',
+  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/zhaoming-dynasty.js',
+  'data/poems-yuanqu.js', 'data/poems-jinxiandai.js',
+  'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
+  'data/author-index.js'
+].forEach(f => vm.runInContext(read(f), sbBare, { filename: f }));
+
+const bareAI = sbBare.window.AuthorIndex;
+chk(!!bareAI, '装配时主表为空，作者名册仍成表（不抛）');
+chk(bareAI.people().filter(p => p.name === '陈毅').length === 0,
+  '片未到：陈毅不在名册上（这就是线上那个病，先如实复现）');
+
+chk(typeof bareAI.rebuild === 'function', 'AuthorIndex 暴露了口子给页面重算（rebuild）');
+
+// 片到齐：把 15 片并进主表，重建 SITE_INDEX，再让名册重算 —— 与页面同一条路
+require('./master-env').pieceFiles().forEach(f =>
+  vm.runInContext(read(f), sbBare, { filename: f }));
+sbBare.window.SITE_INDEX = sbBare.window.buildSiteIndex();
+bareAI.rebuild();
+
+const after = bareAI.people().filter(p => p.name === '陈毅')[0];
+chk(!!after, '片到齐 + rebuild 后陈毅回到名册（实际：' + (after ? '在' : '仍缺席') + '）');
+chk(after && after.at === 17, '陈毅落在「近现代」那一段（at = ' + (after ? after.at : '—') + '）');
+chk(after && after.items.some(i => i.title === '青松') && after.items.some(i => i.title === '梅岭三章'),
+  '陈毅名下《青松》《梅岭三章》都在（实际：' + (after ? after.items.map(i => i.title).join('、') : '无') + '）');
+
+const jxdNames = bareAI.byEra(17).map(p => p.name);
+chk(jxdNames.length >= 10, '近现代那一段不再只有三个人（实际 ' + jxdNames.length + ' 位：'
+  + jxdNames.join('、') + '）');
+['陈毅', '夏明翰', '恽代英', '鲁迅', '周恩来', '李大钊', '于右任', '朱德', '叶剑英'].forEach(n => {
+  chk(jxdNames.indexOf(n) >= 0, '近现代补回 ' + n);
+});
+
+chk(bareAI.total() > 450, '全站名册重算到位（实际 ' + bareAI.total() + ' 位；只算一次的旧写法是 267 位）');
+
+// 页面在片到时真的会重算名册 —— 数据层能重算、页面不调，等于没修
+chk(/TextShards[\s\S]{0,80}onArrive/.test(authorsJs), 'js/authors.js 挂在 TextShards.onArrive 上等片到');
+chk(/AI\.rebuild\(\)/.test(authorsJs), '片到时调了 AI.rebuild()（名册跟着重算）');
+chk(/function watchShards\(\)/.test(authorsJs) && /watchShards\(\);/.test(authorsJs),
+  'watchShards() 定义了且在 boot 里挂上');
+
 console.log('');
 console.log(fails ? '❌ 作者索引测试失败 ' + fails + ' 项' : '🎉 作者索引测试全部通过');
 process.exit(fails ? 1 : 0);

@@ -154,6 +154,32 @@ function dataScriptsOf(htmlFile) {
     chk(sb.TextShards.loaded('__nope__') === false, '失败的片不记成「已到」（下次还能重试）');
     return true;
   }).then(function () {
+    // ── 不是「集子」的会话不许当成片的主人（Issue #480 追问）────────────
+    //
+    // 用户报的病：
+    //   「作者索引页没在 近现代 看到 陈毅，数据库里是有他的作品的……
+    //     是不是有其他作者也有类似的被遗漏？」
+    //
+    // 名册那边是**装配时机**（另见 test/authors.test.js）。这里守的是同一条
+    // 链上的第二处：`shardOf()` 原来对清单里找不到的 id 走
+    // `return bookId` 兜底，于是 `mount()` 里
+    // `TextShards.loaded("authors")` 永远为假、作者详情页一直挂不上。
+    // 判据改成「只在 SITE_BOOKS_DEF 里真有这个 id 时才算片的主人」。
+    const coreSrc = read('js/reader-core.js');
+    const shardFn = (coreSrc.match(/function shardOf\(bookId\) \{[\s\S]*?\n  \}/) || [''])[0];
+    chk(!!shardFn, 'reader-core 里有 shardOf()');
+    chk(!/return bookId;\s*\n  \}/.test(shardFn),
+      'shardOf() 不再拿「不在清单里就当成片名」兜底（它就是 authors 挂不上的原因）');
+    chk(/defs\[i\]\.id === bookId/.test(shardFn),
+      'shardOf() 认 SITE_BOOKS_DEF 里真有的那个 id');
+
+    // 数据层再核一遍：清单里没有 "authors"，所以它不再被当成片
+    const defs = (sb.SITE_BOOKS_DEF || []);
+    chk(!defs.some(function (d) { return d.id === 'authors'; }),
+      '集子清单里没有 authors（它本来就不是一部集子）');
+    chk(sb.TextShards.loaded('authors') === false,
+      'TextShards 不认 authors 这一片（原来它永远「没到」，页面就一直挂不上）');
+
     chk(fails === 0, '分片加载层全部通过');
     console.log('');
     if (fails) { console.log('✗ 分片按需加载测试失败 ' + fails + ' 项'); process.exit(1); }
