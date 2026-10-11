@@ -103,6 +103,16 @@ vm.createContext(sandbox);
   'data/site-index.js'
 ].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
+  if (f === 'data/text-master.js') {
+    const dir = path.join(ROOT, 'data/text-master');
+    if (fs.existsSync(dir)) {
+      fs.readdirSync(dir).sort().forEach(function (p) {
+        if (!/\.js$/.test(p)) return;
+        vm.runInContext(fs.readFileSync(path.join(dir, p), 'utf8'), sandbox,
+          { filename: 'data/text-master/' + p });
+      });
+    }
+  }
 });
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });

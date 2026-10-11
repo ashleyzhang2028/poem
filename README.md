@@ -127,13 +127,18 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 ├── manifest.webmanifest    # PWA 清单
 ├── sw.js                   # Service Worker：离线缓存
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ reader-tables.css（详情页表格）/ legal.css（法务页）
-├── js/                     # 应用脚本（progress-store.js 分域引擎；sync-store.js 跨设备同步；
+├── js/                     # 应用脚本（dom.js 公共 esc；progress-store.js 分域引擎；
+│                           #   sync-store.js 跨设备同步；sync-coverage.js 同步边界总表，只供测试；
 │                           #   today-plan.js 今日排期；recite-defer.js「明日再背」+「月后再背」）
 ├── api/                    # Vercel Serverless：1 个函数（handler.js 收口）
 │   ├── _routes/            # 各条路由的实现（一个业务一个文件）
 │   └── _lib/               # 业务内核 + 配置 / 存储 / 会话 / 身份 / 发信适配层 + schema.sql
 ├── fonts/ icons/ data/     # 自托管中文字体 / 图标 / 诗词语料与索引
+│                           #   data/text-master.js 是正文取数入口，正文按集子分片在 data/text-master/
+│                           #   data/index.js 汇总课内 12 组（POEMS_ALL）；
+│                           #   data/site-index.js 把各部壳装配成全站索引（SITE_INDEX）
 ├── scripts/                # 本地服务器、数据生成脚本、lib/table.js（表格生成器）、doctor.js（开通自检）
+│                           #   oneoff/ 是按 Issue 跑过一遍即失效的历史迁移脚本
 └── test/ docs/             # 测试 / 设计文档（architecture / auth-design / todo）
 ```
 
@@ -159,7 +164,9 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 
 **译文是必填项**，须标注来源口径（`translationSource`），四类取值：`school`（统编版教材与教师用书）、`academic`（《唐诗鉴赏辞典》等工具书）、`public-domain`（公有领域公认注本）、`modern`（现行通用选本）。
 
-**译文底下那行注脚只说口径**。主表另给每条正文算了**版次**（`data/text-master.js` 的 `version`），供本机快照比对；**版次不上界面**（见 `docs/architecture.md` §4.72）。
+**正文主表按集子分片**：`data/text-master.js` 只留取数入口（`masterTextOf` / `textVersionOf` / `textMasterAdd`），正文按 `book` 分 15 片放在 `data/text-master/`。页面引 **入口 + 该页用到的那几部集子的片** —— 首页只引 `poems` 一片（141 行、约 0.12 MB），不再拉全表 23.5 MB。引片次序：入口在前，各片在后，且都先于 `data/index.js` / `data/site-index.js`（装配期就要按 `textRef` 取正文）。跨部同篇的那一行会出现在两个片里，入口按 `id` 去重合一，`window.TEXT_MASTER` 仍是「一行一篇」。
+
+**译文底下那行注脚只说口径**。主表另给每条正文算了**版次**（`version`），供本机快照比对；**版次不上界面**（见 `docs/architecture.md` §4.72）。
 
 加完新篇目后跑一遍：
 
@@ -196,7 +203,7 @@ node test/run.sh                               # 测试
 
 ## 详情页里的表格
 
-**正文是纯文本**（`data/text-master.js` 的 `text` 字段），表格也因此写成纯文本，由阅读器（`js/reader-core.js`）认出来渲染成真 `<table>`。作者在正文里照下面两种样子画就行：
+**正文是纯文本**（主表的 `text` 字段），表格也因此写成纯文本，由阅读器（`js/reader-core.js`）认出来渲染成真 `<table>`。作者在正文里照下面两种样子画就行：
 
 ```
 ┌──────┬────────┐        有框表：画了框线的，整块连续的行 = 一张表。
