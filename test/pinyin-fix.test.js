@@ -25,7 +25,7 @@ function boot() {
     removeItem(k) { delete this._d[k]; }
   };
   vm.createContext(sb);
-  ["data/pinyin-table.js", "data/common-chars.js"].forEach(f =>
+  ["js/dom.js", "data/pinyin-table.js", "data/common-chars.js"].forEach(f =>
     vm.runInContext(fs.readFileSync(ROOT + f, "utf8"), sb, { filename: f }));
   vm.runInContext(fs.readFileSync(ROOT + "js/pinyin-edit.js", "utf8"), sb, { filename: "pinyin-edit.js" });
   vm.runInContext(fs.readFileSync(ROOT + "js/pinyin.js", "utf8"), sb, { filename: "pinyin.js" });

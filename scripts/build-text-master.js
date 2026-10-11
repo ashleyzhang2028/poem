@@ -780,6 +780,17 @@ if (empty.length) {
 }
 
 const BT = '`';
+/* 分片清单在这里先算一遍：`out` 的生成体里要写出它（`window.TEXT_SHARD_BOOKS`），
+   而真正落片的 `pieces` 在后面才铺开。两处口径必须一致 —— 都由 bookOfEntry 算。 */
+const shardBooks = (function () {
+  const set = {};
+  const bookOf = function (e) { return e.indexOf('poems-') === 0 ? 'poems' : e.split('-')[0]; };
+  master.forEach(function (m) {
+    set[bookOf(m.id)] = true;
+    (m.entries || []).forEach(function (e) { if (e) set[bookOf(e)] = true; });
+  });
+  return Object.keys(set).sort();
+})();
 let out = '';
 /* 这一份只剩「取数入口」：正文按集子切进 data/text-master/ 各片，
    由壳文件加载后自己拼回 window.TEXT_MASTER。*/
@@ -844,8 +855,16 @@ out += '      if (!m || !m.id || seen[m.id]) return;\n';
 out += '      seen[m.id] = true;\n';
 out += '      list.push(m);\n';
 out += '    });\n';
+out += '    /* 片是**后到**的（按需 fetch 或运行时预热），而取数入口的 byId 索引\n';
+out += '       算一次就缓存住了。不在这里作废，后到的片就永远查不到 ——\n';
+out += '       表现是「正文空白」，不报错。 */\n';
+out += '    if (typeof window.textMasterReset === \"function\") window.textMasterReset();\n';
 out += '  };\n';
 out += '})();\n';
+out += '\n';
+out += '/* 正文分片的集子清单 —— 由生成器按实际落盘的片写出，唯一一份：\n';
+out += '   js/text-shards.js 按它决定「要预取哪几片」，各页不各写一份。 */\n';
+out += 'window.TEXT_SHARD_BOOKS = ' + JSON.stringify(shardBooks) + ';\n';
 out += '\n';
 out += '/* ==========================================================================\n';
 out += '   近重复对：同一篇却有两种写法，**故意不合并**\n';
@@ -895,6 +914,7 @@ out += '(function () {\n';
 out += '  "use strict";\n';
 out += '\n';
 out += '  var byId = null;\n';
+out += '  window.textMasterReset = function () { byId = null; };\n';
 out += '  function map() {\n';
 out += '    if (byId) return byId;\n';
 out += '    byId = {};\n';

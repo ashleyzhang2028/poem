@@ -54,6 +54,7 @@ const { loadData } = require('./master-env');
 const sb = makeSandbox();
 vm.createContext(sb);
 loadData(sb, DATA);
+vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/dom.js'), 'utf8'), sb, { filename: 'js/dom.js' });
 vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/search.js'), 'utf8'), sb, { filename: 'js/search.js' });
 
 const S = sb.SiteSearch;

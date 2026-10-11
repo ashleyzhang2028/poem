@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v384";
+const CACHE_NAME = "poem-app-v389";
 
 const PRECACHE = [
   "./",
@@ -82,21 +82,7 @@ const PRECACHE = [
   "./data/works-map.js",
   "./data/works-index.js",
   "./data/text-master.js",
-  "./data/text-master/changshi.js",
-  "./data/text-master/chengyu.js",
-  "./data/text-master/classic.js",
-  "./data/text-master/dwang.js",
-  "./data/text-master/gushi.js",
-  "./data/text-master/guwen.js",
-  "./data/text-master/jinxiandai.js",
-  "./data/text-master/mingren.js",
-  "./data/text-master/mingshu.js",
-  "./data/text-master/poems.js",
-  "./data/text-master/songci.js",
-  "./data/text-master/tangshi.js",
-  "./data/text-master/yuanqu.js",
-  "./data/text-master/yuefu.js",
-  "./data/text-master/zhaoming.js",
+  "./js/text-shards.js",
   "./data/canonical-texts.js",
   "./data/group-order.js",
   "./js/collections.js",

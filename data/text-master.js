@@ -59,8 +59,16 @@ window.textMasterAdd = (function () {
       seen[m.id] = true;
       list.push(m);
     });
+    /* 片是**后到**的（按需 fetch 或运行时预热），而取数入口的 byId 索引
+       算一次就缓存住了。不在这里作废，后到的片就永远查不到 ——
+       表现是「正文空白」，不报错。 */
+    if (typeof window.textMasterReset === "function") window.textMasterReset();
   };
 })();
+
+/* 正文分片的集子清单 —— 由生成器按实际落盘的片写出，唯一一份：
+   js/text-shards.js 按它决定「要预取哪几片」，各页不各写一份。 */
+window.TEXT_SHARD_BOOKS = ["changshi","chengyu","classic","dwang","gushi","guwen","jinxiandai","mingren","mingshu","poems","songci","tangshi","yuanqu","yuefu","zhaoming"];
 
 /* ==========================================================================
    近重复对：同一篇却有两种写法，**故意不合并**
@@ -104,6 +112,7 @@ window.TEXT_NEAR_DUP = [
   "use strict";
 
   var byId = null;
+  window.textMasterReset = function () { byId = null; };
   function map() {
     if (byId) return byId;
     byId = {};
