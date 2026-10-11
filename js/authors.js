@@ -187,7 +187,16 @@
       el.innerHTML =
         '<span class="author-name">' + esc(w.name) + "</span>" +
         '<span class="author-count">' + w.items.length + "</span>";
-      el.addEventListener("click", function () { enterAuthor(w.name); });
+      /* ⚠️ 这里**不接** click —— 一格只许进一次 `enterAuthor()`。
+         格子上的 handler 和下面 `bind()` 里那个 document 上的委托 handler
+         会**各触发一次**，于是一次点击进两次：第二次 `leaveAuthor()` 会
+         把刚挂上的阅读器会话卸掉，可 `unmount()` 只从 `mounts` 里摘会话，
+         **摘不掉 `#gw-reader` 上已经绑好的那些 DOM handler**（译文开关、
+         播放、上一篇 / 下一篇……）。于是下一个会话又往同一批节点上绑一套，
+         一个点按被两套 handler 各处理一次：译文开关翻两下等于没翻，播放
+         起了又停。用户报的「从作者索引进去，播放和译文都没反应」就是这个。
+         格子由 `bind()` 里那个委托接（①层 DOM 每次 `renderIndex()` 都重建，
+         委托比逐格接更稳）。 */
       wrap.appendChild(el);
     });
     sec.appendChild(wrap);

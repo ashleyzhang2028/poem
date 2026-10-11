@@ -1795,7 +1795,18 @@
     });
   }
 
+  /* ⚠️ 这一整块绑的是**页面级**的静态节点（`#gw-reader` / `#gw-list` /
+     `document` / 设置弹窗），不是某一个阅读器会话的。而 `unmount()` 只从
+     `mounts` 里摘会话，**摘不掉已经绑在 DOM 上的 handler** —— 于是每挂一次
+     会话（作者索引里换一位作者、集子页里换一部集子）就往同一批节点上再叠
+     一套：一个点按被 N 套 handler 各处理一次，译文开关翻两下等于没翻、
+     播放起了又停。所以这里**只绑一次**（`bindEvents.done`，与 `bindGlobal`
+     同一份做法）。handler 里一律 `claim(e)` 认会话，认的是事件目标所在的
+     DOM，不依赖绑定时是哪一个会话。 */
   function bindEvents() {
+    if (bindEvents.done) return;
+    bindEvents.done = true;
+
     bindSearch(document);
 
     $$all("[data-filter]").forEach(function (b) {
@@ -2128,8 +2139,11 @@
   }
 
   function bindSettings() {
+    if (bindSettings.done) return;
+
     var modal = document.getElementById("settings-modal");
     if (!modal) return;
+    bindSettings.done = true;
     $$("[data-settings-close]").forEach(function (el) {
       el.addEventListener("click", closeSettings);
     });
