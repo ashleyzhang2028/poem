@@ -2190,21 +2190,28 @@
     return true;
   }
 
-  /* 集子 id → 正文片名（不引这一片就不该挂载这一部的阅读器）。
+  /* 集子 id → 正文片名。**只认集子清单里对得上的那一个**，认不出返回空。
 
-     ⚠️ 两者**并不总是同名**：名家 / 帝王各拆两卷（中国 / 外国），两卷各出
-     一份壳，正文却只有一份 —— 外国那两卷的 id 是 `mingren-waiguo` /
+     ⚠️ 认不出时回空串、**不回传原值**。这一步同时是「这一片归不归本页」
+     的判据（`mount` 里拿它取片）：原样回传就等于宣布「本页有这一片」，
+     于是去取一个不存在的文件 —— 404、挂载被拦下、页面一动不动且不报错。
+
+     踩过一次，正是作者索引：那条会话的 id 是 `authors`
+     （`js/authors.js` 的 `mountConfig`），它压根不是集子，正文由
+     `itemsOf()` 从索引里带全、不归任何一片。原样回传之后 `mount` 去取
+     `data/text-master/authors.js`，404 —— 名册里**一位作者都进不去**。
+
+     ⚠️ 集子 id 与片名**并不总是同名**：名家 / 帝王各拆两卷（中国 / 外国），
+     两卷各出一份壳，正文却只有一份 —— 外国那两卷的 id 是 `mingren-waiguo` /
      `dwang-waiguo`，片名却是 `mingren` / `dwang`（`refPrefix` 显式给，
-     见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。
-
-     搜索页那条会话（id 为 "search"）不是某一片的主人，返回空。 */
+     见 data/site-books.js）。照 cfg.id 去取会 404，表现是页面永远不挂载。 */
   function shardOf(bookId) {
-    if (!bookId || bookId === "search") return "";
+    if (!bookId) return "";
     var defs = (typeof window !== "undefined" && window.SITE_BOOKS_DEF) || [];
     for (var i = 0; i < defs.length; i++) {
       if (defs[i].id === bookId) return defs[i].refPrefix || defs[i].id;
     }
-    return bookId;
+    return "";
   }
 
   function mount(config) {
@@ -2221,7 +2228,11 @@
 
        这里在**唯一的挂载入口**上挡一道：片没到就取回来再挂。各集子引擎
        （js/classic.js、js/mingshu.js……）不各写一遍，口径只此一处。
-       ⚠️ 搜索页那条会话（id 为 "search"）不走这一道 —— 它不是某一片的主人。 */
+
+       ⚠️ **只有对得上集子清单的 cfg.id 才走这一道**（见 `shardOf`）——
+       作者索引（`authors`）、搜索页（`search`）这两条会话的正文由各自的
+       items 带全，不归任何一片。放它们进来就是去取一个不存在的文件：
+       挂载被拦下、页面一动不动且不报错。 */
     var shard = shardOf(cfg.id);
     if (shard && window.TextShards && !window.TextShards.loaded(shard)) {
       window.TextShards.need(shard).then(function () {
