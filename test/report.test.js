@@ -297,6 +297,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     sb.window = sb;
     sb.localStorage = fakeStore;
     vm.createContext(sb);
+    vm.runInContext(read("js/dom.js"), sb, { filename: "js/dom.js" });
     vm.runInContext(read("js/report.js"), sb, { filename: "report.js" });
     const R = sb.window.Report;
 

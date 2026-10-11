@@ -98,7 +98,15 @@
     try { backing.setItem(key, text); return true; } catch (e) { return false; }
   }
 
-  var esc = window.DOM.esc;
+  /* esc 从 js/dom.js 那一份取（Issue #550 收归一处）。这个模块既在浏览器
+     跑、也被 Node 测试 require —— 顶层直接读 window 会在 Node 里抛。
+     延迟到用的时候再解，两边都拿得到。 */
+  function esc(s) {
+    if (typeof window !== "undefined" && window.DOM && window.DOM.esc) return window.DOM.esc(s);
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
 
   function firstCharOf(nickname) {
     var s = String(nickname == null ? "" : nickname).trim();

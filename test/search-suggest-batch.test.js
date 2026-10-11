@@ -48,6 +48,7 @@ sb.clearTimeout = () => {};
 const { loadData } = require('./master-env');
 vm.createContext(sb);
 loadData(sb, DATA);
+vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/dom.js'), 'utf8'), sb, { filename: 'js/dom.js' });
 vm.runInContext(searchSrc, sb, { filename: 'js/search.js' });
 
 const S = sb.SiteSearch;

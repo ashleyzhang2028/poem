@@ -9,6 +9,7 @@ const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else conso
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
+vm.runInContext(fs.readFileSync(ROOT + "js/dom.js", "utf8"), sb, { filename: "dom.js" });
 vm.runInContext(fs.readFileSync(ROOT + "data/pinyin-table.js", "utf8"), sb, { filename: "pinyin-table.js" });
 vm.runInContext(fs.readFileSync(ROOT + "data/common-chars.js", "utf8"), sb, { filename: "common-chars.js" });
 vm.runInContext(fs.readFileSync(ROOT + "js/pinyin.js", "utf8"), sb, { filename: "pinyin.js" });

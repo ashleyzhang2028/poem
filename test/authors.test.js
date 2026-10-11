@@ -41,6 +41,7 @@ require('./master-env').expandMaster([
   'data/author-index.js'
 ]).forEach(f => vm.runInContext(read(f), sb, { filename: f }));
 
+vm.runInContext(read('js/dom.js'), sb, { filename: 'js/dom.js' });
 vm.runInContext(read('js/authors.js'), sb, { filename: 'js/authors.js' });
 chk(!!(sb.AuthorsPage && sb.AuthorsPage.index), 'js/authors.js 挂出了 AuthorsPage.index()');
 

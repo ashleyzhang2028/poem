@@ -1,4 +1,8 @@
-(function () {
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.DOM = api;
+})(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
   function esc(s) {
@@ -7,5 +11,5 @@
     });
   }
 
-  window.DOM = { esc: esc };
-})();
+  return { esc: esc };
+});
