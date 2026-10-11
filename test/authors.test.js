@@ -266,6 +266,37 @@ chk(/window\.ReaderList/.test(read('js/search.js')), '搜索页的行渲染借 w
 chk(/window\.ReaderList = \{/.test(read('js/reader-core.js')), 'reader-core 暴露了 ReaderList');
 chk(/window\.ReaderSearch = \{/.test(read('js/reader-core.js')), 'reader-core 暴露了 ReaderSearch（按条开阅读器）');
 
+// ── 一格只许进一次 enterAuthor（Issue #480 第五轮）─────────────────────
+//
+// 用户报的病：
+//   「搜索页 → 搜索 大学之道 → 点开 → 播放 / 译文都正常；
+//     搜索页 → 作者索引 → 先秦 → 曾子 → 点开 大学之道 → 播放没反应、
+//     译文没反应，其他按钮也一样。」
+//
+// 病根不在数据（`classic-gw-69` 的正文与译文都在），在**点两下**：
+//   · `eraCard()` 给每一格接了一个 click；
+//   · `bind()` 又在 document 上接了一个委托（认 `[data-author]`）。
+//   一次点击两条路径都进 `enterAuthor()`：第二次 `leaveAuthor()` 把刚挂上的
+//   会话卸掉，可 `unmount()` 只摘会话、**摘不掉 `#gw-reader` 上已绑的 DOM
+//   handler**，下一个会话又往同一批节点叠一套 —— 一个点按被两套 handler 各
+//   处理一次，译文开关翻两下等于没翻，播放起了又停。
+//
+// 这里守两条：① 名册的格子**不自己接** click（只留委托那一条路）；
+// ② reader-core 的页面级绑定（`bindEvents` / `bindSettings`）只绑一次。
+const eraCardSrc = (authorsJs.match(/function eraCard\(g\)[\s\S]*?\n  \}/) || [''])[0];
+chk(eraCardSrc.indexOf('addEventListener') < 0,
+  'eraCard() 的格子不自己接 click（只走 bind() 里那一条委托）');
+chk(/closest\("\[data-author\]"[\s\S]{0,200}enterAuthor/.test(authorsJs),
+  'bind() 里那条 [data-author] 委托还在（格子靠它进 enterAuthor）');
+
+const coreSrc = read('js/reader-core.js');
+chk(/function bindEvents\(\) \{\s*\n\s*if \(bindEvents\.done\) return;\s*\n\s*bindEvents\.done = true;/.test(coreSrc),
+  'bindEvents() 只绑一次（bindEvents.done 守卫）—— 换会话不再往同一批节点叠 handler');
+chk(/function bindSettings\(\) \{\s*\n\s*if \(bindSettings\.done\) return;/.test(coreSrc),
+  'bindSettings() 只绑一次（bindSettings.done 守卫）');
+chk(!/el\.addEventListener\("click", function \(\) \{ enterAuthor\(/.test(authorsJs),
+  'js/authors.js 里没有「格子自接 enterAuthor」那种写法（它就是叠 handler 的入口）');
+
 console.log('');
 console.log(fails ? '❌ 作者索引测试失败 ' + fails + ' 项' : '🎉 作者索引测试全部通过');
 process.exit(fails ? 1 : 0);
