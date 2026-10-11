@@ -51,11 +51,7 @@
   var hitDocs = {};         /* 当前展出那一段命中：id → 条目（点行时按 id 取回） */
   var suggestIndex = -1;
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   /* 判重后的全站条目。SITE_INDEX 与 WorksIndex 都在启动时定下、此后不动，
      所以这张表算一次就够 —— 原来它每敲一个字重算一遍（5595 条走一遍

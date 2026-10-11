@@ -688,11 +688,7 @@
     );
   }
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   /* 列表行首的序号徽标（Issue #484）：一到两位数是正圆，三位及以上加
      `.is-num-wide` 长成胶囊、字号收一档 —— 见 css/style.css 里的 `.item-num`。

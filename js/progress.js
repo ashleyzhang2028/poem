@@ -309,11 +309,7 @@
     });
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var escapeHtml = window.DOM.esc;
 
   var MASTERY_LABELS = [
     { label: "0-19% 刚起步", tone: "m0" },

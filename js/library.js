@@ -186,11 +186,7 @@
   /* 课内诗词单列（不入 GROUPS），排第一 —— 这是 App 的初心与头号功能。 */
   var SOLO = ["poems"];
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function countOf(bookId) {
     var idx = window.SITE_INDEX || [];

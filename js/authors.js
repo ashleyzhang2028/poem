@@ -65,11 +65,7 @@
      退回来再放回。 */
   var searchNodes = null;
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   /* 拼音序：手机、电脑、Node 三处跑出来一样。`sensitivity:"base"` 让
      「曹」与「艹」类不因声调分家 —— 这里排的是人名，不是生僻字表。 */

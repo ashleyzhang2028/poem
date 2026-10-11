@@ -273,11 +273,7 @@
     return out.join("");
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function getRecord(id) {
     if (window.Storage && window.Storage.get) return window.Storage.get(id);

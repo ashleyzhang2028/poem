@@ -253,11 +253,7 @@
     if (firstField && $(firstField)) $(firstField).focus();
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function passwordChannel(msgId) {
     if (!api) {

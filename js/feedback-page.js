@@ -2,11 +2,7 @@
   "use strict";
 
   function $(id) { return document.getElementById(id); }
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   var F = null;
   var pickedKind = "feature";

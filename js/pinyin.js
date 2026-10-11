@@ -385,11 +385,7 @@
     }).join("\n");
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var escapeHtml = window.DOM.esc;
 
   function annotateText(text, mode) {
     const rare = (mode || "rare") !== "all";

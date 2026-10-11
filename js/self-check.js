@@ -13,11 +13,7 @@
     { key: "reg", name: "注册接口能在不建号的前提下练一遍", hint: "只打形状不合法的请求，不写任何数据；看它回的是 500 还是正常报错" }
   ];
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function readJson(res) {
     return res.text().then(function (t) {

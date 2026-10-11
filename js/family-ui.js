@@ -3,11 +3,7 @@
 
   function $(sel, root) { return (root || document).querySelector(sel); }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function familyMod() { return window.Family || null; }
   function avatarMod() { return window.Avatar || null; }

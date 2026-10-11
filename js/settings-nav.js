@@ -32,11 +32,7 @@
   var APP_VERSION = "0.1.294";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.DOM.esc;
 
   function row(title, desc, attrs) {
     var a = document.createElement("a");
