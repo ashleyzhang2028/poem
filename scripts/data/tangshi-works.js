@@ -6,7 +6,7 @@
    「《唐诗三百首》」，看不出它出自《杜工部集》。
 
    本表给出「诗人 → 他的诗文集（所出之书）」的通行著录名，供
-   scripts/fix-tangshi-source.js 把选本条目那半边的 `source` 换成精确集名，
+   scripts/oneoff/fix-tangshi-source.js 把选本条目那半边的 `source` 换成精确集名，
    与《古文观止》那套口径一致：
 
      source     这首诗**所出之书**（作者别集，如《杜工部集》）
@@ -21,7 +21,7 @@
      · 崔护《题都城南庄》出处在《本事诗》（唐孟棨撰），与 ts-313 一致。
      · 无名氏《杂诗》无作者，出处在《全唐诗》。
 
-   ⚠️ 这是**数据表**，不是生成文件 —— 改完重跑 scripts/fix-tangshi-source.js。
+   ⚠️ 这是**数据表**，不是生成文件 —— 改完重跑 scripts/oneoff/fix-tangshi-source.js。
    ========================================================================== */
 'use strict';
 window.TANGSHI_WORKS = {

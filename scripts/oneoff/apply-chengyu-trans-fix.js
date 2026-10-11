@@ -2,7 +2,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const MASTER_FILE = path.join(ROOT, 'data/text-master.js');
 
 const sandbox = { window: {}, console };

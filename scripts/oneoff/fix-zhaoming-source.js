@@ -33,7 +33,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const TARGET = path.join(ROOT, 'data/poems-zhaoming.js');
 
 /* 集内 `author` → 所出之书（带书名号，与集内既有写法一致）。 */

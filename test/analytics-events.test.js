@@ -82,10 +82,9 @@ htmlFiles(root, []).forEach(function (f) {
 console.log('=== 带 GA 的页面共 ' + withGA.length + ' 个 ===');
 chk(withGA.length >= 37, '带 GA 的页面都在（实际 ' + withGA.length + ' 个）');
 /* admin/* 是内部页，不上统计（Issue #538）：后台几页一个 gtag 都不该有 ——
-   内部页的行为进同一个媒体资源会把外部数字搅浑。admin/index-old.html 是
-   死文件，照旧两样都没有。 */
-chk(noGA.every(f => f === 'admin/index-old.html' || f.startsWith('admin/')),
-  '没挂 GA 的只剩 admin/*（内部页，含死文件 index-old.html）（实际 ' + noGA.join(', ') + '）');
+   内部页的行为进同一个媒体资源会把外部数字搅浑。 */
+chk(noGA.every(f => f.startsWith('admin/')),
+  '没挂 GA 的只剩 admin/*（内部页）（实际 ' + noGA.join(', ') + '）');
 chk(withGA.every(f => !f.startsWith('admin/')), 'admin/* 一个 GA 都不带（内部页不进外部报表）');
 
 // ---------------------------------------------------------------------------

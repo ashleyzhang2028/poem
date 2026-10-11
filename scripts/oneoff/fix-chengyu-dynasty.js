@@ -16,8 +16,8 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
-const { BOOK_DYNASTY, ITEMS } = require('./data/chengyu-dynasty-512.js');
+const ROOT = path.join(__dirname, '..', '..');
+const { BOOK_DYNASTY, ITEMS } = require('../data/chengyu-dynasty-512.js');
 const DRY = process.argv.indexOf('--dry') >= 0;
 const FILE = path.join(ROOT, 'data/poems-chengyu.js');
 

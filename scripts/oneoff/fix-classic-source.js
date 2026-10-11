@@ -14,9 +14,9 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
-const TABLE = require('./data/classic-source-512.js');
-const { DYNASTY_ALIGN } = require('./data/classic-source-512.js');
+const ROOT = path.join(__dirname, '..', '..');
+const TABLE = require('../data/classic-source-512.js');
+const { DYNASTY_ALIGN } = require('../data/classic-source-512.js');
 const FILE = path.join(ROOT, 'data/poems-classic.js');
 
 const sb = { window: {}, console }; sb.window = sb; vm.createContext(sb);

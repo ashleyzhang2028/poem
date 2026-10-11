@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const FILE = path.join(ROOT, 'data/poems-chengyu.js');
 
 const sandbox = { window: {}, console };

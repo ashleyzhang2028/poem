@@ -22,10 +22,10 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const TABLES = [
-  require('./data/chengyu-source-512.js'),
-  require('./data/chengyu-source-512b.js')
+  require('../data/chengyu-source-512.js'),
+  require('../data/chengyu-source-512b.js')
 ];
 const TABLE = Object.assign({}, ...TABLES);
 

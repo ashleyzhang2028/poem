@@ -44,7 +44,7 @@
    由 `scripts/build-mingren.js` 从主表生成。要删人请改名单来源
    （scripts/data/mingren-round5.js 的 DROP 一类），再重跑 build 脚本，
    不要在壳上手工动刀。本脚本不再可用，保留只为留下当时的判定口径。 */
-if (require('fs').existsSync(require('path').join(__dirname, '..', 'data/poems-mingren.js')) === false) {
+if (require('fs').existsSync(require('path').join(__dirname, '..', '..', 'data/poems-mingren.js')) === false) {
   console.error('✗ data/poems-mingren.js 已不存在（Issue #399 拆两部）。' +
     '\n  用法改为：改 scripts/data/mingren-round5.js 的 DROP → node scripts/build-mingren.js --master');
   process.exit(2);
@@ -56,7 +56,7 @@ const path = require('path');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const SHELL = path.join(ROOT, 'data/poems-mingren.js');
 const APPLY = process.argv.slice(2).indexOf('--apply') >= 0;
 
@@ -119,6 +119,6 @@ lines.push('];');
 fs.writeFileSync(SHELL, lines.join('\n') + '\n', 'utf8');
 console.log('✓ data/poems-mingren.js：' + cur.length + ' → ' + kept.length + ' 位');
 
-execFileSync(process.execPath, [path.join(__dirname, 'build-text-master.js')], { stdio: 'inherit' });
-execFileSync(process.execPath, [path.join(__dirname, 'build-works-map.js')], { stdio: 'inherit' });
+execFileSync(process.execPath, [path.join(__dirname, '..', 'build-text-master.js')], { stdio: 'inherit' });
+execFileSync(process.execPath, [path.join(__dirname, '..', 'build-works-map.js')], { stdio: 'inherit' });
 console.log('✓ 主表与判重表已重建');
