@@ -129,7 +129,8 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ reader-tables.css（详情页表格）/ legal.css（法务页）
 ├── js/                     # 应用脚本（dom.js 公共 esc；progress-store.js 分域引擎；
 │                           #   sync-store.js 跨设备同步；sync-coverage.js 同步边界总表，只供测试；
-│                           #   today-plan.js 今日排期；recite-defer.js「明日再背」+「月后再背」）
+│                           #   today-plan.js 今日排期；recite-defer.js「明日再背」+「月后再背」；
+│                           #   text-shards.js 正文分片按需取，用到才 fetch）
 ├── api/                    # Vercel Serverless：1 个函数（handler.js 收口）
 │   ├── _routes/            # 各条路由的实现（一个业务一个文件）
 │   └── _lib/               # 业务内核 + 配置 / 存储 / 会话 / 身份 / 发信适配层 + schema.sql
@@ -164,7 +165,17 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 
 **译文是必填项**，须标注来源口径（`translationSource`），四类取值：`school`（统编版教材与教师用书）、`academic`（《唐诗鉴赏辞典》等工具书）、`public-domain`（公有领域公认注本）、`modern`（现行通用选本）。
 
-**正文主表按集子分片**：`data/text-master.js` 只留取数入口（`masterTextOf` / `textVersionOf` / `textMasterAdd`），正文按 `book` 分 15 片放在 `data/text-master/`。页面引 **入口 + 该页用到的那几部集子的片** —— 首页只引 `poems` 一片（141 行、约 0.12 MB），不再拉全表 23.5 MB。引片次序：入口在前，各片在后，且都先于 `data/index.js` / `data/site-index.js`（装配期就要按 `textRef` 取正文）。跨部同篇的那一行会出现在两个片里，入口按 `id` 去重合一，`window.TEXT_MASTER` 仍是「一行一篇」。
+**正文主表按集子分片**：`data/text-master.js` 只留取数入口（`masterTextOf` / `textVersionOf` / `textMasterAdd` + 片清单 `TEXT_SHARD_BOOKS`），正文按 `book` 分 15 片放在 `data/text-master/`。跨部同篇的那一行会出现在两个片里，入口按 `id` 去重合一，`window.TEXT_MASTER` 仍是「一行一篇」。
+
+引片两条路，**按「页面第一屏要不要正文」分**：
+
+- **要**（首页、各集子页）：用 `<script src>` 同步引该部的片 —— 引片次序是入口在前、各片在后，且都先于 `data/index.js` / `data/site-index.js`（装配期就要按 `textRef` 取正文）。
+- **不要**（`/library/` 集子目录、`/search/`）：只引入口，片由 `js/text-shards.js` **用到才 fetch**。`/library/` 的第一屏只是集子目录与计数（壳里的索引字段就够），进某一部时 `ReaderEngine.mount` 先取回该部的片再挂（见 `shardOf`：名家 / 帝王的外国卷与中国卷共用一片，两卷 id ≠ 片名）。`/search/` 的篇名 / 作者 / 朝代 / 出处那一档靠壳立刻能搜，正文片在首屏之后后台取全，**取回一片就把索引与查询缓存重算一遍** —— 所以「搜正文」一条不漏，只是晚一步到。
+
+两条硬约束（错了都不报错，只表现为「正文空白 / 列表短一截」）：
+
+- 片是**后到**的，`textMasterAdd` 必须顺手作废取数入口的 `byId` 索引（已调 `textMasterReset`）；
+- 片到之后必须**重建 `SITE_INDEX`**（`data/site-index.js` 装配时会丢掉「正文 / 译文为空」的条目 —— 古文、古文观止那一批，片没到就装配，这些条目根本不在索引里）。`js/text-shards.js` 在单片到齐后自动重建，并把订阅方（搜索页）重算一遍。
 
 **译文底下那行注脚只说口径**。主表另给每条正文算了**版次**（`version`），供本机快照比对；**版次不上界面**（见 `docs/architecture.md` §4.72）。
 
@@ -232,6 +243,7 @@ node test/run.sh                               # 测试
 1. **`sw.js` 里不写任何注释**：顶部注释块漏一个 `*/` 就会让整份文件解析失败、Service Worker 从不注册、离线能力静默失效。
 2. **静态资源是「缓存优先」**：只要动了 `css/` 或 `js/` 里的文件，就必须把 `CACHE_NAME` 的版本号 +1，否则老用户会一直拿着旧副本。同时有几个 PR 在改时，每个 PR +5，避免撞号。
 3. **`/api/*` 一律早退**，不缓存也不由 SW 应答 —— 缓存它等于「换个人打开还是上一个人的会话」。
+4. **正文片不进 `PRECACHE`**：15 片合计 24 MB，装包即预缓存等于每个访客都被拉一遍（多数人一辈子不会翻《名著导读》）。它们走**运行时缓存** —— 用到了才取、取到就进缓存，离线时读过的那几部照旧读得到。
 
 缓存版本号不是随手写一个，**要压过当前 main 才算数**（`git fetch` 后照着来）：
 
